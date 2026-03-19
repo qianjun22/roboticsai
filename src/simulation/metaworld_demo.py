@@ -54,8 +54,19 @@ SUCCESS_COLOR = (0, 255, 80)
 # ---------------------------------------------------------------------------
 
 def adapt_7dim_to_4dim(raw: list[float]) -> np.ndarray:
-    """Map 7-dim OpenVLA action [dx,dy,dz,droll,dpitch,dyaw,gripper] → 4-dim MetaWorld [dx,dy,dz,gripper]."""
-    return np.array([raw[0], raw[1], raw[2], raw[6]], dtype=np.float32)
+    """Map 7-dim OpenVLA action [dx,dy,dz,droll,dpitch,dyaw,gripper] → 4-dim MetaWorld [dx,dy,dz,gripper].
+
+    OpenVLA is trained on BridgeV2 (real-robot, meter scale) so outputs very small
+    deltas (~0.001-0.02). MetaWorld expects actions in [-1, 1]. Scale up xyz so
+    motion is clearly visible. Gripper stays binary (0 or ~1).
+    """
+    SCALE = 25.0
+    return np.array([
+        raw[0] * SCALE,
+        raw[1] * SCALE,
+        raw[2] * SCALE,
+        raw[6],
+    ], dtype=np.float32)
 
 
 def call_server(server_url: str, frame_rgb: np.ndarray, instruction: str) -> tuple[np.ndarray, float]:
