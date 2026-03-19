@@ -157,7 +157,9 @@ async def predict(
     # Run inference
     t0 = time.perf_counter()
     try:
-        inputs = processor(images=pil_image, text=instruction, return_tensors="pt")
+        # OpenVLA requires a specific VLA prompt format
+        prompt = f"In: What action should the robot take to {instruction}?\nOut:"
+        inputs = processor(images=pil_image, text=prompt, return_tensors="pt")
         # Always send inputs to cuda:0 — accelerate dispatches to other GPUs internally
         entry_device = "cuda:0" if torch.cuda.is_available() else "cpu"
         model_dtype = next(model.parameters()).dtype
