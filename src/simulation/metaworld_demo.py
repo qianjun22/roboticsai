@@ -221,6 +221,7 @@ def run(args):
                     task_idx, total_tasks,
                 )
                 cv2.imshow("MetaWorld Demo", display)
+                cv2.moveWindow("MetaWorld Demo", 80, 80)   # pin top-left so it's always visible
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("q"):
                     print("Quit key pressed.")
