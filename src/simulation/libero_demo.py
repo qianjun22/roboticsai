@@ -61,7 +61,10 @@ def call_server(server_url: str, frame_rgb: np.ndarray, instruction: str) -> tup
     Returns (7-dim action np.ndarray, latency_ms float).
     Falls back to small random action if server is unreachable.
     """
-    _, buf = cv2.imencode(".jpg", cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
+    # LIBERO agentview_image is in OpenGL convention (y-flipped).
+    # OpenVLA fine-tuning used display-orientation images (arm at top) — flip before sending.
+    frame_display = cv2.flip(frame_rgb, 0)
+    _, buf = cv2.imencode(".jpg", cv2.cvtColor(frame_display, cv2.COLOR_RGB2BGR))
     t0 = time.perf_counter()
     try:
         resp = requests.post(
@@ -99,8 +102,25 @@ def draw_overlay(frame_bgr: np.ndarray,
     """Draw a semi-transparent info bar at the BOTTOM of the frame (preserves full robot view)."""
     img = frame_bgr.copy()
     h, w = img.shape[:2]
-    bar_h = 90   # height of the info strip
-    bar_y0 = h - bar_h  # top edge of the strip
+
+    # Wrap instruction to fit within frame width (~55 chars per line at scale 0.48)
+    chars_per_line = max(1, int(w / 9.5))
+    words = instruction.split()
+    lines, cur = [], ""
+    for word in words:
+        test = (cur + " " + word).strip()
+        if len(test) <= chars_per_line:
+            cur = test
+        else:
+            if cur:
+                lines.append(cur)
+            cur = word
+    if cur:
+        lines.append(cur)
+    instr_lines = lines[:2]  # at most 2 lines
+
+    bar_h = 68 + 20 * len(instr_lines)  # dynamic height
+    bar_y0 = h - bar_h
 
     # Semi-transparent background bar at bottom
     overlay = img.copy()
@@ -111,20 +131,24 @@ def draw_overlay(frame_bgr: np.ndarray,
         cv2.putText(img, text, (x + 1, y + 1), FONT, scale, SHADOW_COLOR, thick + 1, cv2.LINE_AA)
         cv2.putText(img, text, (x, y),           FONT, scale, color,       thick,     cv2.LINE_AA)
 
-    # Line 1: task index + short name
-    put(f"Task [{task_idx + 1}/{total_tasks}]: {task_short}", 10, bar_y0 + 22, scale=0.60, thick=2)
+    y = bar_y0 + 20
+    # Line 1: task index + full task name (wrapped if needed)
+    task_display = f"Task [{task_idx + 1}/{total_tasks}]: {task_short.replace('_', ' ')}"
+    put(task_display, 10, y, scale=0.52, thick=2)
+    y += 20
 
-    # Line 2: instruction (truncated to fit)
-    instr_display = instruction if len(instruction) <= 72 else instruction[:69] + "..."
-    put(f"Instr: {instr_display}", 10, bar_y0 + 44, scale=0.45)
+    # Lines 2+: full instruction wrapped
+    for line in instr_lines:
+        put(line, 10, y, scale=0.48)
+        y += 20
 
-    # Line 3: step / latency / reward
+    # Last line: step / latency / reward
     put(f"Step: {step:>3}/{steps_per_task}   Latency: {latency_ms:.0f} ms   Reward: {reward:+.3f}",
-        10, bar_y0 + 66)
+        10, y)
 
     # SUCCESS flash (bottom-right)
     if success:
-        put("SUCCESS!", w - 110, bar_y0 + 22, color=SUCCESS_COLOR, scale=0.65, thick=2)
+        put("SUCCESS!", w - 115, bar_y0 + 20, color=SUCCESS_COLOR, scale=0.65, thick=2)
 
     # Progress bar at the very bottom edge
     bar_w = int(w * step / max(steps_per_task, 1))
