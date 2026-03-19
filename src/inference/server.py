@@ -63,9 +63,8 @@ def load_model(model_id: str, quantize: bool = False):
         load_kwargs["device_map"] = "auto"
 
     model = AutoModelForVision2Seq.from_pretrained(model_id, **load_kwargs)
-
-    if not quantize and device == "cuda":
-        model = model.to(device)
+    # Note: do NOT call model.to(device) when using device_map="auto"
+    # accelerate manages multi-GPU dispatch via hooks — moving breaks them
 
     model.eval()
     log.info("Model loaded.")
@@ -157,9 +156,10 @@ async def predict(
     t0 = time.perf_counter()
     try:
         inputs = processor(images=pil_image, text=instruction, return_tensors="pt")
-        # Cast to model dtype (BF16 on A100) to avoid float/BF16 mismatch
+        # Always send inputs to cuda:0 — accelerate dispatches to other GPUs internally
+        entry_device = "cuda:0" if torch.cuda.is_available() else "cpu"
         model_dtype = next(model.parameters()).dtype
-        inputs = {k: v.to(device=device, dtype=model_dtype) if v.is_floating_point() else v.to(device) for k, v in inputs.items()}
+        inputs = {k: v.to(device=entry_device, dtype=model_dtype) if v.is_floating_point() else v.to(entry_device) for k, v in inputs.items()}
 
         with torch.inference_mode():
             action = model.predict_action(**inputs, unnorm_key="bridge_orig", do_sample=False)
