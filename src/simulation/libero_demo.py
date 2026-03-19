@@ -96,14 +96,15 @@ def draw_overlay(frame_bgr: np.ndarray,
                  success: bool,
                  task_idx: int,
                  total_tasks: int) -> np.ndarray:
-    """Draw a semi-transparent info bar at the top of the frame."""
+    """Draw a semi-transparent info bar at the BOTTOM of the frame (preserves full robot view)."""
     img = frame_bgr.copy()
     h, w = img.shape[:2]
-    bar_h = 100
+    bar_h = 90   # height of the info strip
+    bar_y0 = h - bar_h  # top edge of the strip
 
-    # Semi-transparent background bar
+    # Semi-transparent background bar at bottom
     overlay = img.copy()
-    cv2.rectangle(overlay, (0, 0), (w, bar_h), BAR_COLOR, -1)
+    cv2.rectangle(overlay, (0, bar_y0), (w, h), BAR_COLOR, -1)
     cv2.addWeighted(overlay, BAR_ALPHA, img, 1 - BAR_ALPHA, 0, img)
 
     def put(text, x, y, color=TEXT_COLOR, scale=FONT_SCALE, thick=FONT_THICK):
@@ -111,24 +112,23 @@ def draw_overlay(frame_bgr: np.ndarray,
         cv2.putText(img, text, (x, y),           FONT, scale, color,       thick,     cv2.LINE_AA)
 
     # Line 1: task index + short name
-    put(f"Task [{task_idx + 1}/{total_tasks}]: {task_short}", 10, 22, scale=0.60, thick=2)
+    put(f"Task [{task_idx + 1}/{total_tasks}]: {task_short}", 10, bar_y0 + 22, scale=0.60, thick=2)
 
     # Line 2: instruction (truncated to fit)
     instr_display = instruction if len(instruction) <= 72 else instruction[:69] + "..."
-    put(f"Instr: {instr_display}", 10, 46, scale=0.45)
+    put(f"Instr: {instr_display}", 10, bar_y0 + 44, scale=0.45)
 
     # Line 3: step / latency / reward
     put(f"Step: {step:>3}/{steps_per_task}   Latency: {latency_ms:.0f} ms   Reward: {reward:+.3f}",
-        10, 70)
+        10, bar_y0 + 66)
 
-    # SUCCESS flash (top-right)
+    # SUCCESS flash (bottom-right)
     if success:
-        put("SUCCESS!", w - 110, 22, color=SUCCESS_COLOR, scale=0.65, thick=2)
+        put("SUCCESS!", w - 110, bar_y0 + 22, color=SUCCESS_COLOR, scale=0.65, thick=2)
 
-    # Progress bar at the bottom of the overlay band
-    bar_y = bar_h - 6
+    # Progress bar at the very bottom edge
     bar_w = int(w * step / max(steps_per_task, 1))
-    cv2.rectangle(img, (0, bar_y), (bar_w, bar_h - 2), (0, 200, 100), -1)
+    cv2.rectangle(img, (0, h - 4), (bar_w, h), (0, 200, 100), -1)
 
     return img
 
@@ -253,6 +253,10 @@ def run(args):
             # 4. Render overlay to cv2 window
             if not args.headless:
                 frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
+                # LIBERO (MuJoCo/OpenGL) renders bottom-to-top — flip for display
+                frame_bgr = cv2.flip(frame_bgr, 0)
+                # Upscale from 256x256 to 512x512 for comfortable viewing
+                frame_bgr = cv2.resize(frame_bgr, (512, 512), interpolation=cv2.INTER_LINEAR)
                 display   = draw_overlay(
                     frame_bgr, task_short, instruction,
                     step, args.steps_per_task,
