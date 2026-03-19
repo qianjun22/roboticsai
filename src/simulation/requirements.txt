@@ -1,0 +1,11 @@
+gym_pusht>=0.1.1          # 2D push task — simplest env to start
+gym_aloha>=0.1.0          # bimanual robot arm (more impressive demo)
+gym_xarm>=1.1.0           # single arm — closest to OpenVLA training dist
+gymnasium>=0.29.0
+numpy>=1.24.0
+opencv-python>=4.9.0      # image capture + display
+httpx>=0.27.0             # calls inference API
+Pillow>=10.0.0
+fastapi>=0.110.0          # mock server
+uvicorn>=0.27.0           # mock server
+python-multipart>=0.0.9   # required by FastAPI Form/UploadFile
