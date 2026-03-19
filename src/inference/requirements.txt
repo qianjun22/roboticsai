@@ -1,9 +1,9 @@
 torch>=2.1.0
 torchvision>=0.16.0
-transformers>=4.40.0
+transformers>=4.40.0,<5.0.0  # OpenVLA incompatible with transformers 5.x
 accelerate>=0.27.0
-bitsandbytes>=0.41.0      # INT4/INT8 quantization for smaller GPUs
-timm>=0.9.0               # Vision encoder (SigLIP)
+bitsandbytes>=0.41.0         # INT4/INT8 quantization for smaller GPUs
+timm>=0.9.10,<1.0.0          # OpenVLA requires timm<1.0.0
 Pillow>=10.0.0
 fastapi>=0.110.0
 uvicorn>=0.27.0

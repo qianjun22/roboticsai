@@ -157,7 +157,9 @@ async def predict(
     t0 = time.perf_counter()
     try:
         inputs = processor(images=pil_image, text=instruction, return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        # Cast to model dtype (BF16 on A100) to avoid float/BF16 mismatch
+        model_dtype = next(model.parameters()).dtype
+        inputs = {k: v.to(device=device, dtype=model_dtype) if v.is_floating_point() else v.to(device) for k, v in inputs.items()}
 
         with torch.inference_mode():
             action = model.predict_action(**inputs, unnorm_key="bridge_orig", do_sample=False)
