@@ -164,7 +164,9 @@ async def predict(
         with torch.inference_mode():
             action = model.predict_action(**inputs, unnorm_key="bridge_orig", do_sample=False)
 
-        action_list = action.squeeze().cpu().numpy().tolist()
+        # predict_action returns numpy array directly
+        action_arr = action.squeeze() if hasattr(action, "squeeze") else action
+        action_list = action_arr.tolist() if hasattr(action_arr, "tolist") else list(action_arr)
     except Exception as e:
         log.exception("Inference error")
         raise HTTPException(status_code=500, detail=f"Inference failed: {e}")
