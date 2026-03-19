@@ -111,6 +111,7 @@ class HealthResponse(BaseModel):
     status: str
     model: str
     device: str
+    unnorm_key: str
     gpu_memory_gb: Optional[float] = None
 
 
@@ -127,6 +128,7 @@ def health():
         status="ok",
         model=app.state.args.model,
         device=str(device),
+        unnorm_key=app.state.args.unnorm_key,
         gpu_memory_gb=gpu_mem,
     )
 
@@ -162,7 +164,7 @@ async def predict(
         inputs = {k: v.to(device=entry_device, dtype=model_dtype) if v.is_floating_point() else v.to(entry_device) for k, v in inputs.items()}
 
         with torch.inference_mode():
-            action = model.predict_action(**inputs, unnorm_key="bridge_orig", do_sample=False)
+            action = model.predict_action(**inputs, unnorm_key=app.state.args.unnorm_key, do_sample=False)
 
         # predict_action returns numpy array directly
         action_arr = action.squeeze() if hasattr(action, "squeeze") else action
@@ -207,6 +209,7 @@ def parse_args():
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--host", default="0.0.0.0")
     p.add_argument("--quantize", action="store_true", help="Load in INT4 (for <10GB GPUs)")
+    p.add_argument("--unnorm-key", default="bridge_orig", help="Action unnormalization key (e.g. bridge_orig, libero_spatial)")
     return p.parse_args()
 
 
