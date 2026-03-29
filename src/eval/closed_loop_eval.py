@@ -124,10 +124,12 @@ def get_observation(scene, robot, cube, cam) -> dict:
         rgb = rgb[:, :, :3]  # drop alpha if RGBA
     rgb = rgb.astype(np.uint8)
 
-    # Robot state (Genesis 0.4.3: get_qpos() returns 1D array, not batched)
+    # Robot state (Genesis 0.4.3: get_qpos() returns a torch Tensor)
     qpos = robot.get_qpos()
+    if hasattr(qpos, "numpy"):
+        qpos = qpos.cpu().numpy()
     if qpos.ndim == 2:
-        qpos = qpos[0]  # handle batched case
+        qpos = qpos[0]
     arm_joints = qpos[:7].astype(np.float32)
     gripper = qpos[7:9].astype(np.float32)
 
@@ -142,6 +144,8 @@ def get_observation(scene, robot, cube, cam) -> dict:
 def check_success(cube) -> bool:
     """Cube is considered lifted if z > table height + 0.08m."""
     pos = cube.get_pos()
+    if hasattr(pos, "numpy"):
+        pos = pos.cpu().numpy()
     if pos.ndim == 2:
         pos = pos[0]
     return float(pos[2]) > (TABLE_Z + 0.08)
