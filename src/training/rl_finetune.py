@@ -198,7 +198,8 @@ class ResidualPPOHead:
             nn.Linear(128, 1),
         ).to(self.device)
 
-        self.log_std = nn.Parameter(torch.zeros(9) - 1.0).to(self.device)  # start small
+        # Create log_std directly on device (nn.Parameter.to() returns non-leaf)
+        self.log_std = nn.Parameter(torch.full((9,), -1.0, device=self.device))
 
         self.opt = torch.optim.Adam(
             list(self.actor.parameters()) + list(self.critic.parameters()) + [self.log_std],
