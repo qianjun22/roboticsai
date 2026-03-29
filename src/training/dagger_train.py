@@ -60,8 +60,9 @@ LIFT_POS       = np.array([0.45, 0.0, TABLE_Z + 0.20])
 
 # ── Scene builder ─────────────────────────────────────────────────────────────
 
-def build_scene():
-    gs.init(backend=gs.cpu, logging_level="warning")
+def build_scene(use_cuda: bool = True):
+    backend = gs.cuda if use_cuda else gs.cpu
+    gs.init(backend=backend, logging_level="warning")
     scene = gs.Scene(
         show_viewer=False,
         renderer=gs.renderers.Rasterizer(),
@@ -205,7 +206,17 @@ def rollout_episode(
     """
     scene.reset()
     robot.set_dofs_position(Q_HOME)
-    for _ in range(10):
+    scene.step()  # 1 settle step (on CUDA, arm drifts to j5≈2.124 = training start)
+
+    # Randomize cube position
+    rng = np.random.default_rng()
+    xy = rng.uniform(-0.12, 0.12, size=2)
+    cube_pos_init = np.array([0.45 + xy[0], xy[1], TABLE_Z + CUBE_HALF])
+    cube.set_pos(cube_pos_init)
+
+    # 3 PD steps at Q_HOME while cube settles
+    for _ in range(3):
+        robot.control_dofs_position(Q_HOME[:9].astype(np.float64), dofs_idx_local=list(range(9)))
         scene.step()
 
     expert.reset()
@@ -263,9 +274,9 @@ def rollout_episode(
 
         exec_arm = exec_action[:7]
         exec_grip = exec_action[7:9]
-        robot.control_dofs_position(exec_arm.astype(np.float64), dofs_idx_local=list(range(7)))
-        robot.control_dofs_position(exec_grip.astype(np.float64), dofs_idx_local=[7, 8])
-        for _ in range(5):
+        exec_all = np.concatenate([exec_arm, exec_grip])
+        robot.control_dofs_position(exec_all.astype(np.float64), dofs_idx_local=list(range(9)))
+        for _ in range(2):  # 2 sim steps matches training SDG 20fps
             scene.step()
 
         arm_q = np.array(robot.get_dofs_position()).flatten()[:7]
@@ -415,7 +426,7 @@ def main():
 
     # Build Genesis scene once (reuse across iterations)
     print("[DAgger] Building Genesis scene (Taichi JIT — may take ~5min first run)...")
-    scene, robot, cube, cam = build_scene()
+    scene, robot, cube, cam = build_scene(use_cuda=True)
     print("[DAgger] Scene ready.\n")
 
     beta = args.beta_start
