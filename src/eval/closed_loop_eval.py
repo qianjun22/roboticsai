@@ -196,10 +196,11 @@ def run_policy_step(policy, obs: dict) -> tuple[np.ndarray, np.ndarray]:
         torch.cuda.set_device(0)  # device 0 after CUDA_VISIBLE_DEVICES remapping
 
     action, _ = policy.get_action(obs)
-    arm = np.array(action["action.arm"])
+    # get_action returns keys "arm" and "gripper" (not "action.arm")
+    arm = np.array(action["arm"])
     if arm.ndim == 3:
         arm = arm[0]  # (16, 7)
-    grip = np.array(action["action.gripper"])
+    grip = np.array(action["gripper"])
     if grip.ndim == 3:
         grip = grip[0]  # (16, 2)
     return arm, grip
