@@ -146,7 +146,7 @@ def execute_action_chunk(scene, robot, arm_actions: np.ndarray, gripper_actions:
 def load_policy(checkpoint_path: str, device: int = 0):
     """Load GR00T fine-tuned policy from checkpoint."""
     repo_dir = Path(__file__).parents[2]  # roboticsai root (eval/ → src/ → root)
-    sys.path.insert(0, str(repo_dir / "training"))
+    sys.path.insert(0, str(repo_dir / "src" / "training"))
 
     import franka_config  # noqa: F401 — registers NEW_EMBODIMENT tag
 
