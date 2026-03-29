@@ -110,17 +110,26 @@ def build_scene():
 
 
 def reset_episode(scene, robot, cube, rng: np.random.Generator):
-    """Reset scene: robot to home, cube to random table position."""
+    """Reset scene: robot to home, cube to random table position.
+
+    Order matters: settle robot at HOME first, then place cube.
+    If cube is placed before robot settles, the arm teleport from
+    the default genesis position can sweep through the cube and
+    launch it off the table (observed: cube_z=1.27m at step 0).
+    """
     scene.reset()
 
-    # Random cube XY on table
+    # 1. Settle robot at HOME first (before placing cube)
+    robot.set_dofs_position(Q_HOME)
+    for _ in range(20):
+        scene.step()
+
+    # 2. Place cube on table AFTER robot is settled
     xy = rng.uniform(-0.12, 0.12, size=2)
     cube_pos = np.array([0.45 + xy[0], xy[1], TABLE_Z + CUBE_HALF])
     cube.set_pos(cube_pos)
-
-    # Robot to home via set_dofs_position (Genesis 0.4.3 API)
-    robot.set_dofs_position(Q_HOME)
-    scene.step()
+    for _ in range(20):
+        scene.step()
 
     return cube_pos
 
