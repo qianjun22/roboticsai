@@ -428,6 +428,13 @@ def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: in
     ]
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+
+    # Stop GR00T inference server to free GPU memory for fine-tune
+    print(f"[DAgger] Stopping GR00T server to free GPU memory...")
+    subprocess.run(["pkill", "-f", "groot_franka_server.py"], capture_output=True)
+    import time as _time
+    _time.sleep(8)  # wait for GPU memory to free
+
     print(f"[DAgger] Starting fine-tune: {steps} steps on GPU {gpu_id}...")
     result = subprocess.run(finetune_cmd, env=env, capture_output=True, text=True, timeout=3600)
     if result.returncode != 0:
@@ -546,14 +553,46 @@ def main():
             "total_episodes": episode_counter,
         })
 
-        # Fine-tune on aggregated dataset
+        # Fine-tune on aggregated dataset (stops server to free GPU memory)
         iter_ckpt = ckpt_dir / f"iter_{iter_i+1:02d}"
         ok = run_finetune(dataset_dir, iter_ckpt, args.finetune_steps, args.gpu_id,
                           base_model=args.base_model)
         if ok:
             print(f"  [DAgger] Checkpoint saved to {iter_ckpt}")
+            active_checkpoint = str(iter_ckpt)
         else:
             print(f"  [DAgger] Fine-tune failed — continuing with previous checkpoint")
+            active_checkpoint = args.base_model
+
+        # Restart GR00T server with new checkpoint for next iteration
+        if iter_i < args.dagger_iters - 1:
+            import time as _time2
+            groot_venv = Path(os.environ.get("GROOT_REPO", "/home/ubuntu/Isaac-GR00T")) / ".venv" / "bin" / "python3"
+            server_script = Path(__file__).resolve().parent.parent / "inference" / "groot_franka_server.py"
+            if groot_venv.exists() and server_script.exists():
+                print(f"  [DAgger] Restarting GR00T server with checkpoint: {active_checkpoint}")
+                env2 = os.environ.copy()
+                env2["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+                subprocess.Popen(
+                    [str(groot_venv), str(server_script),
+                     "--checkpoint", active_checkpoint, "--port", "8002"],
+                    env=env2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+                # Wait up to 90s for server to be ready
+                server_ready = False
+                for _wait in range(18):
+                    _time2.sleep(5)
+                    try:
+                        import urllib.request as _ur
+                        _ur.urlopen(f"{args.server_url}/health", timeout=3)
+                        server_ready = True
+                        break
+                    except Exception:
+                        pass
+                if server_ready:
+                    print(f"  [DAgger] Server ready after {(_wait+1)*5}s")
+                else:
+                    print(f"  [DAgger] WARNING: server did not start, next iter may fail")
 
         # Decay beta (less expert intervention each iteration)
         beta = max(0.0, beta * args.beta_decay)
