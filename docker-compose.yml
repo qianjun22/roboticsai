@@ -1,0 +1,180 @@
+---
+# OCI Robot Cloud — Docker Compose
+#
+# Starts all API services in mock mode for local development and demo.
+# GR00T inference server (port 8002) requires actual OCI A100 GPU — not in this file.
+#
+# Usage:
+#   docker-compose up -d            # Start all services
+#   docker-compose up -d portal     # Start only design partner portal
+#   docker-compose logs -f flywheel # Tail data flywheel logs
+#   docker-compose down             # Stop all services
+#
+# For OCI deployment (GPU services), use src/infra/oci_robot_cloud_setup.sh
+
+version: "3.9"
+
+x-base: &base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  volumes:
+    - ./src:/app/src:ro
+    - /tmp:/tmp
+  environment:
+    - PYTHONUNBUFFERED=1
+
+services:
+
+  # ── Core training pipeline ─────────────────────────────────────────────────
+
+  training-monitor:
+    <<: *base
+    command: python src/api/training_monitor.py --port 8004 --mock
+    ports: ["8004:8004"]
+    container_name: oci-training-monitor
+
+  cost-calculator:
+    <<: *base
+    command: python src/api/cost_calculator.py --port 8005
+    ports: ["8005:8005"]
+    container_name: oci-cost-calculator
+
+  # ── Partner-facing services ────────────────────────────────────────────────
+
+  design-partner-portal:
+    <<: *base
+    command: python src/api/design_partner_portal.py --port 8006 --mock
+    ports: ["8006:8006"]
+    container_name: oci-partner-portal
+
+  real-data-ingestion:
+    <<: *base
+    command: python src/api/real_data_ingestion.py --port 8007
+    ports: ["8007:8007"]
+    container_name: oci-data-ingestion
+    volumes:
+      - ./src:/app/src:ro
+      - /tmp:/tmp
+      - partner-uploads:/tmp/uploads
+
+  partner-onboarding:
+    <<: *base
+    command: python src/api/partner_onboarding_wizard.py --port 8024
+    ports: ["8024:8024"]
+    container_name: oci-onboarding
+
+  multi-tenant-manager:
+    <<: *base
+    command: python src/api/multi_tenant_manager.py --port 8023 --mock
+    ports: ["8023:8023"]
+    container_name: oci-multi-tenant
+    volumes:
+      - ./src:/app/src:ro
+      - /tmp:/tmp
+      - partner-workspaces:/tmp/partners
+
+  # ── Safety and teleoperation ───────────────────────────────────────────────
+
+  safety-monitor:
+    <<: *base
+    command: python src/safety/safety_monitor.py --port 8016
+    ports: ["8016:8016"]
+    container_name: oci-safety-monitor
+
+  teleoperation-collector:
+    <<: *base
+    command: python src/api/teleoperation_collector.py --port 8015
+    ports: ["8015:8015"]
+    container_name: oci-teleoperation
+    volumes:
+      - ./src:/app/src:ro
+      - /tmp:/tmp
+      - teleop-sessions:/tmp/teleop_sessions
+
+  # ── Billing and metering ───────────────────────────────────────────────────
+
+  billing:
+    <<: *base
+    command: python src/api/billing_integration.py --port 8017 --mock
+    ports: ["8017:8017"]
+    container_name: oci-billing
+
+  # ── Learning pipeline ──────────────────────────────────────────────────────
+
+  continuous-learning:
+    <<: *base
+    command: python src/training/continuous_learning.py --port 8018 --mock
+    ports: ["8018:8018"]
+    container_name: oci-continuous-learning
+
+  experiment-tracker:
+    <<: *base
+    command: python src/eval/multimodal_experiment_tracker.py --port 8019 --mock
+    ports: ["8019:8019"]
+    container_name: oci-experiment-tracker
+    volumes:
+      - ./src:/app/src:ro
+      - /tmp:/tmp
+      - experiments-db:/tmp/experiments.db
+
+  data-flywheel:
+    <<: *base
+    command: python src/api/data_flywheel.py --port 8020 --mock
+    ports: ["8020:8020"]
+    container_name: oci-data-flywheel
+
+  # ── Notifications and monitoring ───────────────────────────────────────────
+
+  webhook-notifications:
+    <<: *base
+    command: python src/api/webhook_notifications.py --port 8021 --mock
+    ports: ["8021:8021"]
+    container_name: oci-webhooks
+    volumes:
+      - ./src:/app/src:ro
+      - /tmp:/tmp
+      - webhooks-db:/tmp/webhooks.db
+
+  sla-monitor:
+    <<: *base
+    command: python src/api/partner_sla_monitor.py --port 8022 --mock
+    ports: ["8022:8022"]
+    container_name: oci-sla-monitor
+    volumes:
+      - ./src:/app/src:ro
+      - /tmp:/tmp
+      - sla-db:/tmp/sla_monitor.db
+
+  # ── Analytics and demo ─────────────────────────────────────────────────────
+
+  analytics-dashboard:
+    <<: *base
+    command: python src/api/analytics_dashboard.py --port 8026
+    ports: ["8026:8026"]
+    container_name: oci-analytics
+
+  episode-playback:
+    <<: *base
+    command: python src/demo/episode_playback_server.py --port 8025 --mock
+    ports: ["8025:8025"]
+    container_name: oci-episode-playback
+
+  deployment-dashboard:
+    <<: *base
+    command: python src/api/deployment_dashboard.py --port 8008 --mock
+    ports: ["8008:8008"]
+    container_name: oci-deployment
+
+volumes:
+  partner-uploads:
+  partner-workspaces:
+  teleop-sessions:
+  experiments-db:
+  webhooks-db:
+  sla-db:
+
+networks:
+  default:
+    name: oci-robot-cloud
