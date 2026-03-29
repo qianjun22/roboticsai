@@ -48,70 +48,86 @@ HAS_DEPS = check_deps()
 
 # ── Genesis scene setup ────────────────────────────────────────────────────────
 
+TABLE_Z    = 0.3     # table height
+CUBE_HALF  = 0.025   # half cube size
+
 def build_scene(gpu_id: int = 0):
-    """Create a Franka pick-and-place scene with a red cube."""
+    """Create a Franka pick-and-place scene with a red cube (Genesis 0.4.3 API)."""
     import genesis as gs
-    gs.init(backend=gs.cuda, precision="32", logging_level="error")
+    gs.init(backend=gs.cuda, logging_level="warning")
 
     scene = gs.Scene(
-        gravity=(0, 0, -9.81),
-        dt=0.01,
         show_viewer=False,
         renderer=gs.renderers.Rasterizer(),
+        sim_options=gs.options.SimOptions(dt=0.02, substeps=2),
     )
+
+    # Floor + table
     scene.add_entity(gs.morphs.Plane())
+    scene.add_entity(
+        gs.morphs.Box(size=(0.8, 0.6, TABLE_Z), pos=(0.45, 0.0, TABLE_Z / 2), fixed=True),
+    )
 
     # Franka arm
     robot = scene.add_entity(
-        gs.morphs.MJCF(file="xml/franka_emika_panda/panda.xml"),
-        material=gs.materials.Rigid(),
-        surface=gs.surfaces.Default(color=(0.8, 0.8, 0.8, 1.0)),
+        gs.morphs.MJCF(file="xml/franka_emika_panda/panda.xml", requires_jac_and_IK=True),
     )
 
     # Red cube — target for pick-and-lift
     cube = scene.add_entity(
-        gs.morphs.Box(size=(0.04, 0.04, 0.04)),
-        material=gs.materials.Rigid(rho=500),
-        surface=gs.surfaces.Default(color=(0.8, 0.1, 0.1, 1.0)),
+        gs.morphs.Box(
+            size=(0.05, 0.05, 0.05),
+            pos=(0.45, 0.0, TABLE_Z + CUBE_HALF),
+        ),
     )
 
     # Camera for policy observations
     cam = scene.add_camera(
         res=(256, 256),
-        pos=(0.5, 0.0, 0.5),
-        lookat=(0.0, 0.0, 0.15),
+        pos=(0.5, 0.0, 1.4),
+        lookat=(0.45, 0.0, TABLE_Z),
         fov=60,
         GUI=False,
     )
 
-    scene.build(n_envs=1)
+    scene.build()
     return scene, robot, cube, cam
 
 
 def reset_episode(scene, robot, cube, rng: np.random.Generator):
     """Reset robot to home, place cube at random table position."""
-    # Franka home joints
-    home_q = np.array([0.0, -0.3, 0.0, -2.0, 0.0, 1.8, 0.785, 0.04, 0.04], dtype=np.float32)
-    robot.set_qpos(home_q[np.newaxis])
+    # Franka home joints (9-DOF: 7 arm + 2 finger)
+    home_q = np.array([0.0, -0.4, 0.0, -2.1, 0.0, 1.8, 0.785, 0.04, 0.04], dtype=np.float32)
+    robot.set_qpos(home_q)
 
     # Random cube position on table surface
-    x = rng.uniform(-0.05, 0.15)
+    x = rng.uniform(0.35, 0.55)
     y = rng.uniform(-0.15, 0.15)
-    cube.set_pos(np.array([[x, y, 0.02]]))
-    cube.set_quat(np.array([[1.0, 0.0, 0.0, 0.0]]))
+    cube.set_pos([x, y, TABLE_Z + CUBE_HALF])
 
-    scene.step()
+    # Step to settle
+    for _ in range(10):
+        scene.step()
+
     return home_q[:7], home_q[7:]  # arm joints, gripper
 
 
 def get_observation(scene, robot, cube, cam) -> dict:
     """Capture current scene state as GR00T observation dict."""
-    # RGB frame
-    cam.set_pose(pos=(0.5, 0.0, 0.5), lookat=(0.0, 0.0, 0.15))
-    rgb = cam.render(rgb=True)[0]  # (256, 256, 3) uint8
+    # RGB frame (Genesis 0.4.3: render returns (H,W,4) RGBA or (H,W,3) RGB)
+    rendered = cam.render(rgb=True)
+    if isinstance(rendered, tuple):
+        rgb = rendered[0]   # some versions return (rgb, depth) tuple
+    else:
+        rgb = rendered
+    if rgb.shape[-1] == 4:
+        rgb = rgb[:, :, :3]  # drop alpha if RGBA
+    rgb = rgb.astype(np.uint8)
 
-    # Robot state
-    qpos = robot.get_qpos()[0]  # (9,) — 7 arm + 2 gripper
+    # Robot state (Genesis 0.4.3: get_qpos() returns 1D array, not batched)
+    qpos = robot.get_qpos()
+    if qpos.ndim == 2:
+        qpos = qpos[0]  # handle batched case
     arm_joints = qpos[:7].astype(np.float32)
     gripper = qpos[7:9].astype(np.float32)
 
@@ -124,19 +140,19 @@ def get_observation(scene, robot, cube, cam) -> dict:
 
 
 def check_success(cube) -> bool:
-    """Cube is considered lifted if z > 0.1m above table."""
-    pos = cube.get_pos()[0]  # (3,)
-    return float(pos[2]) > 0.10
+    """Cube is considered lifted if z > table height + 0.08m."""
+    pos = cube.get_pos()
+    if pos.ndim == 2:
+        pos = pos[0]
+    return float(pos[2]) > (TABLE_Z + 0.08)
 
 
 def execute_action_chunk(scene, robot, arm_actions: np.ndarray, gripper_actions: np.ndarray,
-                          steps_per_action: int = 5):
-    """Execute a 16-step action chunk in simulation."""
+                          steps_per_action: int = 3):
+    """Execute a 16-step action chunk in simulation (Genesis 0.4.3)."""
     for t in range(min(len(arm_actions), 16)):
         target_q = np.concatenate([arm_actions[t], gripper_actions[t]])
-        robot.set_dofs_kp(np.array([4500, 4500, 3500, 3500, 2000, 2000, 2000, 100, 100]))
-        robot.set_dofs_kv(np.array([450, 450, 350, 350, 200, 200, 200, 10, 10]))
-        robot.set_dofs_position(target_q[np.newaxis])
+        robot.control_dofs_position(target_q)
         for _ in range(steps_per_action):
             scene.step()
 
