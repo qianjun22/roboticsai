@@ -68,11 +68,17 @@ GRIPPER_CLOSE = 0.005
 
 # ── Genesis scene setup ───────────────────────────────────────────────────────
 
-def build_scene():
-    """Create Franka pick-and-place scene matching genesis_sdg_planned.py geometry."""
+def build_scene(use_cuda: bool = False):
+    """Create Franka pick-and-place scene matching genesis_sdg_planned.py geometry.
+
+    use_cuda: use CUDA backend to match the training SDG dynamics exactly.
+    The CUDA backend has different PD equilibrium (~j5=2.124) than CPU (j5=1.799),
+    matching the training data starting state.
+    """
     import genesis as gs
 
-    gs.init(backend=gs.cpu, logging_level="warning")
+    backend = gs.cuda if use_cuda else gs.cpu
+    gs.init(backend=backend, logging_level="warning")
 
     scene = gs.Scene(
         show_viewer=False,
@@ -113,26 +119,27 @@ def build_scene():
 
 
 def reset_episode(scene, robot, cube, rng: np.random.Generator):
-    """Reset scene: robot to training start state, cube to random table position.
+    """Reset scene: robot to home, cube to random table position.
 
-    Sets robot to Q_TRAIN_START (the actual joint state from training data step 0,
-    measured from SDG-generated joint_states.npy). This matches the exact initial
-    observation distribution the policy was trained on.
+    Uses Q_HOME with PD control. On CUDA (matching training SDG), the Franka PD
+    equilibrium naturally drifts to j5≈2.124 (matching training data step-0).
+    On CPU the equilibrium stays at j5≈1.8 (use --no-cuda for CPU-only testing).
     """
     scene.reset()
 
-    # 1. Teleport robot to the exact training starting state
-    robot.set_dofs_position(Q_TRAIN_START)
+    # Teleport to Q_HOME
+    robot.set_dofs_position(Q_HOME)
+    scene.step()
 
-    # 2. Place cube
+    # Place cube
     xy = rng.uniform(-0.12, 0.12, size=2)
     cube_pos = np.array([0.45 + xy[0], xy[1], TABLE_Z + CUBE_HALF])
     cube.set_pos(cube_pos)
 
-    # 3. Hold robot at training start position while cube settles (5 steps)
-    for _ in range(5):
-        robot.control_dofs_position(Q_TRAIN_START[:7].astype(np.float64), dofs_idx_local=list(range(7)))
-        robot.control_dofs_position(Q_TRAIN_START[7:9].astype(np.float64), dofs_idx_local=[7, 8])
+    # Hold at Q_HOME via full 9-DOF PD while cube settles (10 steps)
+    # On CUDA backend: j5 drifts to ~2.124 equilibrium = matches training distribution
+    for _ in range(10):
+        robot.control_dofs_position(Q_HOME[:9].astype(np.float64), dofs_idx_local=list(range(9)))
         scene.step()
 
     return cube_pos
@@ -295,7 +302,8 @@ def run_mock_eval(num_episodes: int, max_steps: int) -> list[dict]:
 # ── Real eval ─────────────────────────────────────────────────────────────────
 
 def run_eval(num_episodes: int, max_steps: int, sim_steps_per_action: int,
-             server_url: str = "", checkpoint: str = "", gpu_id: int = 0) -> list[dict]:
+             server_url: str = "", checkpoint: str = "", gpu_id: int = 0,
+             use_cuda: bool = True) -> list[dict]:
     """Run closed-loop eval with Genesis sim + GR00T policy (HTTP or in-process)."""
 
     use_server = bool(server_url)
@@ -304,7 +312,7 @@ def run_eval(num_episodes: int, max_steps: int, sim_steps_per_action: int,
     if not use_server:
         policy = load_policy(checkpoint, device=gpu_id)
 
-    scene, robot, cube, cam = build_scene()
+    scene, robot, cube, cam = build_scene(use_cuda=use_cuda)
 
     rng = np.random.default_rng(42)
     results = []
@@ -472,6 +480,10 @@ def main():
                         help="Genesis sim steps per single action in chunk (2 matches SDG 20fps training)")
     parser.add_argument("--gpu-id",             type=int,   default=0)
     parser.add_argument("--output",             default="/tmp/eval_results.json")
+    parser.add_argument("--cuda",               action="store_true", default=True,
+                        help="Use CUDA Genesis backend (matches training SDG dynamics, j5→2.124)")
+    parser.add_argument("--no-cuda",            action="store_false", dest="cuda",
+                        help="Use CPU Genesis backend (faster but training/eval distribution mismatch)")
     parser.add_argument("--mock",               action="store_true",
                         help="Force mock mode (skip Genesis + policy loading)")
     args = parser.parse_args()
@@ -510,6 +522,7 @@ def main():
                 server_url=args.server_url or "",
                 checkpoint=args.checkpoint or "",
                 gpu_id=args.gpu_id,
+                use_cuda=args.cuda,
             )
     except Exception as e:
         print(f"\n[eval] ERROR: {e}")
