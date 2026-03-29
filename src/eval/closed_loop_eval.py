@@ -60,6 +60,9 @@ CUBE_HALF  = 0.025    # half cube side
 LIFT_THRESHOLD = TABLE_Z + 0.08   # cube z > 0.78m = success
 
 Q_HOME = np.array([0.0, -0.4, 0.0, -2.1, 0.0, 1.8, 0.785, 0.04, 0.04], dtype=np.float64)
+# Actual starting state from SDG training data (measured from joint_states.npy step 0)
+# The sim produces this state after SDG init — NOT exactly Q_HOME due to physics
+Q_TRAIN_START = np.array([-0.021, -0.424, 0.012, -1.887, 0.007, 2.124, 0.771, 0.040, 0.039], dtype=np.float64)
 GRIPPER_OPEN  = 0.04
 GRIPPER_CLOSE = 0.005
 
@@ -110,35 +113,26 @@ def build_scene():
 
 
 def reset_episode(scene, robot, cube, rng: np.random.Generator):
-    """Reset scene: robot to home, cube to random table position.
+    """Reset scene: robot to training start state, cube to random table position.
 
-    Matches the SDG data-collection procedure exactly so the initial
-    robot state seen by GR00T at eval time matches the training distribution:
-      1. scene.reset()
-      2. set_dofs_position(Q_HOME)       ← teleport (no PD)
-      3. 1 sim step (no joint cmd)       ← arm drifts ~2.124 on j5, matching SDG step-0
-      4. place cube
-      5. 10 steps with PD hold at Q_HOME ← cube settles, robot stays near SDG start state
+    Sets robot to Q_TRAIN_START (the actual joint state from training data step 0,
+    measured from SDG-generated joint_states.npy). This matches the exact initial
+    observation distribution the policy was trained on.
     """
     scene.reset()
 
-    # 1. Teleport robot to Q_HOME (no PD control yet)
-    robot.set_dofs_position(Q_HOME)
-    scene.step()  # 1 settle step — matches SDG; robot drifts slightly under gravity
+    # 1. Teleport robot to the exact training starting state
+    robot.set_dofs_position(Q_TRAIN_START)
 
-    # 2. Place cube on table (SDG does this before set_dofs, but 1 step apart is fine)
+    # 2. Place cube
     xy = rng.uniform(-0.12, 0.12, size=2)
     cube_pos = np.array([0.45 + xy[0], xy[1], TABLE_Z + CUBE_HALF])
     cube.set_pos(cube_pos)
 
-    # 3. Hold robot near current position while cube settles (10 steps)
-    #    Use current qpos as target so we don't snap back to exact Q_HOME
-    for _ in range(10):
-        q_cur = robot.get_dofs_position()
-        if hasattr(q_cur, "numpy"):
-            q_cur = q_cur.cpu().numpy()
-        robot.control_dofs_position(q_cur[:7].astype(np.float64), dofs_idx_local=list(range(7)))
-        robot.control_dofs_position(q_cur[7:9].astype(np.float64), dofs_idx_local=[7, 8])
+    # 3. Hold robot at training start position while cube settles (5 steps)
+    for _ in range(5):
+        robot.control_dofs_position(Q_TRAIN_START[:7].astype(np.float64), dofs_idx_local=list(range(7)))
+        robot.control_dofs_position(Q_TRAIN_START[7:9].astype(np.float64), dofs_idx_local=[7, 8])
         scene.step()
 
     return cube_pos
