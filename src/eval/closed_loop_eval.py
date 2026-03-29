@@ -136,9 +136,10 @@ def reset_episode(scene, robot, cube, rng: np.random.Generator):
     cube_pos = np.array([0.45 + xy[0], xy[1], TABLE_Z + CUBE_HALF])
     cube.set_pos(cube_pos)
 
-    # Hold at Q_HOME via full 9-DOF PD while cube settles (10 steps)
-    # On CUDA backend: j5 drifts to ~2.124 equilibrium = matches training distribution
-    for _ in range(10):
+    # Hold at Q_HOME via full 9-DOF PD for a few steps while cube settles.
+    # On CUDA: after 1 PD step j5≈2.124 (matches training step-0 exactly).
+    # Run 3 steps so cube is stable but arm stays near training start position.
+    for _ in range(3):
         robot.control_dofs_position(Q_HOME[:9].astype(np.float64), dofs_idx_local=list(range(9)))
         scene.step()
 
