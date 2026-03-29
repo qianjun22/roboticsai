@@ -164,6 +164,7 @@ def launch_finetune(
     steps: int,
     gpu_id: int,
     log_file: Path,
+    base_model: str = "/tmp/finetune_500_5k/checkpoint-5000",
 ) -> subprocess.Popen:
     """Launch fine-tuning subprocess. Returns Popen handle."""
     lerobot_dir = output_dir / job_id / "lerobot"
@@ -171,9 +172,19 @@ def launch_finetune(
     lerobot_dir.mkdir(parents=True, exist_ok=True)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
+    # Resolve script paths relative to this file's location
+    _here = Path(__file__).resolve().parent
+    genesis_to_lerobot = _here.parent / "training" / "genesis_to_lerobot.py"
+    groot_repo = Path(os.environ.get("GROOT_REPO", "/home/ubuntu/Isaac-GR00T"))
+    launch_finetune_script = groot_repo / "gr00t" / "experiment" / "launch_finetune.py"
+    python_bin = groot_repo / ".venv" / "bin" / "python3"
+    if not python_bin.exists():
+        python_bin = Path("python3")
+    franka_cfg = _here.parent / "training" / "franka_config.py"
+
     # Convert to LeRobot v2 first
     convert_cmd = [
-        "python3", "genesis_to_lerobot.py",
+        str(python_bin), str(genesis_to_lerobot),
         "--input", str(watch_dir),
         "--output", str(lerobot_dir),
         "--fps", "20",
@@ -184,8 +195,11 @@ def launch_finetune(
         print(f"[AutoRetrain] Convert warning: {result.stderr[:300]}")
 
     finetune_cmd = [
-        "python3", "launch_finetune.py",
+        str(python_bin), str(launch_finetune_script),
+        "--base-model-path", base_model,
         "--dataset-path", str(lerobot_dir),
+        "--embodiment-tag", "NEW_EMBODIMENT",
+        "--modality-config-path", str(franka_cfg),
         "--max-steps", str(steps),
         "--global-batch-size", "16",
         "--output-dir", str(ckpt_dir),
