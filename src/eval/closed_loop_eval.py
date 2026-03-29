@@ -112,23 +112,33 @@ def build_scene():
 def reset_episode(scene, robot, cube, rng: np.random.Generator):
     """Reset scene: robot to home, cube to random table position.
 
-    Order matters: settle robot at HOME first, then place cube.
-    If cube is placed before robot settles, the arm teleport from
-    the default genesis position can sweep through the cube and
-    launch it off the table (observed: cube_z=1.27m at step 0).
+    Matches the SDG data-collection procedure exactly so the initial
+    robot state seen by GR00T at eval time matches the training distribution:
+      1. scene.reset()
+      2. set_dofs_position(Q_HOME)       ← teleport (no PD)
+      3. 1 sim step (no joint cmd)       ← arm drifts ~2.124 on j5, matching SDG step-0
+      4. place cube
+      5. 10 steps with PD hold at Q_HOME ← cube settles, robot stays near SDG start state
     """
     scene.reset()
 
-    # 1. Settle robot at HOME first (before placing cube)
+    # 1. Teleport robot to Q_HOME (no PD control yet)
     robot.set_dofs_position(Q_HOME)
-    for _ in range(20):
-        scene.step()
+    scene.step()  # 1 settle step — matches SDG; robot drifts slightly under gravity
 
-    # 2. Place cube on table AFTER robot is settled
+    # 2. Place cube on table (SDG does this before set_dofs, but 1 step apart is fine)
     xy = rng.uniform(-0.12, 0.12, size=2)
     cube_pos = np.array([0.45 + xy[0], xy[1], TABLE_Z + CUBE_HALF])
     cube.set_pos(cube_pos)
-    for _ in range(20):
+
+    # 3. Hold robot near current position while cube settles (10 steps)
+    #    Use current qpos as target so we don't snap back to exact Q_HOME
+    for _ in range(10):
+        q_cur = robot.get_dofs_position()
+        if hasattr(q_cur, "numpy"):
+            q_cur = q_cur.cpu().numpy()
+        robot.control_dofs_position(q_cur[:7].astype(np.float64), dofs_idx_local=list(range(7)))
+        robot.control_dofs_position(q_cur[7:9].astype(np.float64), dofs_idx_local=[7, 8])
         scene.step()
 
     return cube_pos
@@ -464,8 +474,8 @@ def main():
     parser.add_argument("--num-episodes",       type=int,   default=20)
     parser.add_argument("--max-steps",          type=int,   default=500,
                         help="Max policy steps per episode (each step = 16 actions)")
-    parser.add_argument("--sim-steps-per-action", type=int, default=5,
-                        help="Genesis sim steps per single action in chunk")
+    parser.add_argument("--sim-steps-per-action", type=int, default=2,
+                        help="Genesis sim steps per single action in chunk (2 matches SDG 20fps training)")
     parser.add_argument("--gpu-id",             type=int,   default=0)
     parser.add_argument("--output",             default="/tmp/eval_results.json")
     parser.add_argument("--mock",               action="store_true",
