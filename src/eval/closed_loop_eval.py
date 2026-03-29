@@ -186,6 +186,11 @@ def load_policy(checkpoint_path: str, device: int = 0):
 
 def run_policy_step(policy, obs: dict) -> tuple[np.ndarray, np.ndarray]:
     """Query policy and return (arm_actions, gripper_actions) each (16, D)."""
+    # Ensure CUDA device consistency after Genesis CUDA init
+    import torch
+    if torch.cuda.is_available():
+        torch.cuda.set_device(0)  # device 0 after CUDA_VISIBLE_DEVICES remapping
+
     action, _ = policy.get_action(obs)
     arm = np.array(action["action.arm"])
     if arm.ndim == 3:
