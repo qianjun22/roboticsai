@@ -222,7 +222,7 @@ def rollout_episode(
         scene.step()
 
     expert.reset()
-    frames, expert_acts, policy_acts = [], [], []
+    frames, expert_acts, policy_acts, actual_states = [], [], [], []
     diverged_steps = 0
 
     arm_q = Q_HOME[:7].copy()
@@ -265,10 +265,11 @@ def rollout_episode(
         pol_action = np.concatenate([pol_arm, pol_grip])
         chunk_step += 1
 
-        # Record (always save expert label)
+        # Record (always save expert label and actual robot state)
         frames.append(rgb.copy())
         expert_acts.append(exp_action.copy())
         policy_acts.append(pol_action.copy())
+        actual_states.append(np.concatenate([arm_q, grip_q]).copy())
 
         # Detect divergence
         if np.max(np.abs(pol_action[:7] - exp_action[:7])) > diverge_threshold:
@@ -308,6 +309,7 @@ def rollout_episode(
                 "frames": frames,
                 "expert_actions": expert_acts,
                 "policy_actions": policy_acts,
+                "actual_states": actual_states,
                 "success": True,
                 "diverged_steps": diverged_steps,
                 "steps": step_i + 1,
@@ -318,6 +320,7 @@ def rollout_episode(
         "frames": frames,
         "expert_actions": expert_acts,
         "policy_actions": policy_acts,
+        "actual_states": actual_states,
         "success": False,
         "diverged_steps": diverged_steps,
         "steps": max_steps,
@@ -332,27 +335,28 @@ def save_lerobot_episode(
     episode_idx: int,
     frames: list,
     expert_actions: list,
+    actual_states: list = None,
     fps: int = 20,
 ):
-    """Save one DAgger episode as LeRobot v2-compatible HDF5."""
+    """Save one DAgger episode as LeRobot v2-compatible numpy arrays.
+
+    Saves three arrays:
+      frames.npy        (N, 256, 256, 3) uint8 — camera frames
+      actions.npy       (N, 9) float32       — expert IK action targets
+      states.npy        (N, 9) float32       — actual robot joint states
+                                               (falls back to actions if not provided)
+    """
     ep_dir = out_dir / f"episode_{episode_idx:06d}"
     ep_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        import h5py
-        n = len(frames)
-        rgb_arr = np.stack(frames).astype(np.uint8)           # N×256×256×3
-        act_arr = np.stack(expert_actions).astype(np.float32)  # N×9
-
-        with h5py.File(ep_dir / "data.hdf5", "w") as f:
-            f.create_dataset("observation/image", data=rgb_arr, compression="gzip")
-            f.create_dataset("action", data=act_arr, compression="gzip")
-            f.attrs["fps"] = fps
-            f.attrs["n_frames"] = n
-    except ImportError:
-        # Fallback: save as numpy
-        np.save(ep_dir / "frames.npy", np.stack(frames))
-        np.save(ep_dir / "actions.npy", np.stack(expert_actions))
+    n = len(frames)
+    np.save(ep_dir / "frames.npy", np.stack(frames).astype(np.uint8))
+    np.save(ep_dir / "actions.npy", np.stack(expert_actions).astype(np.float32))
+    if actual_states and len(actual_states) == n:
+        np.save(ep_dir / "states.npy", np.stack(actual_states).astype(np.float32))
+    else:
+        # Fallback: use expert actions as states (legacy behavior)
+        np.save(ep_dir / "states.npy", np.stack(expert_actions).astype(np.float32))
 
     # Write metadata JSON
     meta = {
@@ -372,7 +376,7 @@ def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: in
     """Invoke GR00T fine-tuning on the DAgger-aggregated dataset."""
     # Resolve script paths relative to this file's location
     _here = Path(__file__).resolve().parent
-    genesis_to_lerobot = _here / "genesis_to_lerobot.py"
+    dagger_to_lerobot = _here / "dagger_to_lerobot.py"
     # GR00T launch_finetune lives in Isaac-GR00T repo
     groot_repo = Path(os.environ.get("GROOT_REPO", "/home/ubuntu/Isaac-GR00T"))
     launch_finetune = groot_repo / "gr00t" / "experiment" / "launch_finetune.py"
@@ -380,9 +384,9 @@ def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: in
     if not python_bin.exists():
         python_bin = Path("python3")
 
-    # First convert to LeRobot v2 format if needed
+    # First convert to LeRobot v2 format using DAgger-aware converter
     convert_cmd = [
-        str(python_bin), str(genesis_to_lerobot),
+        str(python_bin), str(dagger_to_lerobot),
         "--input", str(dataset_dir),
         "--output", str(dataset_dir / "lerobot"),
         "--fps", "20",
@@ -492,10 +496,11 @@ def main():
                 iter_successes += 1
             iter_diverged += ep["diverged_steps"]
 
-            # Save episode to aggregated dataset
+            # Save episode to aggregated dataset (with actual robot states)
             save_lerobot_episode(
                 dataset_dir, episode_counter,
                 ep["frames"], ep["expert_actions"],
+                actual_states=ep.get("actual_states"),
             )
             episode_counter += 1
 
