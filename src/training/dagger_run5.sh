@@ -45,7 +45,7 @@ echo "[run5] Starting GR00T server with 1000-demo checkpoint on port 8002..." | 
 pkill -f "groot_franka_server.py" 2>/dev/null
 sleep 5
 nohup $GROOT_PYTHON $SERVER_SCRIPT \
-    --model-path "$BASE_CKPT" \
+    --checkpoint "$BASE_CKPT" \
     --port 8002 \
     >> $OUTPUT_DIR/server.log 2>&1 &
 SERVER_PID=$!

@@ -221,6 +221,21 @@ def rollout_episode(
         robot.control_dofs_position(Q_HOME[:9].astype(np.float64), dofs_idx_local=list(range(9)))
         scene.step()
 
+    # Verify cube is on the table before starting (sanity check for Genesis state issues)
+    try:
+        cp0 = cube.get_pos()
+        if hasattr(cp0, "cpu"):
+            cp0 = cp0.cpu()
+        z0 = float(np.array(cp0).flatten()[2])
+        if z0 >= LIFT_THRESH:
+            # Cube spawned above success threshold — re-place it
+            cube.set_pos(np.array([0.45, 0.0, TABLE_Z + CUBE_HALF]))
+            for _ in range(3):
+                robot.control_dofs_position(Q_HOME[:9].astype(np.float64), dofs_idx_local=list(range(9)))
+                scene.step()
+    except Exception:
+        pass
+
     expert.reset()
     frames, expert_acts, policy_acts, actual_states = [], [], [], []
     diverged_steps = 0
@@ -259,6 +274,7 @@ def rollout_episode(
                 print(f"  [warn] policy query failed at step {step_i}: {e}")
                 policy_chunk_arm = np.tile(arm_q, (16, 1))
                 policy_chunk_grip = np.tile(grip_q, (16, 1))
+                chunk_step = 0  # must reset to avoid IndexError on next access
 
         pol_arm = policy_chunk_arm[chunk_step]
         pol_grip = policy_chunk_grip[chunk_step]
@@ -302,9 +318,12 @@ def rollout_episode(
                 cp = cp.cpu()
             cube_pos = np.array(cp).flatten()
             cube_z = float(cube_pos[2]) if len(cube_pos) > 2 else float(cube_pos)
+            # Reject physically impossible values (Genesis state corruption)
+            if cube_z < TABLE_Z - 0.15 or cube_z > TABLE_Z + 0.8:
+                cube_z = TABLE_Z + CUBE_HALF
         except Exception:
             cube_z = TABLE_Z + CUBE_HALF
-        if cube_z >= LIFT_THRESH:
+        if cube_z >= LIFT_THRESH and step_i >= 5:
             return {
                 "frames": frames,
                 "expert_actions": expert_acts,
