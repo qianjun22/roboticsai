@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "oci-robot-cloud"
+version = "0.9.0"
+description = "OCI Robot Cloud — synthetic data generation, GR00T fine-tuning, and Jetson deployment for robotics"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "numpy>=1.24",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+data = [
+    "h5py>=3.10",
+    "Pillow>=10.0",
+    "opencv-python-headless>=4.8",
+]
+dev = [
+    "pytest>=8.0",
+    "black>=24.0",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+oci-robot-cloud = "oci_robot_cloud.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/qianjun22/roboticsai"
+Repository = "https://github.com/qianjun22/roboticsai"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["oci_robot_cloud*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
