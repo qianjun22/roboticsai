@@ -151,7 +151,7 @@ def load_policy(checkpoint_path: str, device: int = 0):
     import franka_config  # noqa: F401 — registers NEW_EMBODIMENT tag
 
     from gr00t.policy.gr00t_policy import Gr00tPolicy
-    from gr00t.model.transforms import EmbodimentTag
+    from gr00t.data.embodiment_tags import EmbodimentTag
 
     print(f"[eval] Loading checkpoint: {checkpoint_path}")
     t0 = time.time()
