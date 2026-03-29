@@ -1,0 +1,45 @@
+# OCI Robot Cloud — Python dependencies
+# Install: pip install -r requirements.txt
+#
+# NOTE: GR00T inference and fine-tuning require the Isaac-GR00T venv on OCI.
+# These packages cover the API services, eval scripts, and tools.
+
+# ── Core web framework ─────────────────────────────────────────────────────
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.0.0
+python-multipart>=0.0.9        # file uploads in FastAPI
+
+# ── Numerics & ML ──────────────────────────────────────────────────────────
+numpy>=1.24.0
+scipy>=1.11.0
+
+# ── Data formats ───────────────────────────────────────────────────────────
+pyarrow>=14.0.0                # parquet (LeRobot v2 format)
+pandas>=2.0.0
+
+# ── Simulation (optional, for local SDG testing) ──────────────────────────
+# genesis-world>=0.4.3         # install separately: pip install genesis-world
+
+# ── Optuna (HPO) ───────────────────────────────────────────────────────────
+optuna>=3.5.0
+
+# ── Testing ────────────────────────────────────────────────────────────────
+pytest>=8.0.0
+pytest-cov>=4.0.0
+
+# ── Linting ────────────────────────────────────────────────────────────────
+ruff>=0.3.0
+
+# ── Utilities ─────────────────────────────────────────────────────────────
+requests>=2.31.0
+tqdm>=4.66.0
+Pillow>=10.0.0                 # image processing in SDG
+opencv-python-headless>=4.9.0  # image ops in eval scripts
+
+# ── OCI SDK (for production use with real billing/storage) ─────────────────
+# oci>=2.120.0                  # uncomment for OCI API calls
+
+# ── LeRobot (dataset conversion) ──────────────────────────────────────────
+# Install separately (requires torch + huggingface):
+# pip install lerobot
