@@ -92,27 +92,29 @@ class FrankaPickEnv:
         self._rng = np.random.default_rng(seed)
         self.step_count = 0
 
-    def reset(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Reset scene. Returns (rgb, arm_q, grip_q)."""
+    def reset(self) -> tuple[np.ndarray, np.ndarray]:
+        """Reset scene. Returns (arm_q, grip_q). No camera render for RL speed."""
         self._scene.reset()
         xy = self._rng.uniform(-0.12, 0.12, size=2)
         cube_pos = np.array([0.45 + xy[0], xy[1], TABLE_Z + CUBE_HALF])
         self._cube.set_pos(cube_pos)
+        self._cube_start_z = float(TABLE_Z + CUBE_HALF)
         self._robot.set_dofs_position(Q_HOME)
         self._scene.step()
         self.step_count = 0
-        return self._get_obs()
+        return self._get_joint_state()
 
     def step(self, arm_q: np.ndarray, grip_q: np.ndarray,
-             sim_steps: int = 5) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, bool]:
-        """Apply action. Returns (rgb, arm_q, grip_q, reward, done)."""
+             sim_steps: int = 5) -> tuple[np.ndarray, np.ndarray, float, bool]:
+        """Apply action. Returns (arm_q, grip_q, reward, done).
+        No camera render — uses joint state only for RL residual head."""
         self._robot.control_dofs_position(arm_q.astype(np.float64), dofs_idx_local=list(range(7)))
         self._robot.control_dofs_position(grip_q.astype(np.float64), dofs_idx_local=[7, 8])
         for _ in range(sim_steps):
             self._scene.step()
         self.step_count += 1
 
-        rgb, arm_q_new, grip_q_new = self._get_obs()
+        arm_q_new, grip_q_new = self._get_joint_state()
         cube_z = self._get_cube_z()
 
         # Dense reward: height above table (clipped)
@@ -124,20 +126,22 @@ class FrankaPickEnv:
         # Done conditions
         done = cube_z > LIFT_THRESH or self.step_count >= 500
 
-        return rgb, arm_q_new, grip_q_new, reward, done
+        return arm_q_new, grip_q_new, reward, done
 
-    def _get_obs(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def get_rgb(self) -> np.ndarray:
+        """Capture camera frame (called only when needed for GR00T query)."""
         result = self._cam.render(rgb=True, depth=False, segmentation=False, normal=False)
         rgb = result[0] if isinstance(result, (tuple, list)) else result
         if hasattr(rgb, "numpy"): rgb = rgb.cpu().numpy()
         if rgb.ndim == 4: rgb = rgb[0]
         if rgb.shape[-1] == 4: rgb = rgb[:, :, :3]
-        rgb = rgb.astype(np.uint8)
+        return rgb.astype(np.uint8)
 
+    def _get_joint_state(self) -> tuple[np.ndarray, np.ndarray]:
         q = self._robot.get_dofs_position()
         if hasattr(q, "numpy"): q = q.cpu().numpy()
         if q.ndim == 2: q = q[0]
-        return rgb, q[:7].astype(np.float32), q[7:9].astype(np.float32)
+        return q[:7].astype(np.float32), q[7:9].astype(np.float32)
 
     def _get_cube_z(self) -> float:
         pos = self._cube.get_pos()
@@ -321,40 +325,53 @@ def train(server_url: str, total_steps: int, rollout_steps: int, output: str,
     env  = FrankaPickEnv(seed=seed)
     head = ResidualPPOHead()
 
-    rgb, arm_q, grip_q = env.reset()
+    arm_q, grip_q = env.reset()
     episode_reward = 0.0
     episode_count  = 0
     success_count  = 0
     rollout = []
     step = 0
 
+    # Cache GR00T query to avoid per-step HTTP overhead.
+    # Refresh every N steps or on episode reset.
+    GROOT_REFRESH = 16   # query GR00T once per action chunk
+    _arm_chunk  = np.tile(Q_HOME[:7].astype(np.float32), (16, 1))
+    _grip_chunk = np.tile(Q_HOME[7:9].astype(np.float32), (16, 1))
+    _groot_step = 0
+
     print(f"[rl] Starting PPO residual training: total_steps={total_steps}, rollout={rollout_steps}")
     print(f"[rl] GR00T server: {server_url}")
     print(f"[rl] Output: {output}\n")
+    print(f"[rl] Note: camera render called every {GROOT_REFRESH} steps for GR00T query")
 
     t0 = time.time()
     last_log = 0
 
     while step < total_steps:
-        # Query GR00T for base action chunk
-        try:
-            arm_chunk, grip_chunk = query_groot(server_url, rgb, INSTRUCTION)
-        except Exception as e:
-            print(f"[rl] Server query failed: {e} — using zero base action")
-            arm_chunk  = np.tile(arm_q, (16, 1))
-            grip_chunk = np.tile(grip_q, (16, 1))
+        # Refresh GR00T action chunk every GROOT_REFRESH steps
+        if _groot_step % GROOT_REFRESH == 0:
+            try:
+                rgb = env.get_rgb()   # camera render only here, not every step
+                arm_ch, grip_ch = query_groot(server_url, rgb, INSTRUCTION)
+                _arm_chunk  = arm_ch
+                _grip_chunk = grip_ch
+            except Exception as e:
+                pass  # keep previous chunk
+
+        chunk_idx = _groot_step % GROOT_REFRESH
+        base_arm  = _arm_chunk[min(chunk_idx, len(_arm_chunk) - 1)]
+        base_grip = _grip_chunk[min(chunk_idx, len(_grip_chunk) - 1)]
+        _groot_step += 1
 
         # Query residual head
         delta_arm, delta_grip, log_prob, value = head.get_action(arm_q, grip_q)
 
-        # Apply first action of chunk + residual
-        base_arm  = arm_chunk[0]
-        base_grip = grip_chunk[0]
+        # Apply base action + residual
         final_arm  = np.clip(base_arm  + delta_arm,  JOINT_LOW[:7],  JOINT_HIGH[:7])
         final_grip = np.clip(base_grip + delta_grip, JOINT_LOW[7:9], JOINT_HIGH[7:9])
 
-        # Step environment
-        rgb, arm_q, grip_q, reward, done = env.step(
+        # Step environment (no camera render)
+        arm_q, grip_q, reward, done = env.step(
             final_arm, final_grip, sim_steps=sim_steps_per_action,
         )
         episode_reward += reward
@@ -375,7 +392,8 @@ def train(server_url: str, total_steps: int, rollout_steps: int, output: str,
             if reward >= 10.0:
                 success_count += 1
             episode_count += 1
-            rgb, arm_q, grip_q = env.reset()
+            arm_q, grip_q = env.reset()
+            _groot_step = 0  # force GR00T refresh on new episode
             episode_reward = 0.0
 
         # PPO update every rollout_steps
@@ -400,19 +418,24 @@ def train(server_url: str, total_steps: int, rollout_steps: int, output: str,
     print(f"\n[rl] Training complete. Running 10-episode eval...")
     success = 0
     for _ in range(10):
-        rgb, arm_q, grip_q = env.reset()
+        arm_q, grip_q = env.reset()
         done = False
+        _arm_ch = np.tile(Q_HOME[:7].astype(np.float32), (16, 1))
+        _grip_ch = np.tile(Q_HOME[7:9].astype(np.float32), (16, 1))
+        t = 0
         while not done:
-            try:
-                arm_chunk, grip_chunk = query_groot(server_url, rgb, INSTRUCTION)
-            except Exception:
-                arm_chunk = np.tile(arm_q, (16, 1))
-                grip_chunk = np.tile(grip_q, (16, 1))
-
+            if t % GROOT_REFRESH == 0:
+                try:
+                    rgb = env.get_rgb()
+                    _arm_ch, _grip_ch = query_groot(server_url, rgb, INSTRUCTION)
+                except Exception:
+                    pass
+            idx = t % GROOT_REFRESH
             delta_arm, delta_grip, _, _ = head.get_action(arm_q, grip_q)
-            final_arm  = np.clip(arm_chunk[0]  + delta_arm,  JOINT_LOW[:7],  JOINT_HIGH[:7])
-            final_grip = np.clip(grip_chunk[0] + delta_grip, JOINT_LOW[7:9], JOINT_HIGH[7:9])
-            rgb, arm_q, grip_q, reward, done = env.step(final_arm, final_grip)
+            final_arm  = np.clip(_arm_ch[min(idx, 15)]  + delta_arm,  JOINT_LOW[:7],  JOINT_HIGH[:7])
+            final_grip = np.clip(_grip_ch[min(idx, 15)] + delta_grip, JOINT_LOW[7:9], JOINT_HIGH[7:9])
+            arm_q, grip_q, reward, done = env.step(final_arm, final_grip)
+            t += 1
             if reward >= 10.0:
                 success += 1
                 break
