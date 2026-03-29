@@ -97,13 +97,12 @@ def build_scene():
         ),
     )
 
-    # Camera matching SDG setup
+    # Camera — must match genesis_sdg_planned.py training setup exactly
     cam = scene.add_camera(
         res=(256, 256),
-        pos=(1.0, 0.0, 1.5),
+        pos=(0.5, 0.0, 1.4),
         lookat=(0.45, 0.0, TABLE_Z),
-        fov=60,
-        GUI=False,
+        fov=55,
     )
 
     scene.build()
