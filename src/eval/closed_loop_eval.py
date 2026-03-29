@@ -51,7 +51,7 @@ HAS_DEPS = check_deps()
 def build_scene(gpu_id: int = 0):
     """Create a Franka pick-and-place scene with a red cube."""
     import genesis as gs
-    gs.init(backend=gs.cuda, device=f"cuda:{gpu_id}", precision="32", logging_level="error")
+    gs.init(backend=gs.cuda, precision="32", logging_level="error")
 
     scene = gs.Scene(
         gravity=(0, 0, -9.81),
