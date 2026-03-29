@@ -412,6 +412,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <div style="margin: 8px 0 4px; font-size: 12px; color: #6B7280;">Success rate</div>
 <div class="bar-bg"><div class="bar-fill" style="width:{success_rate}%"></div></div>
 
+{failure_analysis}
+
 <table>
 <thead><tr>
   <th>Episode</th><th>Result</th><th>Steps</th>
@@ -427,18 +429,58 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 </html>"""
 
 
+def categorize_failure(cube_z: float) -> str:
+    """Categorize failure mode based on final cube z-position."""
+    if cube_z > LIFT_THRESHOLD:
+        return "success"
+    elif cube_z > TABLE_Z + 0.04:  # still on table, slightly moved
+        return "partial"
+    elif cube_z >= TABLE_Z - 0.02:  # approximately table level = never contacted
+        return "no_contact"
+    else:  # fell off table
+        return "knocked_off"
+
+
 def make_html(results: list[dict], source: str, output_dir: Path, mode: str) -> str:
     successes = [r for r in results if r["success"]]
+    failures = [r for r in results if not r["success"]]
     success_rate = round(100 * len(successes) / len(results))
     avg_latency = round(np.mean([r["policy_latency_ms"] for r in results]))
     avg_steps = round(np.mean([r["steps"] for r in successes])) if successes else "N/A"
 
+    # Failure mode breakdown
+    no_contact = sum(1 for r in failures if categorize_failure(r["cube_final_z"]) == "no_contact")
+    knocked_off = sum(1 for r in failures if categorize_failure(r["cube_final_z"]) == "knocked_off")
+    partial = sum(1 for r in failures if categorize_failure(r["cube_final_z"]) == "partial")
+
+    failure_html = ""
+    if failures:
+        failure_html = f"""
+<div style="margin: 24px 0 8px; font-size: 13px; color: #9CA3AF; font-weight: bold;">FAILURE ANALYSIS</div>
+<div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+  <div class="card"><div class="val" style="font-size:28px;color:#EF4444">{knocked_off}</div>
+    <div class="lbl">Knocked off table<br>(cube_z &lt; {TABLE_Z-0.02:.2f}m)</div></div>
+  <div class="card"><div class="val" style="font-size:28px;color:#F59E0B">{no_contact}</div>
+    <div class="lbl">Never contacted<br>(cube_z ≈ {TABLE_Z+CUBE_HALF:.3f}m)</div></div>
+  <div class="card"><div class="val" style="font-size:28px;color:#6366F1">{partial}</div>
+    <div class="lbl">Partial (moved,<br>not lifted)</div></div>
+</div>"""
+
     rows = []
     for r in results:
-        status = '<span class="success">✓ SUCCESS</span>' if r["success"] else '<span class="fail">✗ FAILED</span>'
+        if r["success"]:
+            status = '<span class="success">✓ SUCCESS</span>'
+            fail_cat = ""
+        else:
+            status = '<span class="fail">✗ FAILED</span>'
+            cat = categorize_failure(r["cube_final_z"])
+            cat_colors = {"no_contact": "#F59E0B", "knocked_off": "#EF4444", "partial": "#6366F1"}
+            cat_label = {"no_contact": "no contact", "knocked_off": "knocked off", "partial": "partial"}
+            col = cat_colors.get(cat, "#9CA3AF")
+            fail_cat = f' <span style="font-size:10px;color:{col}">({cat_label.get(cat,cat)})</span>'
         xy = r.get("cube_start_xy", ["?", "?"])
         rows.append(
-            f"<tr><td>{r['episode']+1}</td><td>{status}</td>"
+            f"<tr><td>{r['episode']+1}</td><td>{status}{fail_cat}</td>"
             f"<td>{r['steps']}</td><td>{r['policy_latency_ms']}ms</td>"
             f"<td>{r['cube_final_z']}m</td><td>({xy[0]}, {xy[1]})</td></tr>"
         )
@@ -453,6 +495,7 @@ def make_html(results: list[dict], source: str, output_dir: Path, mode: str) -> 
         avg_latency=avg_latency,
         avg_steps=avg_steps,
         task="pick-and-lift (cube z > 0.78m)",
+        failure_analysis=failure_html,
         rows="\n".join(rows),
     )
 
