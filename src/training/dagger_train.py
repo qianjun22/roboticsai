@@ -369,9 +369,14 @@ def save_lerobot_episode(
 
 def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: int):
     """Invoke GR00T fine-tuning on the DAgger-aggregated dataset."""
+    # Resolve script paths relative to this file's location
+    _here = Path(__file__).resolve().parent
+    genesis_to_lerobot = _here.parent / "simulation" / "genesis_to_lerobot.py"
+    launch_finetune = _here / "launch_finetune.py"
+
     # First convert to LeRobot v2 format if needed
     convert_cmd = [
-        "python3", "genesis_to_lerobot.py",
+        "python3", str(genesis_to_lerobot),
         "--input", str(dataset_dir),
         "--output", str(dataset_dir / "lerobot"),
         "--fps", "20",
@@ -382,7 +387,7 @@ def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: in
         print(f"[DAgger] Convert warning: {result.stderr[:200]}")
 
     finetune_cmd = [
-        "python3", "launch_finetune.py",
+        "python3", str(launch_finetune),
         "--dataset-path", str(dataset_dir / "lerobot"),
         "--max-steps", str(steps),
         "--global-batch-size", "16",
