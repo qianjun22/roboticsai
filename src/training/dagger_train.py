@@ -160,6 +160,8 @@ class IKExpert:
     def _cube_pos(self) -> np.ndarray:
         try:
             p = self.cube.get_pos()
+            if hasattr(p, "cpu"):
+                p = p.cpu()
             return np.array(p).flatten()[:3]
         except Exception:
             return np.array([0.45, 0.0, TABLE_Z + CUBE_HALF])
@@ -233,8 +235,14 @@ def rollout_episode(
         # Render observation
         rgb_raw = cam.render(rgb=True, depth=False, segmentation=False, normal=False)
         rgb = rgb_raw[0] if isinstance(rgb_raw, (list, tuple)) else rgb_raw
+        if hasattr(rgb, "cpu"):
+            rgb = rgb.cpu()
         if hasattr(rgb, "numpy"):
             rgb = rgb.numpy()
+        if rgb.ndim == 4:
+            rgb = rgb[0]
+        if rgb.shape[-1] == 4:
+            rgb = rgb[:, :, :3]
         rgb = np.clip(rgb, 0, 255).astype(np.uint8)
 
         # Expert action
@@ -279,12 +287,19 @@ def rollout_episode(
         for _ in range(2):  # 2 sim steps matches training SDG 20fps
             scene.step()
 
-        arm_q = np.array(robot.get_dofs_position()).flatten()[:7]
-        grip_q = np.array(robot.get_dofs_position()).flatten()[7:9]
+        q = robot.get_dofs_position()
+        if hasattr(q, "cpu"):
+            q = q.cpu()
+        q = np.array(q).flatten()
+        arm_q = q[:7]
+        grip_q = q[7:9]
 
         # Check success
         try:
-            cube_pos = np.array(cube.get_pos()).flatten()
+            cp = cube.get_pos()
+            if hasattr(cp, "cpu"):
+                cp = cp.cpu()
+            cube_pos = np.array(cp).flatten()
             cube_z = float(cube_pos[2]) if len(cube_pos) > 2 else float(cube_pos)
         except Exception:
             cube_z = TABLE_Z + CUBE_HALF
