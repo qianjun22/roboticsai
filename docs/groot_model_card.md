@@ -48,12 +48,14 @@ demonstrations generated with Genesis physics simulation and IK-planned expert p
 
 ### Closed-Loop Evaluation (OCI A100, CUDA backend)
 
-| Metric | BC Baseline | DAgger (in progress) | Target |
-|--------|-------------|---------------------|--------|
-| Closed-loop success rate | **5% (1/20 eps)** | TBD* | 65%+ |
-| Avg inference latency | 226ms | — | <250ms |
-| Avg cube_z at end | 0.725m | — | >0.78m |
-| p95 latency | ~280ms | — | <300ms |
+| Metric | BC Baseline | DAgger run5 (5k on 99 eps) | DAgger run6 (target) |
+|--------|-------------|---------------------------|---------------------|
+| Closed-loop success rate | **5% (1/20 eps)** | **5% (1/20 eps)** | 65%+ |
+| Avg inference latency | 226ms | 229ms | <250ms |
+| Avg cube_z at end | 0.725m | 0.725m | >0.78m |
+| p95 latency | ~280ms | ~280ms | <300ms |
+
+**DAgger run5 analysis:** 99 on-policy episodes (9% of 1000-demo BC training set) insufficient to shift policy. Root cause: replay ratio too low — DAgger data diluted in fine-tune. Fix for run6: 200+ eps per iter (>20% of training data) or curriculum DAgger (easy→hard stages).
 
 *DAgger run5 manual fine-tune in progress (5000 steps on 99 on-policy episodes);
 results expected ~2026-03-29. Table will be updated on completion.
