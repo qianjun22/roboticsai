@@ -74,6 +74,37 @@ bash jetson_deploy.sh --serve
 
 ---
 
+## Service Port Map
+
+| Port | Service | Purpose |
+|------|---------|---------|
+| 8002 | `groot_franka_server.py` | GR00T N1.6-3B inference (fine-tuned) |
+| 8003 | `data_collection_api.py` | Design-partner demo upload API |
+| 8004 | `training_monitor.py` | Real-time training loss / GPU dashboard |
+| 8005 | `cost_calculator.py` | OCI vs AWS vs DGX cost comparison |
+| 8006 | `design_partner_portal.py` | Full design-partner self-service portal |
+| 8007 | `real_data_ingestion.py` | HDF5 / MP4+JSON / LeRobot v2 ingestion |
+| 8008 | `deployment_dashboard.py` | 5-robot fleet deployment monitor |
+| 8010 | `cosmos_data_augmentation.py` | Cosmos 3× video augmentation pipeline |
+| 8011 | `live_eval_streamer.py` | Audience-facing success counter (GTC/AI World) |
+| 8015 | `teleoperation_collector.py` | SpaceMouse/gamepad demo capture |
+| 8016 | `safety_monitor.py` | Joint-limit clamping, velocity limits, e-stop |
+| 8017 | `billing_integration.py` | OCI-accurate metering + partner invoices |
+| 8018 | `continuous_learning.py` | Drift detection + auto-retrain flywheel |
+| 8019 | `multimodal_experiment_tracker.py` | MLflow-compatible run tracker + leaderboard |
+| 8020 | `data_flywheel.py` | Unified collect→train→eval→promote dashboard |
+| 8021 | `webhook_notifications.py` | Outbound event webhooks (training/eval/drift) |
+| 8022 | `partner_sla_monitor.py` | Per-service uptime + p95 latency SLA reports |
+| 8023 | `multi_tenant_manager.py` | Isolated workspaces + API keys per partner |
+| 8024 | `partner_onboarding_wizard.py` | 5-step guided first-run wizard |
+| 8025 | `episode_playback_server.py` | Pre-recorded episode playback for demos |
+| 8026 | `analytics_dashboard.py` | Unified learning analytics (C-suite view) |
+
+> **Quick start:** `docker-compose up -d` starts all non-GPU services in mock mode.
+> GPU services (8002 inference, training) run on OCI A100 bare-metal.
+
+---
+
 ## Architecture
 
 ```
