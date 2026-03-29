@@ -52,9 +52,13 @@ TABLE_Z    = 0.3     # table height
 CUBE_HALF  = 0.025   # half cube size
 
 def build_scene(gpu_id: int = 0):
-    """Create a Franka pick-and-place scene with a red cube (Genesis 0.4.3 API)."""
+    """Create a Franka pick-and-place scene with a red cube (Genesis 0.4.3 API).
+
+    NOTE: Uses CPU backend to avoid CUDA context conflicts with GR00T model.
+    The policy runs on GPU; Genesis physics runs on CPU. Both receive numpy arrays.
+    """
     import genesis as gs
-    gs.init(backend=gs.cuda, logging_level="warning")
+    gs.init(backend=gs.cpu, logging_level="warning")
 
     scene = gs.Scene(
         show_viewer=False,
