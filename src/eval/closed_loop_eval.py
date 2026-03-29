@@ -196,10 +196,14 @@ def query_server(server_url: str, rgb: np.ndarray, instruction: str,
 
     try:
         import subprocess
+        arm_str = ",".join(f"{v:.6f}" for v in arm_q.flatten()[:7])
+        grip_str = ",".join(f"{v:.6f}" for v in grip_q.flatten()[:2])
         result = subprocess.run(
             ["curl", "-s", "-X", "POST", f"{server_url}/predict",
              "-F", f"image=@{tmp.name}",
-             "-F", f"instruction={instruction}"],
+             "-F", f"instruction={instruction}",
+             "-F", f"arm_joints={arm_str}",
+             "-F", f"gripper={grip_str}"],
             capture_output=True, text=True, timeout=10,
         )
         if result.returncode != 0:
