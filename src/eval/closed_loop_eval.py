@@ -262,7 +262,12 @@ def run_eval(checkpoint: str, num_episodes: int, max_steps: int,
                 success = True
                 break
 
-        cube_z = float(cube.get_pos()[0][2])
+        _cpos = cube.get_pos()
+        if hasattr(_cpos, "numpy"):
+            _cpos = _cpos.cpu().numpy()
+        if hasattr(_cpos, "ndim") and _cpos.ndim == 2:
+            _cpos = _cpos[0]
+        cube_z = float(_cpos[2])
         avg_latency = (t_policy_total / (step / 16)) * 1000
 
         results.append({
