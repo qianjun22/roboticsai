@@ -204,7 +204,7 @@ def make_html(labels: list, summaries: list, dagger_data: dict | None) -> str:
     rates = [s.get("success_rate", s.get("n_success", 0) / max(s.get("n_episodes", 1), 1))
              for s in summaries]
     n_eps = [s.get("n_episodes", s.get("total_episodes", 20)) for s in summaries]
-    n_success = [s.get("n_success", int(r * n)) for r, n in zip(rates, n_eps)]
+    n_success = [summaries[i].get("n_success", int(r * n)) for i, (r, n) in enumerate(zip(rates, n_eps))]
     avg_z = []
     for s in summaries:
         eps = s.get("episodes", [])

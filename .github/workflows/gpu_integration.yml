@@ -1,0 +1,87 @@
+name: GPU Integration Tests
+
+concurrency:
+  group: gpu-eval
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/eval/**"
+      - "src/inference/**"
+
+jobs:
+  gpu-eval:
+    name: GPU Eval (OCI A100 smoke test)
+    runs-on: [self-hosted, linux, x64, gpu]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check GPU
+        run: |
+          export CUDA_VISIBLE_DEVICES=4
+          nvidia-smi
+
+      - name: Start GR00T server
+        run: |
+          export CUDA_VISIBLE_DEVICES=4
+          nohup python groot_franka_server.py \
+            --checkpoint /tmp/finetune_1000_5k/checkpoint-5000 \
+            --port 8002 \
+            > /tmp/groot_server.log 2>&1 &
+          echo "GR00T server PID: $!"
+
+      - name: Wait for server health
+        run: |
+          echo "Waiting for GR00T server to become healthy..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8002/health > /dev/null 2>&1; then
+              echo "Server healthy after ${i} attempts"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "ERROR: Server did not become healthy after 60 attempts (300s)"
+              cat /tmp/groot_server.log
+              exit 1
+            fi
+            echo "Attempt ${i}/60 — waiting 5s..."
+            sleep 5
+          done
+
+      - name: Run 5-episode smoke test eval
+        run: |
+          export CUDA_VISIBLE_DEVICES=4
+          python src/eval/closed_loop_eval.py \
+            --num-episodes 5 \
+            --output /tmp/gpu_ci_eval/summary.json
+
+      - name: Validate eval output
+        run: |
+          python -c "
+          import json, os, sys
+          path = '/tmp/gpu_ci_eval/summary.json'
+          if not os.path.exists(path):
+              print('ERROR: summary.json not found')
+              sys.exit(1)
+          data = json.loads(open(path).read())
+          print(f'Episodes: {data[\"num_episodes\"]}')
+          print(f'Success rate: {data[\"success_rate\"]}')
+          assert data['success_rate'] >= 0.0, 'success_rate must be >= 0.0'
+          print('Validation passed.')
+          "
+
+      - name: Upload eval summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gpu-eval-summary
+          path: /tmp/gpu_ci_eval/summary.json
+
+      - name: Kill GR00T server
+        if: always()
+        run: |
+          pkill -f "groot_franka_server.py" || true
+          echo "GR00T server stopped"

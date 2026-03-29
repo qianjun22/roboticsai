@@ -1,3 +1,4 @@
+# Full GPU integration tests: .github/workflows/gpu_integration.yml (self-hosted OCI runner)
 name: CI
 
 on:
