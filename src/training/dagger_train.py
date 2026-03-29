@@ -496,6 +496,12 @@ def main():
                 iter_successes += 1
             iter_diverged += ep["diverged_steps"]
 
+            # Skip degenerate episodes (cube fell off at step 0)
+            MIN_FRAMES = 10
+            if len(ep["frames"]) < MIN_FRAMES:
+                print(f"  [warn] skipping short episode ({len(ep['frames'])} frames < {MIN_FRAMES})")
+                continue
+
             # Save episode to aggregated dataset (with actual robot states)
             save_lerobot_episode(
                 dataset_dir, episode_counter,

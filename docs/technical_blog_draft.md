@@ -68,7 +68,7 @@ CUDA_VISIBLE_DEVICES=4 python gr00t/experiment/launch_finetune.py \
     --output-dir /tmp/finetune_1000_5k
 ```
 
-On a single OCI A100-SXM4-80GB, this runs at **2.35 steps/sec** with **87% GPU utilization** consuming **36.8GB VRAM**. Total cost for 5000 steps at OCI spot pricing: ~$0.43.
+On a single OCI A100-SXM4-80GB, this runs at **2.36 steps/sec** with **87% GPU utilization** consuming **36.8GB VRAM**. Total cost for 5000 steps at OCI spot pricing: ~$0.43. Final training loss on 1000-demo dataset: **0.099** (from 0.68 at step 0).
 
 For multi-GPU runs, we use `torchrun` with 4× A100s:
 
@@ -187,6 +187,9 @@ Expected improvements over Genesis IK-planned data:
 git clone https://github.com/qianjun22/roboticsai
 cd roboticsai
 
+# (Optional) Pre-flight check before running anything
+python src/demo/preflight_check.py --quick
+
 # Generate 100 synthetic demos (requires Genesis 0.4.3)
 python src/simulation/genesis_sdg_planned.py --num-demos 100 --output /tmp/sdg
 
@@ -203,6 +206,9 @@ CUDA_VISIBLE_DEVICES=0 python Isaac-GR00T/gr00t/experiment/launch_finetune.py \
 # Evaluate closed-loop
 python src/inference/groot_franka_server.py --model-path /tmp/finetune/checkpoint-2000 &
 python src/eval/closed_loop_eval.py --num-episodes 10
+
+# Or run the full orchestrated pipeline (GTC live demo mode)
+python src/demo/gtc_live_demo.py --demo-mode fast --checkpoint /tmp/finetune/checkpoint-2000
 ```
 
 ---
@@ -213,4 +219,4 @@ Built on NVIDIA Isaac-GR00T, Genesis 0.4.3, LeRobot, and OCI A100 GPU infrastruc
 
 ---
 
-*Status: Draft — pending OCI × NVIDIA review and closed-loop benchmark update with 1000-demo results*
+*Status: Draft — pending OCI × NVIDIA review and closed-loop benchmark update with 1000-demo results (fine-tune complete: loss 0.099, 35.4 min; closed-loop eval in progress)*

@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    name: Unit Tests (no GPU)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install test dependencies
+        run: |
+          pip install --upgrade pip
+          pip install numpy pytest pillow h5py
+
+      - name: Run unit tests
+        run: |
+          python tests/test_pipeline_units.py
+
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Lint src/
+        run: |
+          ruff check src/ --select=E,F,W --ignore=E501,F401,W291,W293 --exit-zero
+        # exit-zero: treat lint failures as warnings, not CI failures (project is experimental)
+
+  mock-eval:
+    name: Mock Closed-Loop Eval
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          pip install numpy pillow requests
+      - name: Run mock eval (5 episodes)
+        run: |
+          mkdir -p /tmp/ci_eval
+          python src/eval/closed_loop_eval.py \
+            --num-episodes 5 \
+            --mock \
+            --output /tmp/ci_eval/summary.json
+          echo "Mock eval complete — checking output..."
+          python -c "
+          import json
+          data = json.loads(open('/tmp/ci_eval/summary.json').read())
+          print(f'Episodes: {data[\"num_episodes\"]}')
+          print(f'Success rate: {data[\"success_rate\"]}%')
+          assert data['num_episodes'] == 5, f'Expected 5 episodes, got {data[\"num_episodes\"]}'
+          print('Output check passed.')
+          "

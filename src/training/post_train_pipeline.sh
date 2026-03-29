@@ -41,11 +41,11 @@ nohup $GROOT_PYTHON $SERVER_SCRIPT \
 SERVER_PID=$!
 echo "[pipeline] GR00T server PID: $SERVER_PID" | tee -a $LOG
 
-# Wait for server to be ready
+# Wait for server to be ready (up to 5 min — GR00T N1.6-3B needs ~2-3 min to load)
 echo "[pipeline] Waiting for GR00T server to be ready..." | tee -a $LOG
-for i in $(seq 1 30); do
+for i in $(seq 1 60); do
     if curl -s http://localhost:8002/health > /dev/null 2>&1; then
-        echo "[pipeline] Server ready after ${i}s" | tee -a $LOG
+        echo "[pipeline] Server ready after ${i}×5s" | tee -a $LOG
         break
     fi
     sleep 5
@@ -93,7 +93,15 @@ nohup $GROOT_PYTHON $SERVER_SCRIPT \
     --port 8002 \
     >> /tmp/groot_dagger.log 2>&1 &
 
-sleep 30  # let server load
+# Wait for DAgger server to be ready (up to 5 min)
+echo "[pipeline] Waiting for DAgger GR00T server to be ready..." | tee -a $LOG
+for i in $(seq 1 60); do
+    if curl -s http://localhost:8002/health > /dev/null 2>&1; then
+        echo "[pipeline] DAgger server ready after ${i}×5s" | tee -a $LOG
+        break
+    fi
+    sleep 5
+done
 
 # --- Step 6: Final eval ---
 echo "[pipeline] Running final closed-loop eval (DAgger+1000demo checkpoint)..." | tee -a $LOG

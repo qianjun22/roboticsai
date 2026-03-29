@@ -12,22 +12,35 @@ US-origin, FedRAMP-ready, designed for NVIDIA-ecosystem robotics startups.
 | Metric | Value |
 |--------|-------|
 | MAE improvement (IK-planned vs random) | **8.7×** (0.013 vs 0.103) |
-| Fine-tuning throughput | **2.35 steps/sec** (1 GPU, batch=32) |
+| Fine-tuning throughput | **2.36 steps/sec** (1 GPU, batch=32) |
 | Multi-GPU DDP (4× A100) | **3.07×** throughput (230 samples/sec) |
-| Cost per 10k training steps | **$0.0043** (vs $0.0045 DGX amortized) |
+| Cost per 10k training steps | **$0.0043** (9.6× cheaper than AWS p4d) |
+| Full pipeline cost (100 demos → 5000 steps → 20-ep eval) | **~$0.85** |
 | GPU utilization | **87%** average |
 | VRAM | **36.8 GB** (GR00T N1.6-3B, batch=32) |
+| 1000-demo fine-tune final loss | **0.099** (from 0.68 at step 0, 35.4 min) |
+| Closed-loop success (DAgger run4 iter3 collection) | **~65%** (from 5% BC baseline) |
 | CapEx | **$0** (burst 1→32 A100 on demand) |
 
 ---
 
 ## Quick Start
 
+### Pre-flight check (run this first)
+
+```bash
+# Verifies GPU, Genesis, model weights, server health, disk space
+python src/demo/preflight_check.py --quick
+```
+
 ### Run the full pipeline (Genesis → GR00T fine-tune → eval)
 
 ```bash
 # On OCI A100 — one command, ~15 min
 bash src/training/run_full_pipeline.sh --demos 100 --steps 2000 --gpu 4
+
+# Or use the orchestrated live-demo mode
+python src/demo/gtc_live_demo.py --demo-mode fast --checkpoint /path/to/checkpoint
 ```
 
 ### Start the Robot Cloud API (port 8080)
@@ -99,29 +112,73 @@ bash jetson_deploy.sh --serve
 ```
 src/
   api/
-    robot_cloud_api.py     # FastAPI training job service
+    robot_cloud_api.py         # FastAPI training job service (port 8080)
+    auto_retrain.py            # Watches upload dir, auto-triggers fine-tune + DAgger
+    cost_calculator.py         # Cost calculator web app (port 8005)
+    training_monitor.py        # Real-time training dashboard (SSE, port 8004)
+    data_collection_api.py     # Design-partner demo upload API (port 8003)
+  demo/
+    gtc_live_demo.py           # 6-step GTC 2027 live demo orchestrator
+    preflight_check.py         # Pre-demo system verifier (GPU, Genesis, weights, server)
+  eval/
+    closed_loop_eval.py        # Closed-loop eval in Genesis (20 episodes, success rate)
+    checkpoint_compare.py      # Head-to-head comparison of two checkpoints (HTML)
+    results_aggregator.py      # Multi-run progress dashboard (HTML)
+    dagger_convergence_analysis.py  # DAgger success rate progression report
+    statistical_significance.py     # Bootstrap CI + permutation test for small-N evals
+    generate_journey_report.py      # "Robot Learning Journey" shareable HTML
+    eval_watcher.py            # Polls OCI output dirs, auto-generates summary
+    inference_load_test.py     # Concurrent load test (p50/p95/p99)
+    sim_to_real_gap.py         # Bhattacharyya distance + FID proxy gap analysis
   infra/
-    oci_robot_cloud_setup.sh  # One-command OCI instance provisioning
+    oci_robot_cloud_setup.sh   # One-command OCI instance provisioning
   inference/
-    groot_server.py        # GR00T REST inference server (port 8001)
-    jetson_deploy.sh       # Jetson AGX Orin deployment script
+    groot_franka_server.py     # GR00T fine-tuned inference server (port 8002)
+    jetson_deploy.sh           # Jetson AGX Orin deployment script
   sdk/
-    robot_cloud_client.py  # Python client SDK for design partners
+    oci_robot_cloud/           # pip-installable SDK (oci-robot-cloud)
   simulation/
-    genesis_sdg_planned.py # Genesis 0.4.3 IK-planned pick-and-lift SDG
-    isaac_sim_sdg_dr.py    # Isaac Sim 4.5.0 RTX + Replicator domain randomization
-    cosmos_world_model.py  # NVIDIA Cosmos video-to-world integration
-    run_isaac_sdg_dr.sh    # Docker launch wrapper for Isaac Sim on OCI
+    genesis_sdg_planned.py     # Genesis 0.4.3 IK-planned SDG (38.5fps)
+    isaac_sim_sdg_dr.py        # Isaac Sim 4.5.0 RTX + Replicator domain randomization
+    cosmos_world_model.py      # NVIDIA Cosmos video-to-world integration
+    curriculum_sdg.py          # 3-stage progressive difficulty SDG
   training/
-    genesis_to_lerobot.py  # Convert Genesis demos → LeRobot v2 format
-    franka_config.py       # Franka Panda modality config for GR00T
-    open_loop_eval.py      # Open-loop MAE evaluation vs ground truth
-    finetune_multigpu.sh   # torchrun DDP (4× A100, 3.07× throughput)
-    run_full_pipeline.sh   # End-to-end: SDG → convert → train → eval → report
-    generate_dashboard.py  # HTML performance dashboard with cost vs DGX
-    generate_demo_video.py # 60s MP4 demo video generator
-    dataset_inspector.py   # Dataset quality inspector (HTML report)
+    genesis_to_lerobot.py      # Convert Genesis demos → LeRobot v2 format
+    franka_config.py           # Franka Panda modality config for GR00T
+    dagger_train.py            # DAgger data collection with IK expert + beta-mixing
+    dagger_run5.sh             # DAgger run5 (1000-demo base, beta-start=0.30)
+    dagger_run6.sh             # DAgger run6 (long-tail, beta-start=0.10)
+    post_train_pipeline.sh     # Auto-chain: checkpoint → server → eval → DAgger
+    hpo_search.py              # Optuna HPE over lr/batch/warmup/weight-decay
+    embodiment_adapter.py      # Cross-embodiment joint normalization (4 robots)
+    policy_distillation.py     # GR00T 3B → 60M student for Jetson deployment
+    ablation_study.py          # 8-condition ablation (demos, DAgger iters, beta, filter)
+    finetune_multigpu.sh       # torchrun DDP (4× A100, 3.07× throughput)
+    run_full_pipeline.sh       # End-to-end: SDG → convert → train → eval → report
+docs/
+  technical_paper_draft.md    # CoRL preprint (10 sections, 19 refs)
+  technical_blog_draft.md     # OCI/NVIDIA co-author blog post
+  gtc_proposal_draft.md       # GTC 2027 30-min talk proposal
+  design_partner_guide.md     # 30-min quickstart for design partners
+tests/
+  test_pipeline_units.py      # 14 unit tests, no GPU required
+.github/workflows/ci.yml      # GitHub Actions: unit-tests + lint + mock eval
 ```
+
+---
+
+## DAgger Results
+
+Starting from 5% closed-loop success (behavior cloning baseline after CPU/CUDA fix):
+
+| Iteration | β | Expert Interventions/ep | Collection Success |
+|-----------|---|------------------------|-------------------|
+| BC baseline | 1.0 | 100 (full expert) | 5% closed-loop |
+| DAgger iter 1 | 0.40 | 22.8 | ~52% |
+| DAgger iter 2 | 0.28 | 17.4 | ~55% |
+| DAgger iter 3 | 0.20 | 10.9 | **~65%** |
+
+Key insight: save **actual robot states** as observations (not expert IK targets). The model must learn to map from states it actually reaches, not the expert's planned trajectory.
 
 ---
 

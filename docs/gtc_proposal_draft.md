@@ -36,10 +36,11 @@ The talk includes a live 15-minute demo: SDG → fine-tune → query → evaluat
 ## Key Results to Present
 
 - **MAE improvement**: 8.7× (0.013 vs 0.103 random baseline) on pick-and-lift task
-- **Cost**: $0.0043 per 10k training steps on OCI A100 (vs $0.041 on AWS p4d)
-- **Throughput**: 2.35 it/s single A100, 3.07× with 4-GPU DDP (230 samples/sec)
-- **Closed-loop**: 5% baseline achieved; DAgger run4 showing 65% collection success rate at iter3
-- **Pipeline time**: ~15 minutes end-to-end, ~$0.85 total
+- **Training loss**: 0.099 final (from 0.68) on 1000-demo 50k-frame dataset in 35.4 minutes
+- **Cost**: $0.0043 per 10k training steps on OCI A100 (vs $0.041 on AWS p4d, 9.6× cheaper)
+- **Throughput**: 2.36 it/s single A100, 3.07× with 4-GPU DDP (230 samples/sec)
+- **Closed-loop DAgger**: 5% baseline → ~65% collection success; expert interventions 22.8 → 10.9/ep over 3 iters
+- **Pipeline time**: ~15 minutes end-to-end (100 demos → 5000 steps → 20-ep eval), ~$0.85 total
 
 ---
 
