@@ -367,16 +367,22 @@ def save_lerobot_episode(
 
 # ── Fine-tune step (calls existing launch_finetune.py) ───────────────────────
 
-def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: int):
+def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: int,
+                 base_model: str = "/tmp/finetune_500_5k/checkpoint-5000"):
     """Invoke GR00T fine-tuning on the DAgger-aggregated dataset."""
     # Resolve script paths relative to this file's location
     _here = Path(__file__).resolve().parent
-    genesis_to_lerobot = _here.parent / "simulation" / "genesis_to_lerobot.py"
-    launch_finetune = _here / "launch_finetune.py"
+    genesis_to_lerobot = _here / "genesis_to_lerobot.py"
+    # GR00T launch_finetune lives in Isaac-GR00T repo
+    groot_repo = Path(os.environ.get("GROOT_REPO", "/home/ubuntu/Isaac-GR00T"))
+    launch_finetune = groot_repo / "gr00t" / "experiment" / "launch_finetune.py"
+    python_bin = groot_repo / ".venv" / "bin" / "python3"
+    if not python_bin.exists():
+        python_bin = Path("python3")
 
     # First convert to LeRobot v2 format if needed
     convert_cmd = [
-        "python3", str(genesis_to_lerobot),
+        str(python_bin), str(genesis_to_lerobot),
         "--input", str(dataset_dir),
         "--output", str(dataset_dir / "lerobot"),
         "--fps", "20",
@@ -386,9 +392,13 @@ def run_finetune(dataset_dir: Path, checkpoint_dir: Path, steps: int, gpu_id: in
     if result.returncode != 0:
         print(f"[DAgger] Convert warning: {result.stderr[:200]}")
 
+    modality_cfg = _here / "franka_config.py"
     finetune_cmd = [
-        "python3", str(launch_finetune),
+        str(python_bin), str(launch_finetune),
+        "--base-model-path", base_model,
         "--dataset-path", str(dataset_dir / "lerobot"),
+        "--embodiment-tag", "NEW_EMBODIMENT",
+        "--modality-config-path", str(modality_cfg),
         "--max-steps", str(steps),
         "--global-batch-size", "16",
         "--output-dir", str(checkpoint_dir),
@@ -425,6 +435,8 @@ def main():
     parser.add_argument("--beta-decay", type=float, default=0.7,
                         help="Beta multiplier per iteration (0.7 → beta decays toward 0)")
     parser.add_argument("--gpu-id", type=int, default=4)
+    parser.add_argument("--base-model", default="/tmp/finetune_500_5k/checkpoint-5000",
+                        help="Base GR00T checkpoint to start fine-tuning from")
     parser.add_argument("--dry-run", action="store_true",
                         help="Collect one episode and exit (for testing)")
     args = parser.parse_args()
@@ -506,7 +518,8 @@ def main():
 
         # Fine-tune on aggregated dataset
         iter_ckpt = ckpt_dir / f"iter_{iter_i+1:02d}"
-        ok = run_finetune(dataset_dir, iter_ckpt, args.finetune_steps, args.gpu_id)
+        ok = run_finetune(dataset_dir, iter_ckpt, args.finetune_steps, args.gpu_id,
+                          base_model=args.base_model)
         if ok:
             print(f"  [DAgger] Checkpoint saved to {iter_ckpt}")
         else:
