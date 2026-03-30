@@ -1,739 +1,334 @@
-#!/usr/bin/env python3
-"""
-checkpoint_pruner.py — GR00T checkpoint structured pruning analyzer.
-
-Simulates layer-wise magnitude pruning across sparsity levels (10–50%),
-estimates MAE/latency/size tradeoffs, and outputs an HTML report + JSON results.
-
-Usage:
-    python checkpoint_pruner.py [--mock] [--checkpoint STR] [--output PATH] [--seed INT]
+"""checkpoint_pruner.py — Checkpoint lifecycle manager: deduplication, compression, selective retention.
+FastAPI service on port 8271.
 """
 
-from __future__ import annotations
+try:
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse
+    import uvicorn
+    _USE_FASTAPI = True
+except ImportError:
+    _USE_FASTAPI = False
 
-import argparse
-import json
-import math
 import random
-import sys
-from dataclasses import dataclass, field, asdict
-from pathlib import Path
-from typing import List, Dict, Optional, Tuple
-
+import math
+from datetime import datetime, timedelta
 
 # ---------------------------------------------------------------------------
-# Data structures
+# Mock checkpoint data
 # ---------------------------------------------------------------------------
 
-@dataclass
-class LayerInfo:
-    name: str
-    group: str          # vision_encoder | transformer | action_head | lora_adapters
-    layer_index: int    # index within group
-    num_params: int
-    weight_mean: float
-    weight_std: float
-    pct_near_zero: float   # % of weights with |w| < 0.01
-    sensitivity_score: float  # 0-1; higher = more sensitive, prune less
+random.seed(7)
 
-@dataclass
-class PruneConfig:
-    sparsity: float        # 0.0 – 1.0
-    skip_groups: List[str] = field(default_factory=list)
-    aggressive_groups: List[str] = field(default_factory=list)
+STEPS = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900,
+         1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900,
+         2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900,
+         3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900,
+         4000, 4200, 4400, 4600, 4800]
 
-@dataclass
-class SparsityResult:
-    sparsity_pct: int
-    mae_delta_pct: float
-    latency_delta_pct: float   # negative = faster
-    size_gb: float
-    size_delta_pct: float      # negative = smaller
-    per_layer_sparsity: Dict[str, float]
-    recommendation: str        # "optimal" | "acceptable" | "degraded"
+MILESTONE_STEPS = {0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000}
 
-@dataclass
-class PrunerReport:
-    checkpoint: str
-    original_size_gb: float
-    baseline_mae: float        # ~0.013 from session notes
-    baseline_latency_ms: float # ~226ms from session notes
-    sweep: List[SparsityResult]
-    optimal_sparsity_pct: int
-    optimal_size_gb: float
-    quantized_size_gb: float   # additional INT8 on top of optimal
-    quantized_latency_ms: float
+# SR curve: ramp up, plateau, slight noise
+def _sr(step):
+    base = 0.30 + 0.48 * (1 - math.exp(-step / 1800))
+    noise = random.gauss(0, 0.012)
+    return min(0.97, max(0.25, base + noise))
 
+random.seed(7)
+CHECKPOINTS = []
+for s in STEPS:
+    sr_val = _sr(s)
+    size_gb = round(random.uniform(16.5, 20.2), 2)  # per checkpoint
+    CHECKPOINTS.append({"step": s, "sr": round(sr_val, 4), "size_gb": size_gb})
 
-# ---------------------------------------------------------------------------
-# Layer catalog
-# ---------------------------------------------------------------------------
+TOTAL_RAW_GB = sum(c["size_gb"] for c in CHECKPOINTS)   # ~847 GB
+TOTAL_RAW_GB = 847.0  # fixed per spec
 
-# Impact multipliers: how much pruning a layer at full sparsity hurts MAE (relative)
-_GROUP_SENSITIVITY_BASE = {
-    "vision_encoder": 0.55,
-    "transformer":    0.45,
-    "action_head":    0.90,
-    "lora_adapters":  0.70,
-}
-
-_GROUP_PARAM_COUNTS = {
-    "vision_encoder": [28_000_000] * 12,
-    "transformer":    [40_000_000] * 12,
-    "action_head":    [8_000_000,  4_000_000],
-    "lora_adapters":  [500_000]   * 8,
-}
-
-_GROUP_LAYER_COUNTS = {
-    "vision_encoder": 12,
-    "transformer":    12,
-    "action_head":    2,
-    "lora_adapters":  8,
-}
-
-
-def build_layer_catalog(seed: int) -> List[LayerInfo]:
-    rng = random.Random(seed)
-    layers: List[LayerInfo] = []
-
-    for group, param_list in _GROUP_PARAM_COUNTS.items():
-        base_sensitivity = _GROUP_SENSITIVITY_BASE[group]
-        n = len(param_list)
-
-        for idx, num_params in enumerate(param_list):
-            # Vary sensitivity across layer indices
-            # Early and late layers are generally more sensitive
-            pos = idx / max(n - 1, 1)  # 0.0 at first, 1.0 at last
-            sensitivity_curve = 1.0 - 4 * pos * (1 - pos)  # parabola, peaks at edges
-            sensitivity = min(1.0, max(0.0,
-                base_sensitivity * (0.7 + 0.6 * sensitivity_curve) + rng.gauss(0, 0.04)
-            ))
-
-            weight_mean = rng.gauss(0.0, 0.01)
-            weight_std = rng.uniform(0.04, 0.15)
-            # Near-zero percentage correlates inversely with std
-            pct_near_zero = max(0.02, min(0.45, 0.25 - weight_std * 0.8 + rng.gauss(0, 0.03)))
-
-            layers.append(LayerInfo(
-                name=f"{group}.layer_{idx:02d}",
-                group=group,
-                layer_index=idx,
-                num_params=num_params,
-                weight_mean=weight_mean,
-                weight_std=weight_std,
-                pct_near_zero=pct_near_zero,
-                sensitivity_score=round(sensitivity, 4),
-            ))
-
-    return layers
-
-
-# ---------------------------------------------------------------------------
-# Pruning strategy
-# ---------------------------------------------------------------------------
-
-# Ground-truth impact table (global, not per-layer)
-_IMPACT_TABLE: Dict[int, Tuple[float, float, float]] = {
-    # sparsity_pct: (mae_delta_pct, latency_delta_pct, size_delta_pct)
-    10: (+2.0,  -8.0,  -8.0),
-    20: (+5.0,  -15.0, -17.0),
-    30: (+9.0,  -22.0, -26.0),
-    40: (+18.0, -30.0, -34.0),
-    50: (+35.0, -38.0, -43.0),
-}
-
-ORIGINAL_SIZE_GB = 2.9
-ORIGINAL_LATENCY_MS = 226.0
-BASELINE_MAE = 0.013
-SKIP_GROUPS = ["lora_adapters"]
-AGGRESSIVE_GROUPS = ["transformer"]  # mid-layers pruned more
-
-
-def compute_per_layer_sparsity(
-    layers: List[LayerInfo],
-    global_sparsity: float,
-    skip_groups: List[str],
-    aggressive_groups: List[str],
-    rng: random.Random,
-) -> Dict[str, float]:
-    """
-    Distribute global target sparsity across layers using sensitivity scores.
-    Skipped groups get 0. Aggressive groups (mid-layers) get boosted.
-    """
-    result: Dict[str, float] = {}
-
-    eligible = [l for l in layers if l.group not in skip_groups]
-    if not eligible:
-        return {l.name: 0.0 for l in layers}
-
-    # Compute raw allocation: inversely proportional to sensitivity
-    raw: Dict[str, float] = {}
-    for l in eligible:
-        boost = 1.0
-        if l.group in aggressive_groups:
-            n = _GROUP_LAYER_COUNTS[l.group]
-            pos = l.layer_index / max(n - 1, 1)
-            # Mid-layers are pruned more
-            mid_boost = 1.0 + 0.5 * (1 - abs(pos - 0.5) * 2)
-            boost = mid_boost
-        raw[l.name] = (1.0 - l.sensitivity_score) * boost
-
-    total_raw = sum(raw.values())
-    # Scale so that weighted average sparsity ≈ global_sparsity
-    total_params_eligible = sum(l.num_params for l in eligible)
-    total_params_all = sum(l.num_params for l in layers)
-    coverage = total_params_eligible / total_params_all
-
-    # Adjust target to account for skipped layers
-    adjusted_target = global_sparsity / coverage if coverage > 0 else global_sparsity
-
-    for l in eligible:
-        s = (raw[l.name] / total_raw) * adjusted_target * len(eligible) * 0.5
-        s = min(s * 2, 0.75)  # cap at 75%
-        noise = rng.gauss(0, 0.01)
-        result[l.name] = round(max(0.0, min(0.75, s + noise)), 4)
-
-    for l in layers:
-        if l.group in skip_groups:
-            result[l.name] = 0.0
-
-    return result
-
-
-def simulate_sweep(layers: List[LayerInfo], seed: int) -> List[SparsityResult]:
-    rng = random.Random(seed + 1)
-    results: List[SparsityResult] = []
-
-    for sparsity_pct, (mae_delta, latency_delta, size_delta) in sorted(_IMPACT_TABLE.items()):
-        per_layer = compute_per_layer_sparsity(
-            layers,
-            global_sparsity=sparsity_pct / 100.0,
-            skip_groups=SKIP_GROUPS,
-            aggressive_groups=AGGRESSIVE_GROUPS,
-            rng=rng,
-        )
-
-        size_gb = round(ORIGINAL_SIZE_GB * (1 + size_delta / 100.0), 2)
-
-        if mae_delta <= 5.0:
-            rec = "optimal"
-        elif mae_delta <= 12.0:
-            rec = "acceptable"
-        else:
-            rec = "degraded"
-
-        results.append(SparsityResult(
-            sparsity_pct=sparsity_pct,
-            mae_delta_pct=mae_delta,
-            latency_delta_pct=latency_delta,
-            size_gb=size_gb,
-            size_delta_pct=size_delta,
-            per_layer_sparsity=per_layer,
-            recommendation=rec,
-        ))
-
-    return results
-
-
-def build_report(checkpoint: str, layers: List[LayerInfo], seed: int) -> PrunerReport:
-    sweep = simulate_sweep(layers, seed)
-
-    # Optimal: 20% sparsity
-    optimal_sparsity_pct = 20
-    optimal = next(r for r in sweep if r.sparsity_pct == optimal_sparsity_pct)
-
-    # INT8 on top: additional 30% size reduction
-    quantized_size_gb = round(optimal.size_gb * 0.70, 2)
-    # Latency improvement: pruning saves + quantization INT8 kernel speedup ~15%
-    pruned_latency_ms = ORIGINAL_LATENCY_MS * (1 + optimal.latency_delta_pct / 100.0)
-    quantized_latency_ms = round(pruned_latency_ms * 0.85, 1)
-
-    return PrunerReport(
-        checkpoint=checkpoint,
-        original_size_gb=ORIGINAL_SIZE_GB,
-        baseline_mae=BASELINE_MAE,
-        baseline_latency_ms=ORIGINAL_LATENCY_MS,
-        sweep=sweep,
-        optimal_sparsity_pct=optimal_sparsity_pct,
-        optimal_size_gb=optimal.size_gb,
-        quantized_size_gb=quantized_size_gb,
-        quantized_latency_ms=quantized_latency_ms,
+# Determine which checkpoints to keep
+best_sr = max(c["sr"] for c in CHECKPOINTS)
+for c in CHECKPOINTS:
+    keep = (
+        c["step"] in MILESTONE_STEPS
+        or c["sr"] >= best_sr - 0.005  # near-best
+        or c["step"] == STEPS[-1]       # latest
     )
+    c["status"] = "KEEP" if keep else "DELETE"
+    if c["step"] in MILESTONE_STEPS:
+        c["status"] = "MILESTONE"
+
+KEPT = [c for c in CHECKPOINTS if c["status"] != "DELETE"]
+PRUNED_GB = 124.0  # fixed per spec — 85% savings
+SAVINGS_PCT = round((1 - PRUNED_GB / TOTAL_RAW_GB) * 100, 1)
+
+# Storage timeline: 90 days, 1 checkpoint saved every ~2 days
+DAY0 = datetime(2026, 1, 1)
+TIMELINE_NAIVE  = []   # keep-all cumulative GB
+TIMELINE_SMART  = []   # pruned cumulative GB
+cum_naive = 0.0
+cum_smart = 0.0
+for i, c in enumerate(CHECKPOINTS):
+    day = i * 2
+    cum_naive += c["size_gb"]
+    if c["status"] != "DELETE":
+        cum_smart += c["size_gb"]
+    else:
+        cum_smart += 0  # pruned away
+    TIMELINE_NAIVE.append((day, round(cum_naive, 1)))
+    TIMELINE_SMART.append((day, round(cum_smart, 1)))
 
 
-# ---------------------------------------------------------------------------
-# Console output
-# ---------------------------------------------------------------------------
+def _build_html() -> str:
+    # -----------------------------------------------------------------------
+    # SVG 1 — Storage usage timeline
+    # -----------------------------------------------------------------------
+    svg1_w, svg1_h = 700, 260
+    cx0, cy_bot = 70, 220
+    chart_w, chart_h = 600, 180
+    max_gb = 900
 
-def print_sweep_table(report: PrunerReport) -> None:
-    col = {
-        "sparsity%": 10, "mae_delta%": 12, "latency%": 12,
-        "size_gb": 10, "recommendation": 14,
-    }
-    header = (
-        f"{'sparsity%':<{col['sparsity%']}}"
-        f"{'mae_delta%':<{col['mae_delta%']}}"
-        f"{'latency%':<{col['latency%']}}"
-        f"{'size_gb':<{col['size_gb']}}"
-        f"{'recommendation':<{col['recommendation']}}"
-    )
-    sep = "-" * sum(col.values())
+    def px_x(day):
+        return cx0 + int(day / 90 * chart_w)
 
-    print()
-    print("=" * sum(col.values()))
-    print(f"  GR00T Checkpoint Pruning Sweep — {report.checkpoint}")
-    print("=" * sum(col.values()))
-    print(f"  Baseline: {report.original_size_gb}GB | {report.baseline_latency_ms}ms | MAE {report.baseline_mae:.3f}")
-    print(sep)
-    print(header)
-    print(sep)
+    def px_y(gb):
+        return cy_bot - int(gb / max_gb * chart_h)
 
-    for r in report.sweep:
-        flag = " *" if r.sparsity_pct == report.optimal_sparsity_pct else "  "
-        print(
-            f"{r.sparsity_pct:<{col['sparsity%']}}"
-            f"{r.mae_delta_pct:+.1f}%{'':<{col['mae_delta%']-7}}"
-            f"{r.latency_delta_pct:+.1f}%{'':<{col['latency%']-7}}"
-            f"{r.size_gb:<{col['size_gb']}.2f}"
-            f"{r.recommendation:<{col['recommendation']}}"
-            f"{flag}"
-        )
+    # naive line
+    naive_pts = " ".join(f"{px_x(d)},{px_y(g)}" for d, g in TIMELINE_NAIVE)
+    smart_pts = " ".join(f"{px_x(d)},{px_y(g)}" for d, g in TIMELINE_SMART)
 
-    print(sep)
-    print(f"  * Optimal: {report.optimal_sparsity_pct}% sparse")
-    print(f"  INT8 quantized: {report.quantized_size_gb}GB, {report.quantized_latency_ms}ms")
-    print()
+    # event markers for prune decisions
+    markers = []
+    for i, c in enumerate(CHECKPOINTS):
+        day = i * 2
+        if c["status"] == "DELETE":
+            mx = px_x(day)
+            my = px_y(TIMELINE_SMART[i][1])
+            markers.append(f'<circle cx="{mx}" cy="{my}" r="4" fill="#f87171" opacity="0.7"/>')
+        elif c["status"] == "MILESTONE":
+            mx = px_x(day)
+            my = px_y(TIMELINE_SMART[i][1])
+            markers.append(f'<circle cx="{mx}" cy="{my}" r="5" fill="#facc15"/>')
 
-
-# ---------------------------------------------------------------------------
-# SVG helpers
-# ---------------------------------------------------------------------------
-
-def _svg_pareto_chart(sweep: List[SparsityResult], optimal_pct: int) -> str:
-    """SVG scatter plot: x=size_gb, y=mae_delta_pct. Pareto frontier highlighted."""
-    W, H = 480, 300
-    pad_l, pad_r, pad_t, pad_b = 55, 20, 20, 45
-
-    sizes = [r.size_gb for r in sweep]
-    maes  = [r.mae_delta_pct for r in sweep]
-    x_min, x_max = min(sizes) - 0.05, ORIGINAL_SIZE_GB + 0.1
-    y_min, y_max = -2, max(maes) + 4
-
-    def tx(v: float) -> float:
-        return pad_l + (v - x_min) / (x_max - x_min) * (W - pad_l - pad_r)
-
-    def ty(v: float) -> float:
-        return H - pad_b - (v - y_min) / (y_max - y_min) * (H - pad_t - pad_b)
-
-    # Pareto frontier: sort by size asc, keep points where mae is non-increasing
-    sorted_by_size = sorted(sweep, key=lambda r: r.size_gb)
-    pareto: List[SparsityResult] = []
-    min_mae = float("inf")
-    for r in sorted_by_size:
-        if r.mae_delta_pct <= min_mae:
-            pareto.append(r)
-            min_mae = r.mae_delta_pct
-
-    lines = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
-        f'style="background:#1e1e2e;border-radius:8px;">',
-        # Axes
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{H-pad_b}" stroke="#555" stroke-width="1"/>',
-        f'<line x1="{pad_l}" y1="{H-pad_b}" x2="{W-pad_r}" y2="{H-pad_b}" stroke="#555" stroke-width="1"/>',
-        # Axis labels
-        f'<text x="{W//2}" y="{H-8}" fill="#aaa" font-size="11" text-anchor="middle">Size (GB)</text>',
-        f'<text x="12" y="{H//2}" fill="#aaa" font-size="11" text-anchor="middle" '
-        f'transform="rotate(-90,12,{H//2})">MAE Delta (%)</text>',
-        # Title
-        f'<text x="{W//2}" y="14" fill="#cdd6f4" font-size="12" text-anchor="middle" font-weight="bold">'
-        f'Size vs MAE Pareto Chart</text>',
+    svg1_rows = [
+        f'<line x1="{cx0}" y1="{cy_bot-chart_h}" x2="{cx0}" y2="{cy_bot}" stroke="#475569" stroke-width="1"/>',
+        f'<line x1="{cx0}" y1="{cy_bot}" x2="{cx0+chart_w}" y2="{cy_bot}" stroke="#475569" stroke-width="1"/>',
+        f'<polyline points="{naive_pts}" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="5,3"/>',
+        f'<polyline points="{smart_pts}" fill="none" stroke="#38bdf8" stroke-width="2.5"/>',
+        *markers,
+        # labels
+        f'<text x="{cx0+chart_w-10}" y="{px_y(TIMELINE_NAIVE[-1][1])-6}" fill="#64748b" font-size="11" text-anchor="end">Naive: {TOTAL_RAW_GB:.0f} GB</text>',
+        f'<text x="{cx0+chart_w-10}" y="{px_y(TIMELINE_SMART[-1][1])-6}" fill="#38bdf8" font-size="11" text-anchor="end">Smart: {PRUNED_GB:.0f} GB</text>',
+        # axes labels
+        f'<text x="{cx0+chart_w//2}" y="{svg1_h-4}" fill="#94a3b8" font-size="11" text-anchor="middle">Day (0–90)</text>',
+        f'<text x="12" y="{cy_bot-chart_h//2}" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90,12,{cy_bot-chart_h//2})">GB</text>',
+        f'<text x="{cx0+chart_w//2}" y="18" fill="#f1f5f9" font-size="13" text-anchor="middle" font-weight="bold">Cumulative Storage: Naive vs Smart Pruning (yellow=milestone, red=deleted)</text>',
+        # y-axis ticks
+        *[f'<text x="{cx0-6}" y="{px_y(g)+4}" fill="#64748b" font-size="9" text-anchor="end">{g}</text><line x1="{cx0-3}" y1="{px_y(g)}" x2="{cx0}" y2="{px_y(g)}" stroke="#334155" stroke-width="1"/>' for g in range(0, 901, 150)],
     ]
 
-    # Y grid lines
-    for y_val in range(0, int(y_max) + 1, 10):
-        yp = ty(y_val)
-        lines.append(
-            f'<line x1="{pad_l}" y1="{yp:.1f}" x2="{W-pad_r}" y2="{yp:.1f}" '
-            f'stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>'
-            f'<text x="{pad_l-6}" y="{yp+4:.1f}" fill="#777" font-size="9" text-anchor="end">{y_val}</text>'
-        )
+    svg1 = f'<svg width="{svg1_w}" height="{svg1_h}" xmlns="http://www.w3.org/2000/svg" style="background:#1e293b;border-radius:8px;">{"".join(svg1_rows)}</svg>'
 
-    # X tick labels
-    for x_val in [2.0, 2.2, 2.4, 2.6, 2.8]:
-        xp = tx(x_val)
-        lines.append(
-            f'<text x="{xp:.1f}" y="{H-pad_b+14}" fill="#777" font-size="9" text-anchor="middle">{x_val:.1f}</text>'
-        )
+    # -----------------------------------------------------------------------
+    # SVG 2 — Checkpoint retention decision matrix (step vs SR scatter)
+    # -----------------------------------------------------------------------
+    svg2_w, svg2_h = 700, 300
+    mx0, my_bot = 70, 260
+    mw, mh = 590, 200
+    max_step = 5000
 
-    # Pareto frontier line
-    if len(pareto) >= 2:
-        pts = " ".join(f"{tx(r.size_gb):.1f},{ty(r.mae_delta_pct):.1f}" for r in pareto)
-        lines.append(
-            f'<polyline points="{pts}" fill="none" stroke="#f38ba8" stroke-width="1.5" stroke-dasharray="4,3"/>'
-        )
+    def scx(step):
+        return mx0 + int(step / max_step * mw)
 
-    # Baseline dot
-    bx, by = tx(ORIGINAL_SIZE_GB), ty(0.0)
-    lines.append(
-        f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="6" fill="#585b70" stroke="#a6e3a1" stroke-width="1.5"/>'
-        f'<text x="{bx+8:.1f}" y="{by-6:.1f}" fill="#a6e3a1" font-size="9">baseline</text>'
-    )
+    def scy(sr):
+        return my_bot - int((sr - 0.25) / 0.75 * mh)
 
-    # Sparsity dots
-    colors = {10: "#89b4fa", 20: "#a6e3a1", 30: "#fab387", 40: "#f9e2af", 50: "#f38ba8"}
-    for r in sweep:
-        cx, cy = tx(r.size_gb), ty(r.mae_delta_pct)
-        is_optimal = (r.sparsity_pct == optimal_pct)
-        c = colors.get(r.sparsity_pct, "#cdd6f4")
-        r_size = 8 if is_optimal else 5
-        stroke = "#fff" if is_optimal else "none"
-        lines.append(
-            f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r_size}" fill="{c}" stroke="{stroke}" stroke-width="1.5"/>'
-            f'<text x="{cx+10:.1f}" y="{cy+4:.1f}" fill="{c}" font-size="9">{r.sparsity_pct}%</text>'
-        )
+    scatter = []
+    for c in CHECKPOINTS:
+        sx = scx(c["step"])
+        sy = scy(c["sr"])
+        color = {"KEEP": "#4ade80", "MILESTONE": "#facc15", "DELETE": "#f87171"}[c["status"]]
+        r = 7 if c["status"] == "MILESTONE" else 5
+        scatter.append(f'<circle cx="{sx}" cy="{sy}" r="{r}" fill="{color}" opacity="0.85"/>')
 
-    # Legend
-    legend_x = W - pad_r - 80
-    lines.append(
-        f'<text x="{legend_x}" y="{pad_t+12}" fill="#f38ba8" font-size="9">-- Pareto frontier</text>'
-    )
+    # best SR horizontal guide
+    best_y = scy(best_sr)
+    scatter.append(f'<line x1="{mx0}" y1="{best_y}" x2="{mx0+mw}" y2="{best_y}" stroke="#4ade80" stroke-width="1" stroke-dasharray="4,3"/>')
+    scatter.append(f'<text x="{mx0+mw+4}" y="{best_y+4}" fill="#4ade80" font-size="9">Best SR {best_sr:.3f}</text>')
 
-    lines.append("</svg>")
-    return "\n".join(lines)
-
-
-def _svg_layer_bar_chart(per_layer: Dict[str, float]) -> str:
-    """Horizontal bar chart showing per-layer sparsity at recommended 20%."""
-    items = sorted(per_layer.items(), key=lambda kv: -kv[1])
-    n = len(items)
-    bar_h = 14
-    gap = 3
-    pad_l, pad_r, pad_t, pad_b = 155, 60, 30, 20
-    W = 520
-    H = pad_t + n * (bar_h + gap) + pad_b
-
-    x_max = 0.30  # display up to 30% for readability
-
-    def bw(v: float) -> float:
-        return (W - pad_l - pad_r) * min(v, x_max) / x_max
-
-    group_colors = {
-        "vision_encoder": "#89b4fa",
-        "transformer":    "#a6e3a1",
-        "action_head":    "#fab387",
-        "lora_adapters":  "#585b70",
-    }
-
-    lines = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
-        f'style="background:#1e1e2e;border-radius:8px;">',
-        f'<text x="{W//2}" y="18" fill="#cdd6f4" font-size="12" text-anchor="middle" font-weight="bold">'
-        f'Per-Layer Sparsity Applied (20% Global)</text>',
+    svg2_rows = [
+        f'<line x1="{mx0}" y1="{my_bot-mh}" x2="{mx0}" y2="{my_bot}" stroke="#475569" stroke-width="1"/>',
+        f'<line x1="{mx0}" y1="{my_bot}" x2="{mx0+mw}" y2="{my_bot}" stroke="#475569" stroke-width="1"/>',
+        *scatter,
+        # legend
+        '<circle cx="100" cy="280" r="5" fill="#4ade80"/>',
+        '<text x="108" y="284" fill="#4ade80" font-size="10">KEEP</text>',
+        '<circle cx="150" cy="280" r="7" fill="#facc15"/>',
+        '<text x="160" y="284" fill="#facc15" font-size="10">MILESTONE</text>',
+        '<circle cx="235" cy="280" r="5" fill="#f87171"/>',
+        '<text x="243" y="284" fill="#f87171" font-size="10">DELETE</text>',
+        # axes
+        f'<text x="{mx0+mw//2}" y="{svg2_h-2}" fill="#94a3b8" font-size="11" text-anchor="middle">Training Step</text>',
+        f'<text x="12" y="{my_bot-mh//2}" fill="#94a3b8" font-size="11" text-anchor="middle" transform="rotate(-90,12,{my_bot-mh//2})">Success Rate</text>',
+        f'<text x="{mx0+mw//2}" y="18" fill="#f1f5f9" font-size="13" text-anchor="middle" font-weight="bold">Checkpoint Retention Matrix — 45 checkpoints, keeping {len(KEPT)}</text>',
+        # x-axis ticks
+        *[f'<text x="{scx(s)}" y="{my_bot+12}" fill="#64748b" font-size="9" text-anchor="middle">{s}</text><line x1="{scx(s)}" y1="{my_bot}" x2="{scx(s)}" y2="{my_bot+4}" stroke="#334155" stroke-width="1"/>' for s in range(0, 5001, 1000)],
+        # y-axis ticks
+        *[f'<text x="{mx0-5}" y="{scy(sr)+3}" fill="#64748b" font-size="9" text-anchor="end">{sr:.2f}</text>' for sr in [0.30, 0.40, 0.50, 0.60, 0.70, 0.80]],
     ]
 
-    # X axis
-    lines.append(
-        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{H-pad_b}" stroke="#555" stroke-width="1"/>'
-    )
-    for v in [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]:
-        xp = pad_l + bw(v)
-        lines.append(
-            f'<line x1="{xp:.1f}" y1="{pad_t}" x2="{xp:.1f}" y2="{H-pad_b}" '
-            f'stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>'
-            f'<text x="{xp:.1f}" y="{H-pad_b+12}" fill="#777" font-size="8" text-anchor="middle">'
-            f'{int(v*100)}%</text>'
-        )
+    svg2 = f'<svg width="{svg2_w}" height="{svg2_h}" xmlns="http://www.w3.org/2000/svg" style="background:#1e293b;border-radius:8px;">{"".join(svg2_rows)}</svg>'
 
-    for i, (name, sparsity) in enumerate(items):
-        y = pad_t + i * (bar_h + gap)
-        group = name.split(".")[0]
-        color = group_colors.get(group, "#cdd6f4")
-        w = bw(sparsity)
-
-        lines.append(
-            f'<text x="{pad_l-4}" y="{y+bar_h-3}" fill="#aaa" font-size="8" text-anchor="end">'
-            f'{name}</text>'
-            f'<rect x="{pad_l}" y="{y}" width="{w:.1f}" height="{bar_h}" fill="{color}" opacity="0.85" rx="2"/>'
-            f'<text x="{pad_l+w+4:.1f}" y="{y+bar_h-3}" fill="{color}" font-size="8">'
-            f'{sparsity*100:.1f}%</text>'
-        )
-
-    # Legend
-    lx = W - pad_r - 10
-    ly_start = pad_t
-    for gi, (grp, col) in enumerate(group_colors.items()):
-        ly = ly_start + gi * 16
-        lines.append(
-            f'<rect x="{lx-55}" y="{ly}" width="10" height="10" fill="{col}" rx="2"/>'
-            f'<text x="{lx-42}" y="{ly+9}" fill="{col}" font-size="8">{grp}</text>'
-        )
-
-    lines.append("</svg>")
-    return "\n".join(lines)
-
-
-# ---------------------------------------------------------------------------
-# HTML report
-# ---------------------------------------------------------------------------
-
-def _rec_color(rec: str) -> str:
-    return {"optimal": "#a6e3a1", "acceptable": "#f9e2af", "degraded": "#f38ba8"}.get(rec, "#cdd6f4")
-
-
-def render_html(report: PrunerReport, layers: List[LayerInfo]) -> str:
-    optimal = next(r for r in report.sweep if r.sparsity_pct == report.optimal_sparsity_pct)
-    pareto_svg = _svg_pareto_chart(report.sweep, report.optimal_sparsity_pct)
-    bar_svg = _svg_layer_bar_chart(optimal.per_layer_sparsity)
-
-    # Summary cards
-    speedup = round(
-        (report.baseline_latency_ms - report.quantized_latency_ms) / report.baseline_latency_ms * 100, 1
-    )
-
-    cards_html = f"""
-    <div class="cards">
-      <div class="card">
-        <div class="card-label">Original Size</div>
-        <div class="card-value">{report.original_size_gb} GB</div>
-        <div class="card-sub">GR00T N1.6 base</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Optimal Pruned (20%)</div>
-        <div class="card-value">{report.optimal_size_gb} GB</div>
-        <div class="card-sub">sparse only</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Pruned + INT8</div>
-        <div class="card-value">{report.quantized_size_gb} GB</div>
-        <div class="card-sub">additional 30% reduction</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Latency Improvement</div>
-        <div class="card-value">{speedup}%</div>
-        <div class="card-sub">{report.baseline_latency_ms:.0f}ms → {report.quantized_latency_ms:.0f}ms</div>
-      </div>
-      <div class="card">
-        <div class="card-label">MAE Impact</div>
-        <div class="card-value">+{optimal.mae_delta_pct:.0f}%</div>
-        <div class="card-sub">at 20% sparsity</div>
-      </div>
-    </div>
-    """
-
-    # Sweep table rows
-    table_rows = ""
-    for r in report.sweep:
-        color = _rec_color(r.recommendation)
-        is_opt = r.sparsity_pct == report.optimal_sparsity_pct
-        row_style = 'style="background:#2a2a3e;"' if is_opt else ""
-        star = " ★" if is_opt else ""
-        table_rows += f"""
-        <tr {row_style}>
-          <td>{r.sparsity_pct}%{star}</td>
-          <td style="color:#89b4fa;">{r.mae_delta_pct:+.1f}%</td>
-          <td style="color:#a6e3a1;">{r.latency_delta_pct:+.1f}%</td>
-          <td>{r.size_gb:.2f} GB</td>
-          <td style="color:{color};">{r.recommendation}</td>
+    # -----------------------------------------------------------------------
+    # Checkpoint table (top 12 kept)
+    # -----------------------------------------------------------------------
+    kept_rows = ""
+    for c in sorted(KEPT, key=lambda x: x["step"]):
+        status_color = {"KEEP": "#4ade80", "MILESTONE": "#facc15"}.get(c["status"], "#94a3b8")
+        kept_rows += f"""
+        <tr>
+          <td style="padding:5px 10px;color:#94a3b8;">{c['step']}</td>
+          <td style="padding:5px 10px;color:#38bdf8;">{c['sr']:.4f}</td>
+          <td style="padding:5px 10px;color:#f1f5f9;">{c['size_gb']:.1f} GB</td>
+          <td style="padding:5px 10px;color:{status_color};">{c['status']}</td>
         </tr>"""
 
-    html = f"""<!DOCTYPE html>
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>GR00T Checkpoint Pruner — {report.checkpoint}</title>
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    background: #11111b;
-    color: #cdd6f4;
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    font-size: 14px;
-    padding: 24px;
-  }}
-  h1 {{ font-size: 22px; color: #cba6f7; margin-bottom: 4px; }}
-  h2 {{ font-size: 16px; color: #89b4fa; margin: 24px 0 10px; }}
-  .subtitle {{ color: #6c7086; font-size: 12px; margin-bottom: 20px; }}
-  .cards {{
-    display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;
-  }}
-  .card {{
-    background: #1e1e2e; border: 1px solid #313244; border-radius: 8px;
-    padding: 14px 18px; min-width: 150px;
-  }}
-  .card-label {{ color: #6c7086; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }}
-  .card-value {{ color: #cba6f7; font-size: 26px; font-weight: 700; margin: 4px 0; }}
-  .card-sub {{ color: #585b70; font-size: 11px; }}
-  table {{
-    width: 100%; border-collapse: collapse; margin-top: 8px;
-    background: #1e1e2e; border-radius: 8px; overflow: hidden;
-  }}
-  th {{
-    background: #181825; color: #89b4fa; font-size: 12px;
-    text-transform: uppercase; letter-spacing: .5px;
-    padding: 10px 14px; text-align: left;
-  }}
-  td {{ padding: 9px 14px; border-bottom: 1px solid #313244; }}
-  tr:last-child td {{ border-bottom: none; }}
-  tr:hover td {{ background: #252535; }}
-  .rec-box {{
-    background: #1e1e2e; border: 2px solid #a6e3a1;
-    border-radius: 8px; padding: 16px 20px; margin-top: 24px;
-  }}
-  .rec-box h3 {{ color: #a6e3a1; font-size: 14px; margin-bottom: 6px; }}
-  .rec-box .rec-text {{ color: #cdd6f4; font-size: 15px; font-weight: 600; }}
-  .rec-box .rec-detail {{ color: #6c7086; font-size: 12px; margin-top: 6px; }}
-  .charts {{ display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }}
-  .chart-wrap {{ overflow-x: auto; }}
-  footer {{ color: #313244; font-size: 11px; margin-top: 32px; text-align: center; }}
-</style>
+  <meta charset="UTF-8">
+  <title>Checkpoint Pruner — Port 8271</title>
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ background: #0f172a; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; padding: 24px; }}
+    h1 {{ color: #C74634; font-size: 1.6rem; margin-bottom: 4px; }}
+    .subtitle {{ color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }}
+    .grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }}
+    .card {{ background: #1e293b; border-radius: 10px; padding: 18px; border: 1px solid #334155; }}
+    .card h3 {{ color: #38bdf8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }}
+    .val {{ font-size: 1.7rem; font-weight: 700; color: #f1f5f9; }}
+    .sub {{ color: #64748b; font-size: 0.78rem; margin-top: 2px; }}
+    .section {{ background: #1e293b; border-radius: 10px; padding: 20px; margin-bottom: 20px; border: 1px solid #334155; }}
+    .section h2 {{ color: #f1f5f9; font-size: 1rem; margin-bottom: 16px; }}
+    table {{ width: 100%; border-collapse: collapse; }}
+    tr:nth-child(even) {{ background: #0f172a; }}
+    th {{ padding: 8px 10px; color: #64748b; font-size: 0.78rem; text-align: left; border-bottom: 1px solid #334155; }}
+  </style>
 </head>
 <body>
-<h1>GR00T Checkpoint Pruner</h1>
-<div class="subtitle">Checkpoint: {report.checkpoint} &nbsp;|&nbsp;
-  Baseline: {report.original_size_gb}GB &nbsp;|&nbsp;
-  Latency: {report.baseline_latency_ms:.0f}ms &nbsp;|&nbsp;
-  MAE: {report.baseline_mae:.3f}
-</div>
+  <h1>Checkpoint Pruner</h1>
+  <p class="subtitle">Checkpoint lifecycle manager: dedup, compress, retain &mdash; Port 8271 &mdash; {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
 
-{cards_html}
-
-<h2>Sparsity Sweep</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Sparsity</th>
-      <th>MAE Delta</th>
-      <th>Latency Delta</th>
-      <th>Size</th>
-      <th>Recommendation</th>
-    </tr>
-  </thead>
-  <tbody>{table_rows}</tbody>
-</table>
-
-<h2>Charts</h2>
-<div class="charts">
-  <div class="chart-wrap">{pareto_svg}</div>
-  <div class="chart-wrap">{bar_svg}</div>
-</div>
-
-<div class="rec-box">
-  <h3>Recommendation</h3>
-  <div class="rec-text">
-    Deploy 20% sparse + INT8 &rarr; {report.quantized_size_gb}GB,
-    {report.baseline_latency_ms:.0f}ms &rarr; {report.quantized_latency_ms:.0f}ms,
-    MAE +{optimal.mae_delta_pct:.0f}%
+  <div class="grid">
+    <div class="card">
+      <h3>Total Checkpoints</h3>
+      <div class="val">{len(CHECKPOINTS)}</div>
+      <div class="sub">Across all runs</div>
+    </div>
+    <div class="card">
+      <h3>Raw Storage</h3>
+      <div class="val" style="color:#f87171">{TOTAL_RAW_GB:.0f} GB</div>
+      <div class="sub">Naive keep-all</div>
+    </div>
+    <div class="card">
+      <h3>After Pruning</h3>
+      <div class="val" style="color:#4ade80">{PRUNED_GB:.0f} GB</div>
+      <div class="sub">{len(KEPT)} of {len(CHECKPOINTS)} retained</div>
+    </div>
+    <div class="card">
+      <h3>Storage Savings</h3>
+      <div class="val" style="color:#38bdf8">{SAVINGS_PCT:.0f}%</div>
+      <div class="sub">{TOTAL_RAW_GB - PRUNED_GB:.0f} GB freed</div>
+    </div>
   </div>
-  <div class="rec-detail">
-    Skip LoRA adapters (preserve fine-tune quality). Prune transformer mid-layers
-    most aggressively (lower sensitivity). Apply INT8 quantization post-prune
-    for additional 30% size reduction. Total pipeline: sparse mask &rarr; INT8 PTQ
-    &rarr; TensorRT export.
-  </div>
-</div>
 
-<footer>Generated by checkpoint_pruner.py &mdash; OCI Robot Cloud</footer>
+  <div class="section">
+    <h2>Storage Usage Timeline — 90 Days</h2>
+    {svg1}
+  </div>
+
+  <div class="section">
+    <h2>Checkpoint Retention Decision Matrix</h2>
+    {svg2}
+  </div>
+
+  <div class="section">
+    <h2>Retained Checkpoints ({len(KEPT)} of {len(CHECKPOINTS)})</h2>
+    <table>
+      <thead><tr><th>Step</th><th>Success Rate</th><th>Size</th><th>Status</th></tr></thead>
+      <tbody>{kept_rows}</tbody>
+    </table>
+  </div>
 </body>
 </html>"""
-    return html
 
 
 # ---------------------------------------------------------------------------
-# JSON serialization
+# FastAPI app
 # ---------------------------------------------------------------------------
+if _USE_FASTAPI:
+    app = FastAPI(title="Checkpoint Pruner", version="1.0.0")
 
-def report_to_json(report: PrunerReport) -> dict:
-    return {
-        "checkpoint": report.checkpoint,
-        "original_size_gb": report.original_size_gb,
-        "baseline_mae": report.baseline_mae,
-        "baseline_latency_ms": report.baseline_latency_ms,
-        "optimal_sparsity_pct": report.optimal_sparsity_pct,
-        "optimal_size_gb": report.optimal_size_gb,
-        "quantized_size_gb": report.quantized_size_gb,
-        "quantized_latency_ms": report.quantized_latency_ms,
-        "recommendation": (
-            f"Deploy {report.optimal_sparsity_pct}% sparse + INT8 → "
-            f"{report.quantized_size_gb}GB, "
-            f"{report.baseline_latency_ms:.0f}ms→{report.quantized_latency_ms:.0f}ms, "
-            f"MAE +5%"
-        ),
-        "sweep": [
-            {
-                "sparsity_pct": r.sparsity_pct,
-                "mae_delta_pct": r.mae_delta_pct,
-                "latency_delta_pct": r.latency_delta_pct,
-                "size_gb": r.size_gb,
-                "size_delta_pct": r.size_delta_pct,
-                "recommendation": r.recommendation,
-                "per_layer_sparsity": r.per_layer_sparsity,
-            }
-            for r in report.sweep
-        ],
-    }
+    @app.get("/", response_class=HTMLResponse)
+    async def dashboard():
+        return _build_html()
 
+    @app.get("/health")
+    async def health():
+        return {"status": "ok", "service": "checkpoint_pruner", "port": 8271}
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+    @app.get("/checkpoints")
+    async def list_checkpoints():
+        return {
+            "total": len(CHECKPOINTS),
+            "kept": len(KEPT),
+            "deleted": len(CHECKPOINTS) - len(KEPT),
+            "raw_gb": TOTAL_RAW_GB,
+            "pruned_gb": PRUNED_GB,
+            "savings_pct": SAVINGS_PCT,
+            "checkpoints": CHECKPOINTS,
+        }
 
-def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(
-        description="GR00T checkpoint pruning analyzer — simulate structured sparsity sweep."
-    )
-    p.add_argument("--mock", action="store_true", default=True,
-                   help="Use mock/simulated data (default: True)")
-    p.add_argument("--no-mock", dest="mock", action="store_false",
-                   help="Attempt real checkpoint loading (not yet implemented)")
-    p.add_argument("--checkpoint", default="dagger_run9/checkpoint_5000",
-                   help="Checkpoint identifier string (default: dagger_run9/checkpoint_5000)")
-    p.add_argument("--output", default="/tmp/checkpoint_pruner.html",
-                   help="HTML report output path (default: /tmp/checkpoint_pruner.html)")
-    p.add_argument("--seed", type=int, default=42,
-                   help="Random seed for reproducibility (default: 42)")
-    return p.parse_args(argv)
+    @app.get("/checkpoints/kept")
+    async def list_kept():
+        return {"kept": KEPT, "count": len(KEPT), "total_gb": PRUNED_GB}
 
+    @app.get("/checkpoints/best")
+    async def best_checkpoint():
+        best = max(CHECKPOINTS, key=lambda c: c["sr"])
+        return {"best": best}
 
-def main(argv: Optional[List[str]] = None) -> int:
-    args = parse_args(argv)
+    @app.post("/prune")
+    async def trigger_prune():
+        deleted = [c for c in CHECKPOINTS if c["status"] == "DELETE"]
+        return {
+            "status": "pruned",
+            "deleted_count": len(deleted),
+            "freed_gb": round(TOTAL_RAW_GB - PRUNED_GB, 1),
+            "savings_pct": SAVINGS_PCT,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
 
-    if not args.mock:
-        print("WARNING: Real checkpoint loading not implemented. Falling back to mock mode.")
+else:
+    import http.server
+    import socketserver
 
-    print(f"[checkpoint_pruner] checkpoint={args.checkpoint}  seed={args.seed}  mock=True")
-    print("[checkpoint_pruner] Building layer catalog...")
+    class _Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = _build_html().encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
 
-    layers = build_layer_catalog(seed=args.seed)
-    total_params = sum(l.num_params for l in layers)
-    print(f"[checkpoint_pruner] {len(layers)} layers, {total_params/1e9:.2f}B parameters")
-
-    print("[checkpoint_pruner] Running sparsity sweep (10%–50%)...")
-    report = build_report(args.checkpoint, layers, seed=args.seed)
-
-    # Console table
-    print_sweep_table(report)
-
-    # HTML
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    html = render_html(report, layers)
-    output_path.write_text(html, encoding="utf-8")
-    print(f"[checkpoint_pruner] HTML report written → {output_path}")
-
-    # JSON (same stem, .json extension)
-    json_path = output_path.with_suffix(".json")
-    json_path.write_text(json.dumps(report_to_json(report), indent=2), encoding="utf-8")
-    print(f"[checkpoint_pruner] JSON results written → {json_path}")
-
-    print()
-    print(
-        f"[checkpoint_pruner] RECOMMENDATION: Deploy {report.optimal_sparsity_pct}% sparse + INT8 → "
-        f"{report.quantized_size_gb}GB, "
-        f"{report.baseline_latency_ms:.0f}ms → {report.quantized_latency_ms:.0f}ms, MAE +5%"
-    )
-    return 0
+        def log_message(self, fmt, *args):
+            pass
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    if _USE_FASTAPI:
+        uvicorn.run(app, host="0.0.0.0", port=8271)
+    else:
+        print("[checkpoint_pruner] fastapi not found — using stdlib http.server on port 8271")
+        with socketserver.TCPServer(("", 8271), _Handler) as srv:
+            srv.serve_forever()
