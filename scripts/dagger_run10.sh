@@ -1,25 +1,27 @@
-#!/bin/bash
-# OCI Robot Cloud — DAgger Run10
-# Reward shaping v3.0: task_success weight 0.40→0.50, target >80% SR
-# Starts from groot_finetune_v2 checkpoint (78% SR)
-# Usage: bash scripts/dagger_run10.sh [--dry-run]
+#!/usr/bin/env bash
+# dagger_run10.sh
+# DAgger run10 -- reward shaping v3.0 (task_success weight 0.40 -> 0.50)
+# Starting from groot_finetune_v2 checkpoint (78% SR)
+# Target: >80% SR on cube-lift
+#
+# Run on OCI A100 GPU4 (138.1.153.110)
+# Prerequisites:
+#   - groot_finetune_v2 checkpoint at /tmp/finetune_v2/checkpoint-5000
+#   - GR00T server running on port 8002 (staging)
+#
+# Usage:
+#   bash scripts/dagger_run10.sh
+#   ITERS=10 EPS_PER_ITER=50 bash scripts/dagger_run10.sh  # aggressive
 
-set -e
-DRY_RUN=${1:-""}
-GREEN='\033[0;32m'
-AMBER='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+set -euo pipefail
 
-BASE_CKPT="/home/ubuntu/isaacgr00t/checkpoints/groot_prod"
-DAGGER_DIR="/tmp/dagger_run10"
-N_ITERS=5
-N_EPS_PER_ITER=40
-FINETUNE_STEPS=5000
-BETA_START=0.20
-BETA_DECAY=0.80
-GROOT_PORT=8001
-MIN_FRAMES=10
+ITERS=${ITERS:-6}
+EPS_PER_ITER=${EPS_PER_ITER:-30}
+FINETUNE_STEPS=${FINETUNE_STEPS:-5000}
+BASE_CHECKPOINT="/tmp/finetune_v2/checkpoint-5000"
+RUN_DIR="/tmp/dagger_run10"
+GROOT_PORT=8002
+GROOT_HOST="http://localhost:$GROOT_PORT"
 
 export REWARD_TASK_SUCCESS=0.50
 export REWARD_LIFT_HEIGHT=0.20
@@ -29,117 +31,105 @@ export REWARD_EFFICIENCY=0.05
 export REWARD_COLLISION=0.01
 export REWARD_TIME_PENALTY=0.01
 
-echo "============================================"
-echo "  DAgger Run10 — Reward Shaping v3.0"
-echo "  $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-echo "  Base: groot_finetune_v2 (78% SR)"
-echo "  Target: >80% SR"
-echo "  Iters: $N_ITERS × $N_EPS_PER_ITER eps × ${FINETUNE_STEPS} steps"
-echo "============================================"
+log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 
-if [[ "$DRY_RUN" == "--dry-run" ]]; then
-    echo -e "${AMBER}[DRY RUN]${NC} Showing plan only."
-    beta=$BETA_START
-    for i in $(seq 1 $N_ITERS); do
-        echo "  Iter $i: beta=$beta, collect ${N_EPS_PER_ITER} eps, fine-tune ${FINETUNE_STEPS} steps"
-        beta=$(echo "$beta * $BETA_DECAY" | bc -l | xargs printf '%.2f')
-    done
-    exit 0
-fi
+log "=== DAgger run10 --- reward shaping v3.0 ==="
+log "Config: $ITERS iters x $EPS_PER_ITER eps x $FINETUNE_STEPS steps"
+log "Reward v3.0: task_success=$REWARD_TASK_SUCCESS (was 0.40)"
 
-mkdir -p "$DAGGER_DIR"
-COMBINED_DATA="$DAGGER_DIR/combined"
-mkdir -p "$COMBINED_DATA"
-LOG="$DAGGER_DIR/run10.log"
-exec > >(tee -a "$LOG") 2>&1
+mkdir -p "$RUN_DIR/lerobot"
 
-if ! curl -sf "http://localhost:$GROOT_PORT/health" > /dev/null 2>&1; then
-    echo -e "${RED}[ERROR]${NC} GR00T server not responding on port $GROOT_PORT"
-    exit 1
-fi
-echo -e "${GREEN}[OK]${NC} GR00T server up"
+[ -d "$BASE_CHECKPOINT" ] || { echo "ERROR: Base checkpoint not found: $BASE_CHECKPOINT"; exit 1; }
+curl -sf "$GROOT_HOST/health" || { echo "ERROR: GR00T not running on port $GROOT_PORT"; exit 1; }
 
-beta=$BETA_START
-TOTAL_EPS=0
+CURRENT_CHECKPOINT="$BASE_CHECKPOINT"
 
-for ITER in $(seq 1 $N_ITERS); do
-    ITER_DIR="$DAGGER_DIR/iter_$ITER"
-    mkdir -p "$ITER_DIR"
-    echo "======================================"
-    echo "  Iter $ITER/$N_ITERS (beta=$beta)"
-    echo "  $(date -u '+%H:%M:%S UTC')"
-    echo "======================================"
+for iter in $(seq 1 $ITERS); do
+  log "--- Iteration $iter / $ITERS ---"
+  ITER_DIR="$RUN_DIR/iter_$iter"
+  mkdir -p "$ITER_DIR/raw" "$ITER_DIR/lerobot" "$ITER_DIR/eval"
 
-    python src/training/dagger_train.py \
-        --mode collect --n_episodes $N_EPS_PER_ITER --beta $beta \
-        --output_dir "$ITER_DIR/raw" --groot_port $GROOT_PORT \
-        --min_frames $MIN_FRAMES 2>/dev/null || true
+  BETA=$(python3 -c "print(f'{max(0.05, 0.30 - ($iter - 1) * 0.05):.2f}')")
+  log "[$iter] Beta=$BETA  Collecting $EPS_PER_ITER episodes..."
 
-    N_COLLECTED=$(find "$ITER_DIR/raw" -name "episode_*.npy" 2>/dev/null | wc -l || echo 0)
-    TOTAL_EPS=$((TOTAL_EPS + N_COLLECTED))
+  python3 src/training/dagger_train.py \
+    --mode collect \
+    --server-url "$GROOT_HOST" \
+    --num-episodes "$EPS_PER_ITER" \
+    --beta "$BETA" \
+    --output-dir "$ITER_DIR/raw" \
+    --reward-task-success "$REWARD_TASK_SUCCESS" \
+    --reward-lift-height "$REWARD_LIFT_HEIGHT" \
+    --seed "$iter"
 
-    python scripts/genesis_to_lerobot.py \
-        --input "$ITER_DIR/raw" --output "$ITER_DIR/lerobot" \
-        --min_frames $MIN_FRAMES 2>/dev/null || true
+  python3 scripts/genesis_to_lerobot.py \
+    --input "$ITER_DIR/raw" \
+    --output "$ITER_DIR/lerobot" \
+    --min-frames 10
 
-    if [[ $ITER -gt 1 ]]; then
-        python scripts/merge_datasets.py \
-            --datasets "$COMBINED_DATA" "$ITER_DIR/lerobot" \
-            --output "$COMBINED_DATA" 2>/dev/null || cp -r "$ITER_DIR/lerobot" "$COMBINED_DATA"
-    else
-        cp -r "$ITER_DIR/lerobot" "$COMBINED_DATA"
-    fi
+  MERGED="$RUN_DIR/merged_iter_$iter"
+  mkdir -p "$MERGED"
+  [ "$iter" -eq 1 ] && cp -r "$RUN_DIR/lerobot/." "$MERGED/" 2>/dev/null || true
+  [ "$iter" -gt 1 ] && cp -r "$RUN_DIR/merged_iter_$((iter-1))/." "$MERGED/"
+  python3 scripts/merge_lerobot_datasets.py \
+    --base "$MERGED" --add "$ITER_DIR/lerobot" --output "$MERGED"
 
-    CKPT_DIR="$DAGGER_DIR/checkpoint_iter$ITER"
-    cd /home/ubuntu/isaacgr00t
-    python -m gr00t.train \
-        --dataset_path "$COMBINED_DATA" --output_dir "$CKPT_DIR" \
-        --num_steps $FINETUNE_STEPS --learning_rate 1e-5 --batch_size 4 \
-        --chunk_size 16 --lora_rank 16 \
-        --resume_from_checkpoint "$BASE_CKPT" 2>/dev/null || true
+  ITER_FT="$RUN_DIR/finetune_iter_$iter"
+  log "[$iter] Fine-tuning $FINETUNE_STEPS steps..."
+  ISAAC_GROOT_ROOT="${ISAAC_GROOT_ROOT:-/root/Isaac-GR00T}"
+  source "$ISAAC_GROOT_ROOT/venv/bin/activate" || true
+  python "$ISAAC_GROOT_ROOT/scripts/gr00t_finetune.py" \
+    --dataset-path "$MERGED" \
+    --output-dir "$ITER_FT" \
+    --base-model-path "$CURRENT_CHECKPOINT" \
+    --batch-size 32 --max-steps "$FINETUNE_STEPS" \
+    --learning-rate 1e-4 --save-steps 1000 \
+    --video-backend decord --embodiment-tag new_embodiment \
+    2>&1 | tee "$ITER_FT/train.log"
 
-    cp -r "$CKPT_DIR/checkpoint-$FINETUNE_STEPS" \
-        "/home/ubuntu/isaacgr00t/checkpoints/groot_prod" 2>/dev/null || true
-    pkill -f "groot_franka_server" || true
-    sleep 3
-    nohup python groot_franka_server.py --port $GROOT_PORT \
-        --checkpoint "/home/ubuntu/isaacgr00t/checkpoints/groot_prod" \
-        > /tmp/groot_server_run10.log 2>&1 &
-    sleep 6
+  CURRENT_CHECKPOINT="$ITER_FT/checkpoint-$FINETUNE_STEPS"
 
-    python src/eval/closed_loop_eval.py --episodes 10 \
-        --output "$ITER_DIR/eval" --host localhost --port $GROOT_PORT 2>/dev/null || true
+  pkill -f "groot_franka_server.*$GROOT_PORT" || true
+  sleep 3
+  nohup python src/api/groot_franka_server.py \
+    --checkpoint "$CURRENT_CHECKPOINT" --port "$GROOT_PORT" \
+    > "$ITER_DIR/server.log" 2>&1 &
+  sleep 10
 
-    SR=$(python3 -c "
-import json, pathlib
-p = pathlib.Path('$ITER_DIR/eval/summary.json')
-if p.exists():
-    d = json.loads(p.read_text())
-    print(f'{d.get(\"success_rate\", 0)*100:.0f}%')
-else:
-    print('N/A')
-" 2>/dev/null || echo "N/A")
-    echo -e "  ${GREEN}Iter $ITER SR: $SR${NC} (total eps: $TOTAL_EPS)"
-    beta=$(echo "$beta * $BETA_DECAY" | bc -l | xargs printf '%.2f')
+  python3 src/eval/closed_loop_eval.py \
+    --server-url "$GROOT_HOST" --num-episodes 10 \
+    --output-dir "$ITER_DIR/eval" --seed 99
+
+  SR=$(python3 -c "import json; d=json.load(open('$ITER_DIR/eval/summary.json')); print(int(d['success_rate']*100))" 2>/dev/null || echo 0)
+  log "[$iter] SR=${SR}%"
+  python3 -c "import json,datetime; open('$RUN_DIR/progress.jsonl','a').write(json.dumps({'iter':$iter,'beta':'$BETA','sr_pct':$SR,'ts':datetime.datetime.utcnow().isoformat()+'Z'})+'\n')"
+
+  [ "$SR" -ge 80 ] && { log "TARGET REACHED: SR=${SR}% >= 80%"; break; } || true
 done
 
-python src/eval/closed_loop_eval.py --episodes 20 \
-    --output "$DAGGER_DIR/final_eval" --host localhost --port $GROOT_PORT 2>/dev/null || true
+log "=== Final eval: 20 episodes ==="
+mkdir -p "$RUN_DIR/final_eval"
+python3 src/eval/closed_loop_eval.py \
+  --server-url "$GROOT_HOST" --num-episodes 20 \
+  --output-dir "$RUN_DIR/final_eval" --seed 42
 
-FINAL_SR=$(python3 -c "
-import json, pathlib
-p = pathlib.Path('$DAGGER_DIR/final_eval/summary.json')
-if p.exists():
-    d = json.loads(p.read_text())
-    print(f'{d.get(\"success_rate\", 0)*100:.0f}%')
-else:
-    print('N/A')
-" 2>/dev/null || echo "N/A")
+FINAL_SR=$(python3 -c "import json; d=json.load(open('$RUN_DIR/final_eval/summary.json')); print(int(d['success_rate']*100))" 2>/dev/null || echo '?')
 
-echo ""
-echo "============================================"
-echo "  DAgger Run10 Complete"
-echo "  Total episodes collected: $TOTAL_EPS"
-echo "  Final SR: $FINAL_SR (target: >80%)"
-echo "  Checkpoints: $DAGGER_DIR/checkpoint_iter*"
-echo "============================================"
+python3 -c "
+import json, datetime
+summary = {
+    'run': 'dagger_run10', 'reward_version': 'v3.0',
+    'reward_weights': {'task_success': 0.50, 'lift_height': 0.20, 'grasp_stability': 0.13,
+                       'smoothness': 0.10, 'efficiency': 0.05, 'collision': 0.01, 'time_penalty': 0.01},
+    'base_sr_pct': 78, 'final_sr_pct': $FINAL_SR,
+    'final_checkpoint': '$CURRENT_CHECKPOINT',
+    'completed_at': datetime.datetime.utcnow().isoformat() + 'Z',
+}
+open('$RUN_DIR/summary.json', 'w').write(json.dumps(summary, indent=2))
+print('Summary written to $RUN_DIR/summary.json')
+"
+
+log "======================================="
+log "DAgger run10 COMPLETE -- Final SR: ${FINAL_SR}%"
+log "  If SR >= 80%: bash scripts/promote_groot_finetune_v2.sh"
+log "======================================="
