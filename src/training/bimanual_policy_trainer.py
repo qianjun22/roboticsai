@@ -1,6 +1,9 @@
-"""Bimanual Policy Trainer — FastAPI port 8716"""
-import math, random
-from http.server import HTTPServer, BaseHTTPRequestHandler
+# Bimanual Policy Trainer — port 8924
+# Dual-arm GR00T training: shared vision encoder + per-arm action decoder + coordination reward
+
+import math
+import random
+
 try:
     from fastapi import FastAPI
     from fastapi.responses import HTMLResponse
@@ -9,207 +12,171 @@ try:
 except ImportError:
     USE_FASTAPI = False
 
-PORT = 8716
+APP_TITLE = "Bimanual Policy Trainer"
+PORT = 8924
 
-def build_html():
-    random.seed(42)
+# ── Data ──────────────────────────────────────────────────────────────────────
 
-    # Generate loss curve (exponential decay with noise)
-    steps = list(range(0, 2001, 100))
-    loss_vals = [round(2.4 * math.exp(-0.0018 * s) + 0.08 + random.gauss(0, 0.015), 4) for s in steps]
+STEPS = list(range(0, 5001, 500))
 
-    # Arm synchrony metric (sinusoidal, improving over time)
-    sync_vals = [round(0.55 + 0.38 * (1 - math.exp(-s / 800)) + 0.04 * math.sin(s / 120) + random.gauss(0, 0.01), 3) for s in steps]
+def _sr(step):
+    """Sigmoid success-rate curve from 28% baseline toward 55% target."""
+    x = step / 5000
+    return 0.28 + (0.55 - 0.28) * (1 / (1 + math.exp(-10 * (x - 0.5))))
 
-    # SVG loss curve (600x180)
-    svg_w, svg_h = 600, 180
-    pad = 40
-    plot_w = svg_w - 2 * pad
-    plot_h = svg_h - 2 * pad
-    loss_min, loss_max = 0.05, 2.5
+def _sync(step):
+    """Arm synchronisation metric: improves from 0.42 toward 0.91."""
+    x = step / 5000
+    return 0.42 + (0.91 - 0.42) * (1 - math.exp(-3 * x))
 
-    def lx(i):
-        return pad + i * plot_w / (len(steps) - 1)
+SR_BASELINE = [round(0.28 + random.gauss(0, 0.01), 3) for _ in STEPS]   # no coord reward
+SR_WITH     = [round(_sr(s) + random.gauss(0, 0.008), 3) for s in STEPS]
+SYNC_METRIC = [round(_sync(s) + random.gauss(0, 0.005), 3) for s in STEPS]
 
-    def ly(v):
-        return pad + plot_h - (v - loss_min) / (loss_max - loss_min) * plot_h
+# SVG helpers
+def _polyline(xs, ys, w, h, pad, color, stroke_w=2.5):
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    if max_x == min_x: max_x = min_x + 1
+    if max_y == min_y: max_y = min_y + 0.01
+    pts = " ".join(
+        f"{pad + (x - min_x)/(max_x - min_x)*(w - 2*pad):.1f},"
+        f"{h - pad - (y - min_y)/(max_y - min_y)*(h - 2*pad):.1f}"
+        for x, y in zip(xs, ys)
+    )
+    return f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="{stroke_w}" stroke-linejoin="round"/>'
 
-    loss_pts = " ".join(f"{lx(i):.1f},{ly(v):.1f}" for i, v in enumerate(loss_vals))
-    sync_pts = " ".join(f"{lx(i):.1f},{pad + plot_h - (v - 0.5) / 0.5 * plot_h:.1f}" for i, v in enumerate(sync_vals))
+def build_sr_svg():
+    W, H, PAD = 560, 220, 32
+    baseline = _polyline(STEPS, SR_BASELINE, W, H, PAD, "#64748b")
+    with_cr   = _polyline(STEPS, SR_WITH,    W, H, PAD, "#38bdf8")
+    target_y  = H - PAD - (0.55 - min(SR_WITH)) / (max(SR_WITH) - min(SR_WITH) + 1e-9) * (H - 2*PAD)
+    return f'''
+<svg width="{W}" height="{H}" xmlns="http://www.w3.org/2000/svg" style="background:#1e293b;border-radius:8px">
+  <text x="{W//2}" y="18" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="monospace">Bimanual Success Rate vs Training Steps</text>
+  {baseline}
+  {with_cr}
+  <line x1="{PAD}" y1="{target_y:.1f}" x2="{W-PAD}" y2="{target_y:.1f}" stroke="#C74634" stroke-width="1" stroke-dasharray="6,3"/>
+  <text x="{W-PAD+2}" y="{target_y:.1f}" fill="#C74634" font-size="9" font-family="monospace" dominant-baseline="middle">55% target</text>
+  <circle cx="{W-2*PAD}" cy="{H-14}" r="5" fill="#64748b"/><text x="{W-2*PAD+8}" y="{H-10}" fill="#94a3b8" font-size="9" font-family="monospace">No coord reward (28%)</text>
+  <circle cx="{PAD}"     cy="{H-14}" r="5" fill="#38bdf8"/><text x="{PAD+8}"     y="{H-10}" fill="#94a3b8" font-size="9" font-family="monospace">With coord reward (47%)</text>
+</svg>'''
 
-    # Current metrics
-    current_loss = loss_vals[-1]
-    current_sync = sync_vals[-1]
-    left_arm_mae  = round(0.021 + random.gauss(0, 0.003), 4)
-    right_arm_mae = round(0.019 + random.gauss(0, 0.003), 4)
-    coord_score   = round(current_sync * 100, 1)
-    grad_norm     = round(0.18 + random.gauss(0, 0.02), 4)
-    lr_current    = round(1e-4 * math.exp(-2001 / 5000), 6)
-    epoch         = 14
-    batch_size    = 64
-    gpu_util      = random.randint(87, 96)
+def build_sync_svg():
+    W, H, PAD = 560, 200, 32
+    line = _polyline(STEPS, SYNC_METRIC, W, H, PAD, "#a78bfa")
+    return f'''
+<svg width="{W}" height="{H}" xmlns="http://www.w3.org/2000/svg" style="background:#1e293b;border-radius:8px">
+  <text x="{W//2}" y="18" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="monospace">Arm Synchronisation Metric (0→1) vs Training Steps</text>
+  {line}
+  <text x="{W-PAD}" y="{H//2}" fill="#a78bfa" font-size="9" font-family="monospace" text-anchor="end">0.91 peak</text>
+</svg>'''
 
-    # Task breakdown (bar chart)
-    tasks = ["Pick-Place", "Handover", "Peg-Insert", "Fold-Cloth", "Wipe-Table"]
-    task_sr = [round(0.82 + random.gauss(0, 0.05), 2) for _ in tasks]
-    task_sr = [max(0.0, min(1.0, v)) for v in task_sr]
-
-    bar_svg_w, bar_svg_h = 600, 160
-    bar_pad = 40
-    bar_w = (bar_svg_w - 2 * bar_pad) / len(tasks) - 8
-
-    bars_html = ""
-    colors = ["#38bdf8", "#818cf8", "#34d399", "#fb923c", "#f472b6"]
-    for i, (t, sr) in enumerate(zip(tasks, task_sr)):
-        bx = bar_pad + i * ((bar_svg_w - 2 * bar_pad) / len(tasks))
-        bh = sr * (bar_svg_h - 2 * bar_pad)
-        by = bar_pad + (bar_svg_h - 2 * bar_pad) - bh
-        bars_html += f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{colors[i]}" rx="3"/>'
-        bars_html += f'<text x="{bx + bar_w/2:.1f}" y="{by - 4:.1f}" fill="#e2e8f0" font-size="11" text-anchor="middle">{sr:.0%}</text>'
-        bars_html += f'<text x="{bx + bar_w/2:.1f}" y="{bar_svg_h - 6:.1f}" fill="#94a3b8" font-size="10" text-anchor="middle">{t}</text>'
-
-    return f"""<!DOCTYPE html><html><head><title>Bimanual Policy Trainer</title>
+def html_page():
+    sr_svg   = build_sr_svg()
+    sync_svg = build_sync_svg()
+    latest_sr   = SR_WITH[-1]
+    latest_sync = SYNC_METRIC[-1]
+    gap = round(0.55 - latest_sr, 3)
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{APP_TITLE}</title>
 <style>
-body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif}}
-h1{{color:#C74634;margin:0;padding:20px 24px 4px;font-size:1.6rem}}
-.subtitle{{color:#94a3b8;padding:0 24px 16px;font-size:0.9rem}}
-.grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 16px 16px}}
-.card{{background:#1e293b;padding:18px 20px;border-radius:10px;border:1px solid #334155}}
-.card h2{{color:#38bdf8;margin:0 0 10px;font-size:0.95rem;text-transform:uppercase;letter-spacing:.05em}}
-.kpi{{font-size:2rem;font-weight:700;color:#f1f5f9}}
-.kpi-sub{{font-size:0.78rem;color:#64748b;margin-top:2px}}
-.wide{{grid-column:span 2}}
-.full{{grid-column:span 4}}
-svg text{{font-family:system-ui,sans-serif}}
-.tag{{display:inline-block;background:#0f3460;color:#38bdf8;border-radius:4px;padding:2px 8px;font-size:0.78rem;margin-right:6px}}
-</style></head>
+  body{{margin:0;padding:24px;background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}}
+  h1{{color:#C74634;margin:0 0 4px}}
+  h2{{color:#38bdf8;font-size:1rem;margin:20px 0 8px}}
+  .card{{background:#1e293b;border-radius:10px;padding:20px;margin-bottom:20px}}
+  .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}}
+  .kpi{{background:#1e293b;border-radius:8px;padding:16px;text-align:center}}
+  .kpi .val{{font-size:2rem;font-weight:700;color:#38bdf8}}
+  .kpi .lbl{{font-size:.75rem;color:#94a3b8;margin-top:4px}}
+  .kpi .val.red{{color:#C74634}}
+  .kpi .val.green{{color:#4ade80}}
+  table{{width:100%;border-collapse:collapse;font-size:.85rem}}
+  th{{text-align:left;color:#94a3b8;padding:6px 8px;border-bottom:1px solid #334155}}
+  td{{padding:6px 8px;border-bottom:1px solid #1e293b}}
+  .badge{{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.75rem}}
+  .blue{{background:#0ea5e920;color:#38bdf8}}.red{{background:#C7463420;color:#C74634}}
+  .green{{background:#4ade8020;color:#4ade80}}.purple{{background:#a78bfa20;color:#a78bfa}}
+</style>
+</head>
 <body>
-<h1>Bimanual Policy Trainer</h1>
-<p class="subtitle">GR00T N1.6 — Dual-arm coordination fine-tuning pipeline &nbsp;|&nbsp; Port {PORT}</p>
+<h1>{APP_TITLE}</h1>
+<p style="color:#94a3b8;margin:0 0 20px">Dual-arm GR00T training — shared vision encoder + per-arm action decoder + coordination reward</p>
 
 <div class="grid">
-  <div class="card">
-    <h2>Train Loss</h2>
-    <div class="kpi">{current_loss:.4f}</div>
-    <div class="kpi-sub">step 2000 / 2000 &nbsp; epoch {epoch}</div>
-  </div>
-  <div class="card">
-    <h2>Arm Sync Score</h2>
-    <div class="kpi">{coord_score:.1f}%</div>
-    <div class="kpi-sub">left/right temporal alignment</div>
-  </div>
-  <div class="card">
-    <h2>Left Arm MAE</h2>
-    <div class="kpi">{left_arm_mae:.4f}</div>
-    <div class="kpi-sub">joint-space rad error</div>
-  </div>
-  <div class="card">
-    <h2>Right Arm MAE</h2>
-    <div class="kpi">{right_arm_mae:.4f}</div>
-    <div class="kpi-sub">joint-space rad error</div>
-  </div>
-
-  <div class="card wide">
-    <h2>Training Loss Curve</h2>
-    <svg width="{svg_w}" height="{svg_h}" viewBox="0 0 {svg_w} {svg_h}">
-      <line x1="{pad}" y1="{pad}" x2="{pad}" y2="{pad+plot_h}" stroke="#334155" stroke-width="1"/>
-      <line x1="{pad}" y1="{pad+plot_h}" x2="{pad+plot_w}" y2="{pad+plot_h}" stroke="#334155" stroke-width="1"/>
-      <text x="{pad-6}" y="{pad+4}" fill="#64748b" font-size="10" text-anchor="end">{loss_max:.1f}</text>
-      <text x="{pad-6}" y="{pad+plot_h}" fill="#64748b" font-size="10" text-anchor="end">{loss_min:.2f}</text>
-      <text x="{pad}" y="{pad+plot_h+14}" fill="#64748b" font-size="10">0</text>
-      <text x="{pad+plot_w}" y="{pad+plot_h+14}" fill="#64748b" font-size="10" text-anchor="end">2000</text>
-      <polyline points="{loss_pts}" fill="none" stroke="#C74634" stroke-width="2.2" stroke-linejoin="round"/>
-      <circle cx="{lx(len(steps)-1):.1f}" cy="{ly(loss_vals[-1]):.1f}" r="4" fill="#C74634"/>
-    </svg>
-  </div>
-
-  <div class="card wide">
-    <h2>Arm Synchrony Over Training</h2>
-    <svg width="{svg_w}" height="{svg_h}" viewBox="0 0 {svg_w} {svg_h}">
-      <line x1="{pad}" y1="{pad}" x2="{pad}" y2="{pad+plot_h}" stroke="#334155" stroke-width="1"/>
-      <line x1="{pad}" y1="{pad+plot_h}" x2="{pad+plot_w}" y2="{pad+plot_h}" stroke="#334155" stroke-width="1"/>
-      <text x="{pad-6}" y="{pad+4}" fill="#64748b" font-size="10" text-anchor="end">100%</text>
-      <text x="{pad-6}" y="{pad+plot_h}" fill="#64748b" font-size="10" text-anchor="end">50%</text>
-      <polyline points="{sync_pts}" fill="none" stroke="#34d399" stroke-width="2.2" stroke-linejoin="round"/>
-    </svg>
-  </div>
-
-  <div class="card full">
-    <h2>Per-Task Success Rate</h2>
-    <svg width="{bar_svg_w}" height="{bar_svg_h}" viewBox="0 0 {bar_svg_w} {bar_svg_h}">
-      {bars_html}
-    </svg>
-  </div>
-
-  <div class="card">
-    <h2>Gradient Norm</h2>
-    <div class="kpi">{grad_norm:.4f}</div>
-    <div class="kpi-sub">clipped at 1.0</div>
-  </div>
-  <div class="card">
-    <h2>Learning Rate</h2>
-    <div class="kpi" style="font-size:1.4rem">{lr_current:.2e}</div>
-    <div class="kpi-sub">cosine decay</div>
-  </div>
-  <div class="card">
-    <h2>Batch Size</h2>
-    <div class="kpi">{batch_size}</div>
-    <div class="kpi-sub">per GPU &nbsp;×&nbsp; 4 GPUs</div>
-  </div>
-  <div class="card">
-    <h2>GPU Utilization</h2>
-    <div class="kpi">{gpu_util}%</div>
-    <div class="kpi-sub">A100 80GB SXM</div>
-  </div>
-
-  <div class="card full">
-    <h2>Config</h2>
-    <span class="tag">model: GR00T-N1.6</span>
-    <span class="tag">arms: 2 × 7-DoF</span>
-    <span class="tag">chunk_size: 16</span>
-    <span class="tag">obs_horizon: 2</span>
-    <span class="tag">action_dim: 14</span>
-    <span class="tag">dataset: bimanual_1k_demos</span>
-    <span class="tag">DDP: 4×A100</span>
-    <span class="tag">amp: bf16</span>
-  </div>
+  <div class="kpi"><div class="val red">28%</div><div class="lbl">SR without coord reward</div></div>
+  <div class="kpi"><div class="val blue">47%</div><div class="lbl">SR with coord reward</div></div>
+  <div class="kpi"><div class="val green">55%</div><div class="lbl">Target bimanual SR</div></div>
+  <div class="kpi"><div class="val" style="color:#a78bfa">{latest_sync:.2f}</div><div class="lbl">Arm sync metric (latest)</div></div>
+  <div class="kpi"><div class="val" style="color:#fbbf24">{gap:.3f}</div><div class="lbl">Gap to target</div></div>
 </div>
+
+<div class="card">
+  <h2>Bimanual Success Rate vs Training Steps</h2>
+  {sr_svg}
+</div>
+
+<div class="card">
+  <h2>Arm Synchronisation Metric</h2>
+  {sync_svg}
+</div>
+
+<div class="card">
+  <h2>Architecture Summary</h2>
+  <table>
+    <tr><th>Component</th><th>Detail</th><th>Status</th></tr>
+    <tr><td>Vision Encoder</td><td>Shared ViT-L/14 (frozen first 18 layers)</td><td><span class="badge green">active</span></td></tr>
+    <tr><td>Left-Arm Decoder</td><td>8-layer transformer, 512 hidden, chunk=16</td><td><span class="badge blue">training</span></td></tr>
+    <tr><td>Right-Arm Decoder</td><td>8-layer transformer, 512 hidden, chunk=16</td><td><span class="badge blue">training</span></td></tr>
+    <tr><td>Coordination Head</td><td>Cross-attention between arm latents, λ=0.3</td><td><span class="badge blue">training</span></td></tr>
+    <tr><td>Coord Reward Weight</td><td>λ_coord = 0.3 (annealed 0→0.3 over 1k steps)</td><td><span class="badge purple">tuned</span></td></tr>
+    <tr><td>Training Hardware</td><td>4× A100 80 GB (DDP), batch 32 per GPU</td><td><span class="badge green">healthy</span></td></tr>
+  </table>
+</div>
+
+<p style="color:#475569;font-size:.75rem;margin-top:24px">OCI Robot Cloud · {APP_TITLE} · port {PORT}</p>
 </body></html>"""
 
 if USE_FASTAPI:
-    app = FastAPI(title="Bimanual Policy Trainer")
+    app = FastAPI(title=APP_TITLE)
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        return build_html()
+        return HTMLResponse(html_page())
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "port": PORT}
+        return {"status": "ok", "service": APP_TITLE, "port": PORT}
 
     @app.get("/metrics")
     def metrics():
-        random.seed()
         return {
-            "port": PORT,
-            "step": 2000,
-            "train_loss": round(random.uniform(0.09, 0.12), 4),
-            "left_arm_mae": round(random.uniform(0.018, 0.025), 4),
-            "right_arm_mae": round(random.uniform(0.018, 0.025), 4),
-            "sync_score": round(random.uniform(0.88, 0.94), 3),
-            "gpu_util_pct": random.randint(87, 96),
+            "sr_baseline_pct": 28,
+            "sr_with_coord_pct": 47,
+            "sr_target_pct": 55,
+            "latest_sync_metric": SYNC_METRIC[-1],
+            "gap_to_target": round(0.55 - SR_WITH[-1], 3),
+            "training_steps_logged": len(STEPS),
         }
-
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        self.wfile.write(build_html().encode())
-    def log_message(self, *a): pass
+else:
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    class _H(BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = html_page().encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        def log_message(self, *a): pass
 
 if __name__ == "__main__":
     if USE_FASTAPI:
         uvicorn.run(app, host="0.0.0.0", port=PORT)
     else:
-        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+        print(f"FastAPI unavailable — falling back to stdlib HTTPServer on port {PORT}")
+        HTTPServer(("0.0.0.0", PORT), _H).serve_forever()
