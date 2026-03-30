@@ -1,268 +1,232 @@
-#!/usr/bin/env python3
-"""
-sample_efficiency_benchmark.py — Benchmarks policy sample efficiency across training algorithms.
+"""Sample Efficiency Benchmark — FastAPI port 8782"""
+import math, random
+from http.server import HTTPServer, BaseHTTPRequestHandler
+try:
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse
+    import uvicorn
+    USE_FASTAPI = True
+except ImportError:
+    USE_FASTAPI = False
 
-Measures how quickly each algorithm reaches target success rates with increasing
-demo counts. Key metric for selling OCI Robot Cloud: "reach 65% SR with 500 demos,
-not 5000." Produces the data efficiency curve for GTC talk and CoRL paper.
-
-Usage:
-    python src/eval/sample_efficiency_benchmark.py --mock --output /tmp/sample_efficiency.html
-    python src/eval/sample_efficiency_benchmark.py --target-sr 0.65 --max-demos 2000
-"""
-
-import argparse
-import json
-import math
-import random
-import time
-from dataclasses import dataclass
-from pathlib import Path
+PORT = 8782
 
 
-# ── Algorithms ────────────────────────────────────────────────────────────────
+def build_html():
+    random.seed(42)
+    # Generate sample efficiency curves: success rate vs number of demos
+    demo_counts = [10, 25, 50, 100, 200, 500, 1000, 2000]
+    # Simulate three policy types: BC, DAgger, GR00T fine-tuned
+    def sigmoid(x, k=0.004, x0=300):
+        return 1.0 / (1.0 + math.exp(-k * (x - x0)))
 
-@dataclass
-class Algorithm:
-    name: str
-    description: str
-    demo_efficiency: float   # higher = fewer demos needed
-    color: str
+    bc_rates      = [round(sigmoid(d, k=0.007, x0=400) * 100 + random.uniform(-2, 2), 1) for d in demo_counts]
+    dagger_rates  = [round(sigmoid(d, k=0.006, x0=200) * 100 + random.uniform(-2, 2), 1) for d in demo_counts]
+    groot_rates   = [round(sigmoid(d, k=0.009, x0=120) * 100 + random.uniform(-2, 2), 1) for d in demo_counts]
 
+    # SVG chart dimensions
+    W, H = 560, 260
+    pad_l, pad_r, pad_t, pad_b = 55, 20, 20, 45
+    chart_w = W - pad_l - pad_r
+    chart_h = H - pad_t - pad_b
 
-ALGORITHMS = [
-    Algorithm("BC",             "Behavior Cloning (baseline)",             0.40, "#64748b"),
-    Algorithm("BC+DR",          "BC + Domain Randomization",               0.55, "#3b82f6"),
-    Algorithm("DAgger",         "DAgger online imitation",                 0.72, "#22c55e"),
-    Algorithm("Curriculum",     "Curriculum SDG + BC",                     0.65, "#f59e0b"),
-    Algorithm("DAgger+Curr",    "DAgger + Curriculum (best combo)",        0.82, "#C74634"),
-    Algorithm("LoRA+DAgger",    "LoRA fine-tune + DAgger",                 0.78, "#a855f7"),
-]
+    max_demos = math.log10(demo_counts[-1])
+    min_demos = math.log10(demo_counts[0])
 
-DEMO_COUNTS = [50, 100, 200, 300, 500, 750, 1000, 1500, 2000]
+    def x_pos(d):
+        return pad_l + (math.log10(d) - min_demos) / (max_demos - min_demos) * chart_w
 
+    def y_pos(r):
+        return pad_t + chart_h - (r / 100.0) * chart_h
 
-# ── Simulation ─────────────────────────────────────────────────────────────────
+    def polyline(rates, color):
+        pts = " ".join(f"{x_pos(d):.1f},{y_pos(r):.1f}" for d, r in zip(demo_counts, rates))
+        return f'<polyline points="{pts}" fill="none" stroke="{color}" stroke-width="2.5" stroke-linejoin="round"/>'
 
-def sr_at_demos(algo: Algorithm, n_demos: int, seed: int = 42) -> float:
-    rng = random.Random(seed + int(algo.demo_efficiency * 100) + n_demos)
-    # S-curve: SR = max_sr * (1 - exp(-n_demos / half_demos))
-    max_sr = 0.90 * algo.demo_efficiency
-    half_demos = 500 / algo.demo_efficiency   # fewer demos needed for efficient algos
-    sr = max_sr * (1 - math.exp(-n_demos / half_demos))
-    sr = max(0.02, min(max_sr, sr + rng.gauss(0, 0.015)))
-    return round(sr, 3)
-
-
-def compute_demos_to_target(algo: Algorithm, target_sr: float, seed: int = 42) -> int:
-    """Find minimum demos needed to reach target_sr."""
-    for n in DEMO_COUNTS:
-        if sr_at_demos(algo, n, seed) >= target_sr:
-            return n
-    return -1   # never reached
-
-
-def benchmark(target_sr: float = 0.65, seed: int = 42) -> dict:
-    curves = {}
-    for algo in ALGORITHMS:
-        curve = [(n, sr_at_demos(algo, n, seed)) for n in DEMO_COUNTS]
-        demos_to_target = compute_demos_to_target(algo, target_sr, seed)
-        curves[algo.name] = {
-            "description": algo.description,
-            "color": algo.color,
-            "curve": curve,
-            "demos_to_target": demos_to_target,
-            "final_sr": curve[-1][1],
-            "demo_efficiency_score": algo.demo_efficiency,
-        }
-    return curves
-
-
-# ── HTML report ───────────────────────────────────────────────────────────────
-
-def render_html(curves: dict, target_sr: float, max_demos: int) -> str:
-    best_algo = min(
-        ((name, d) for name, d in curves.items() if d["demos_to_target"] > 0),
-        key=lambda x: x[1]["demos_to_target"],
-        default=(list(curves.keys())[0], list(curves.values())[0])
-    )
-    bc_demos = curves["BC"]["demos_to_target"]
-    best_name, best_data = best_algo
-    savings = bc_demos - best_data["demos_to_target"] if bc_demos > 0 and best_data["demos_to_target"] > 0 else 0
-
-    # SVG: all learning curves
-    w, h = 560, 200
-    demo_vals = [n for n in DEMO_COUNTS if n <= max_demos]
-    x_scale = (w - 60) / max(demo_vals[-1], 1)
-    y_scale = (h - 30) / 1.0
-
-    svg = f'<svg width="{w}" height="{h}" style="background:#0f172a;border-radius:8px">'
-    # Target line
-    target_y = h - 10 - target_sr * y_scale
-    svg += (f'<line x1="30" y1="{target_y:.1f}" x2="{w}" y2="{target_y:.1f}" '
-            f'stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5,3"/>')
-    svg += (f'<text x="32" y="{target_y-3:.1f}" fill="#f59e0b" font-size="9">'
-            f'target {target_sr:.0%}</text>')
-    # Axis
-    svg += (f'<line x1="30" y1="{h-10}" x2="{w}" y2="{h-10}" stroke="#334155" stroke-width="1"/>')
-
-    for algo_name, data in curves.items():
-        pts = " ".join(
-            f"{30+n*x_scale:.1f},{h-10-sr*y_scale:.1f}"
-            for n, sr in data["curve"] if n <= max_demos
+    def dots(rates, color):
+        return "".join(
+            f'<circle cx="{x_pos(d):.1f}" cy="{y_pos(r):.1f}" r="4" fill="{color}"/>'
+            for d, r in zip(demo_counts, rates)
         )
-        col = data["color"]
-        svg += (f'<polyline points="{pts}" fill="none" stroke="{col}" '
-                f'stroke-width="2.2" opacity="0.9"/>')
-        # Mark where target is reached
-        if data["demos_to_target"] > 0 and data["demos_to_target"] <= max_demos:
-            cx = 30 + data["demos_to_target"] * x_scale
-            svg += (f'<circle cx="{cx:.1f}" cy="{target_y:.1f}" r="4" fill="{col}"/>')
 
-    # Demo axis labels
-    for n in [100, 500, 1000, 2000]:
-        if n <= max_demos:
-            x = 30 + n * x_scale
-            svg += (f'<text x="{x:.1f}" y="{h-1}" fill="#64748b" font-size="8.5" '
-                    f'text-anchor="middle">{n}</text>')
-    svg += (f'<text x="30" y="{h-1}" fill="#64748b" font-size="8.5">0</text>')
-    svg += '</svg>'
-
-    # SVG: demos-to-target bar chart
-    w2, h2 = 400, 140
-    reachable = [(name, d) for name, d in curves.items() if d["demos_to_target"] > 0]
-    max_demo_bar = max(d["demos_to_target"] for _, d in reachable) if reachable else 1
-
-    svg2 = f'<svg width="{w2}" height="{h2}" style="background:#0f172a;border-radius:8px">'
-    bar_h = (h2 - 20) / max(len(reachable), 1) - 4
-    for i, (name, data) in enumerate(sorted(reachable, key=lambda x: x[1]["demos_to_target"])):
-        y = 10 + i * (bar_h + 4)
-        bw = data["demos_to_target"] / max_demo_bar * (w2 - 130)
-        col = data["color"]
-        svg2 += (f'<rect x="120" y="{y}" width="{bw:.1f}" height="{bar_h:.1f}" '
-                 f'fill="{col}" rx="2" opacity="0.85"/>')
-        svg2 += (f'<text x="118" y="{y+bar_h*0.7:.1f}" fill="#94a3b8" font-size="9.5" '
-                 f'text-anchor="end">{name}</text>')
-        svg2 += (f'<text x="{123+bw:.1f}" y="{y+bar_h*0.7:.1f}" fill="{col}" '
-                 f'font-size="9">{data["demos_to_target"]} demos</text>')
-    svg2 += '</svg>'
-
-    legend = " ".join(
-        f'<span style="color:{d["color"]}">■ {name}</span>'
-        for name, d in curves.items()
+    # X-axis tick labels (log scale)
+    x_ticks = "".join(
+        f'<text x="{x_pos(d):.1f}" y="{pad_t + chart_h + 18}" fill="#94a3b8" font-size="10" text-anchor="middle">{d}</text>'
+        for d in demo_counts
+    )
+    # Y-axis ticks
+    y_ticks = "".join(
+        f'<text x="{pad_l - 8}" y="{y_pos(v):.1f}" fill="#94a3b8" font-size="10" text-anchor="end" dominant-baseline="middle">{v}%</text>'
+        f'<line x1="{pad_l}" y1="{y_pos(v):.1f}" x2="{pad_l + chart_w}" y2="{y_pos(v):.1f}" stroke="#334155" stroke-width="0.5"/>'
+        for v in [0, 20, 40, 60, 80, 100]
     )
 
-    # Table
-    rows = ""
-    for name, data in sorted(curves.items(), key=lambda x: (x[1]["demos_to_target"] if x[1]["demos_to_target"] > 0 else 99999)):
-        tgt_str = (f'{data["demos_to_target"]}' if data["demos_to_target"] > 0
-                   else '<span style="color:#ef4444">never</span>')
-        savings_str = ""
-        if bc_demos > 0 and data["demos_to_target"] > 0:
-            s = bc_demos - data["demos_to_target"]
-            savings_str = f'<span style="color:#22c55e">-{s}</span>' if s > 0 else "—"
-        sr_c = "#22c55e" if data["final_sr"] >= 0.70 else "#f59e0b" if data["final_sr"] >= 0.50 else "#ef4444"
-        rows += f"""<tr>
-          <td style="color:{data['color']}">{name}</td>
-          <td style="color:#94a3b8;font-size:11px">{data['description']}</td>
-          <td style="color:{sr_c}">{data['final_sr']:.0%}</td>
-          <td>{tgt_str}</td>
-          <td>{savings_str}</td>
-          <td>{data['demo_efficiency_score']:.2f}</td>
-        </tr>"""
+    # Area under curve metric (trapezoidal, normalized)
+    def auc(rates):
+        total = 0.0
+        for i in range(len(rates) - 1):
+            total += (rates[i] + rates[i+1]) / 2.0
+        return round(total / (len(rates) - 1), 1)
 
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Sample Efficiency Benchmark</title>
+    bc_auc     = auc(bc_rates)
+    dagger_auc = auc(dagger_rates)
+    groot_auc  = auc(groot_rates)
+
+    # Sample-to-threshold metrics (demos needed to hit 80%)
+    def demos_to_threshold(rates, thresh=80):
+        for d, r in zip(demo_counts, rates):
+            if r >= thresh:
+                return d
+        return ">2000"
+
+    bc_thresh     = demos_to_threshold(bc_rates)
+    dagger_thresh = demos_to_threshold(dagger_rates)
+    groot_thresh  = demos_to_threshold(groot_rates)
+
+    # Learning rate sensitivity bar chart data
+    lrs = [1e-5, 5e-5, 1e-4, 5e-4, 1e-3]
+    lr_perf = [round(45 + 40 * math.exp(-((math.log10(lr) + 3.7) ** 2) / 0.6) + random.uniform(-1, 1), 1) for lr in lrs]
+    lr_labels = ["1e-5", "5e-5", "1e-4", "5e-4", "1e-3"]
+
+    bW, bH = 360, 160
+    bpad_l, bpad_r, bpad_t, bpad_b = 50, 10, 15, 35
+    bchart_w = bW - bpad_l - bpad_r
+    bchart_h = bH - bpad_t - bpad_b
+    bar_w = bchart_w / len(lrs) * 0.6
+
+    max_perf = max(lr_perf)
+    bars = ""
+    for i, (lbl, perf) in enumerate(zip(lr_labels, lr_perf)):
+        bx = bpad_l + (i + 0.5) * (bchart_w / len(lrs)) - bar_w / 2
+        bh = (perf / max_perf) * bchart_h
+        by = bpad_t + bchart_h - bh
+        alpha = 0.5 + 0.5 * (perf / max_perf)
+        fill = f"rgba(56,189,248,{alpha:.2f})"
+        bars += f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{fill}" rx="2"/>'
+        bars += f'<text x="{bx + bar_w/2:.1f}" y="{by - 4:.1f}" fill="#e2e8f0" font-size="10" text-anchor="middle">{perf}%</text>'
+        bars += f'<text x="{bx + bar_w/2:.1f}" y="{bpad_t + bchart_h + 16}" fill="#94a3b8" font-size="10" text-anchor="middle">{lbl}</text>'
+
+    return f"""<!DOCTYPE html><html><head><title>Sample Efficiency Benchmark</title>
 <style>
-body{{background:#1e293b;color:#e2e8f0;font-family:monospace;margin:0;padding:24px}}
-h1{{color:#C74634;margin:0 0 4px}}
-.meta{{color:#94a3b8;font-size:12px;margin-bottom:20px}}
-.grid{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px}}
-.card{{background:#0f172a;border-radius:8px;padding:14px}}
-.card h3{{color:#94a3b8;font-size:11px;text-transform:uppercase;margin:0 0 4px}}
-.big{{font-size:28px;font-weight:bold}}
-.charts{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}}
-table{{width:100%;border-collapse:collapse;font-size:12px}}
-th{{color:#94a3b8;text-align:left;padding:5px 8px;border-bottom:1px solid #334155}}
-td{{padding:4px 8px;border-bottom:1px solid #1e293b}}
+body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:24px}}
+h1{{color:#C74634;margin:0 0 4px 0;font-size:1.6rem}}
+h2{{color:#38bdf8;font-size:1rem;margin:0 0 12px 0}}
+.grid{{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1100px}}
+.card{{background:#1e293b;padding:20px;border-radius:8px;border:1px solid #334155}}
+.stat{{display:inline-block;background:#0f172a;border-radius:6px;padding:10px 18px;margin:4px}}
+.stat .val{{font-size:1.5rem;font-weight:700;color:#38bdf8}}
+.stat .lbl{{font-size:0.75rem;color:#94a3b8}}
+.legend{{display:flex;gap:16px;margin-bottom:8px;font-size:0.8rem}}
+.leg-item{{display:flex;align-items:center;gap:6px}}
+.leg-dot{{width:12px;height:12px;border-radius:50%}}
 </style></head>
 <body>
 <h1>Sample Efficiency Benchmark</h1>
-<div class="meta">Target: {target_sr:.0%} SR · Max demos: {max_demos} · {len(ALGORITHMS)} algorithms</div>
+<p style="color:#94a3b8;margin:0 0 20px 0">Policy performance vs. number of demonstrations — OCI Robot Cloud | port {PORT}</p>
+
+<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  <div class="stat"><div class="val">{groot_rates[-1]}%</div><div class="lbl">GR00T @ 2000 demos</div></div>
+  <div class="stat"><div class="val">{groot_thresh}</div><div class="lbl">GR00T demos to 80%</div></div>
+  <div class="stat"><div class="val">{groot_auc}%</div><div class="lbl">GR00T Avg AUC</div></div>
+  <div class="stat"><div class="val">{round((groot_auc - bc_auc) / bc_auc * 100, 1)}%</div><div class="lbl">GR00T vs BC lift</div></div>
+</div>
 
 <div class="grid">
-  <div class="card"><h3>Most Efficient</h3>
-    <div class="big" style="color:{best_data['color']}">{best_name}</div>
-    <div style="color:#64748b;font-size:12px">{best_data['demos_to_target']} demos to {target_sr:.0%} SR</div></div>
-  <div class="card"><h3>vs BC Baseline</h3>
-    <div class="big" style="color:#22c55e">-{savings}</div>
-    <div style="color:#64748b;font-size:12px">fewer demos needed</div></div>
-  <div class="card"><h3>Best Final SR</h3>
-    <div class="big" style="color:#22c55e">
-      {max(d['final_sr'] for d in curves.values()):.0%}
+  <div class="card">
+    <h2>Success Rate vs. Demo Count (log scale)</h2>
+    <div class="legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#C74634"></div>BC</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#facc15"></div>DAgger</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#38bdf8"></div>GR00T FT</div>
     </div>
-    <div style="color:#64748b;font-size:12px">at {max_demos} demos</div></div>
-</div>
-
-<div class="charts">
-  <div>
-    <h3 style="color:#94a3b8;font-size:11px;text-transform:uppercase;margin-bottom:8px">Learning Curves (demos vs SR)</h3>
-    <div style="font-size:10px;margin-bottom:6px">{legend}</div>
-    {svg}
-    <div style="color:#64748b;font-size:10px;margin-top:4px">● marks where each algo reaches target {target_sr:.0%}</div>
+    <svg width="{W}" height="{H}" style="overflow:visible">
+      {y_ticks}
+      {x_ticks}
+      <text x="{pad_l + chart_w/2}" y="{H - 4}" fill="#94a3b8" font-size="11" text-anchor="middle"># Demonstrations</text>
+      {polyline(bc_rates, '#C74634')}
+      {dots(bc_rates, '#C74634')}
+      {polyline(dagger_rates, '#facc15')}
+      {dots(dagger_rates, '#facc15')}
+      {polyline(groot_rates, '#38bdf8')}
+      {dots(groot_rates, '#38bdf8')}
+      <!-- 80% threshold line -->
+      <line x1="{pad_l}" y1="{y_pos(80):.1f}" x2="{pad_l + chart_w}" y2="{y_pos(80):.1f}" stroke="#4ade80" stroke-width="1" stroke-dasharray="6,3"/>
+      <text x="{pad_l + chart_w - 2}" y="{y_pos(80) - 4:.1f}" fill="#4ade80" font-size="10" text-anchor="end">80% target</text>
+    </svg>
   </div>
-  <div>
-    <h3 style="color:#94a3b8;font-size:11px;text-transform:uppercase;margin-bottom:8px">Demos Required to Reach {target_sr:.0%} SR</h3>
-    {svg2}
+
+  <div class="card">
+    <h2>Learning Rate Sensitivity @ 200 demos</h2>
+    <svg width="{bW}" height="{bH}" style="overflow:visible">
+      {bars}
+      <text x="{bpad_l + bchart_w/2}" y="{bH - 4}" fill="#94a3b8" font-size="11" text-anchor="middle">Learning Rate</text>
+    </svg>
+
+    <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:0.82rem">
+      <thead><tr>
+        <th style="text-align:left;color:#94a3b8;padding:4px 8px">Policy</th>
+        <th style="text-align:right;color:#94a3b8;padding:4px 8px">AUC Avg</th>
+        <th style="text-align:right;color:#94a3b8;padding:4px 8px">Demos→80%</th>
+        <th style="text-align:right;color:#94a3b8;padding:4px 8px">Peak@2k</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:4px 8px;color:#C74634">BC</td>
+            <td style="text-align:right;padding:4px 8px">{bc_auc}%</td>
+            <td style="text-align:right;padding:4px 8px">{bc_thresh}</td>
+            <td style="text-align:right;padding:4px 8px">{bc_rates[-1]}%</td></tr>
+        <tr><td style="padding:4px 8px;color:#facc15">DAgger</td>
+            <td style="text-align:right;padding:4px 8px">{dagger_auc}%</td>
+            <td style="text-align:right;padding:4px 8px">{dagger_thresh}</td>
+            <td style="text-align:right;padding:4px 8px">{dagger_rates[-1]}%</td></tr>
+        <tr style="background:#0f172a"><td style="padding:4px 8px;color:#38bdf8">GR00T FT</td>
+            <td style="text-align:right;padding:4px 8px">{groot_auc}%</td>
+            <td style="text-align:right;padding:4px 8px">{groot_thresh}</td>
+            <td style="text-align:right;padding:4px 8px">{groot_rates[-1]}%</td></tr>
+      </tbody>
+    </table>
   </div>
-</div>
-
-<table>
-  <tr><th>Algorithm</th><th>Description</th><th>Final SR ({max_demos} demos)</th>
-      <th>Demos to {target_sr:.0%}</th><th>vs BC</th><th>Efficiency Score</th></tr>
-  {rows}
-</table>
-
-<div style="color:#64748b;font-size:11px;margin-top:16px">
-  Key finding: <strong>DAgger+Curriculum</strong> reaches {target_sr:.0%} SR with {best_data['demos_to_target']} demos
-  vs {bc_demos if bc_demos > 0 else "never"} for BC — {savings}× demo reduction.<br>
-  OCI Robot Cloud value prop: same {target_sr:.0%} SR in {best_data['demos_to_target']} demos × $0.43/run = practical for robotics startups.
 </div>
 </body></html>"""
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
+if USE_FASTAPI:
+    app = FastAPI(title="Sample Efficiency Benchmark")
 
-def main():
-    parser = argparse.ArgumentParser(description="Sample efficiency benchmark")
-    parser.add_argument("--mock",       action="store_true", default=True)
-    parser.add_argument("--target-sr",  type=float, default=0.65)
-    parser.add_argument("--max-demos",  type=int, default=2000)
-    parser.add_argument("--output",     default="/tmp/sample_efficiency_benchmark.html")
-    parser.add_argument("--seed",       type=int, default=42)
-    args = parser.parse_args()
+    @app.get("/", response_class=HTMLResponse)
+    def index():
+        return build_html()
 
-    print(f"[sample-eff] Benchmarking {len(ALGORITHMS)} algorithms → target SR={args.target_sr:.0%}")
-    t0 = time.time()
+    @app.get("/health")
+    def health():
+        return {"status": "ok", "port": PORT}
 
-    curves = benchmark(args.target_sr, args.seed)
+    @app.get("/metrics")
+    def metrics():
+        random.seed(42)
+        demo_counts = [10, 25, 50, 100, 200, 500, 1000, 2000]
+        def sigmoid(x, k=0.004, x0=300):
+            return 1.0 / (1.0 + math.exp(-k * (x - x0)))
+        return {
+            "demo_counts": demo_counts,
+            "bc_rates":     [round(sigmoid(d, k=0.007, x0=400) * 100, 1) for d in demo_counts],
+            "dagger_rates": [round(sigmoid(d, k=0.006, x0=200) * 100, 1) for d in demo_counts],
+            "groot_rates":  [round(sigmoid(d, k=0.009, x0=120) * 100, 1) for d in demo_counts],
+        }
 
-    print(f"\n  {'Algorithm':<20} {'Final SR':>9}  {'Demos to {:.0%}'.format(args.target_sr):>14}")
-    print(f"  {'─'*20} {'─'*9}  {'─'*14}")
-    for name, data in sorted(curves.items(), key=lambda x: x[1]["demos_to_target"] if x[1]["demos_to_target"] > 0 else 9999):
-        tgt = str(data["demos_to_target"]) if data["demos_to_target"] > 0 else "never"
-        print(f"  {name:<20} {data['final_sr']:>8.0%}  {tgt:>14}")
 
-    print(f"\n  [{time.time()-t0:.1f}s]\n")
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        self.wfile.write(build_html().encode())
 
-    html = render_html(curves, args.target_sr, args.max_demos)
-    Path(args.output).write_text(html)
-    print(f"  HTML → {args.output}")
-
-    json_out = Path(args.output).with_suffix(".json")
-    json_out.write_text(json.dumps(curves, indent=2))
-    print(f"  JSON → {json_out}")
+    def log_message(self, *a):
+        pass
 
 
 if __name__ == "__main__":
-    main()
+    if USE_FASTAPI:
+        uvicorn.run(app, host="0.0.0.0", port=PORT)
+    else:
+        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
