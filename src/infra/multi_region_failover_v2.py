@@ -12,91 +12,94 @@ except ImportError:
 
 PORT = 8387
 
+REGIONS = [
+    {"name": "Ashburn",  "role": "PRIMARY",   "color": "#22c55e", "health": 98.7, "load": 847,  "uptime": 99.94, "lag": None},
+    {"name": "Phoenix",  "role": "SECONDARY",  "color": "#38bdf8", "health": 91.2, "load": 0,    "uptime": 99.97, "lag": 8.2},
+    {"name": "Frankfurt","role": "DR",         "color": "#94a3b8", "health": 94.1, "load": 0,    "uptime": 99.91, "lag": 31.4},
+]
+
+SCENARIOS = [
+    {"name": "planned_maintenance", "rto": 45,  "rpo": 0},
+    {"name": "region_outage",       "rto": 18,  "rpo": 0},
+    {"name": "network_partition",   "rto": 12,  "rpo": 0},
+    {"name": "full_failover",       "rto": 28,  "rpo": 0},
+]
+
+DRILLS = [
+    {"date": "Apr 1",  "result": "PASSED", "actual_rto": 12},
+    {"date": "Mar 15", "result": "PASSED", "actual_rto": 18},
+    {"date": "Mar 1",  "result": "PASSED", "actual_rto": 22},
+]
+
 def build_html():
-    regions = [
-        ("Ashburn","PRIMARY","HEALTHY",91,226,99.97),
-        ("Phoenix","SECONDARY","HEALTHY",62,241,99.94),
-        ("Frankfurt","DR","HEALTHY",71,258,99.91),
-    ]
-    drills = [
-        ("2026-02-14","Ashburn→Phoenix","15s","PASS","14.8s RTO"),
-        ("2026-03-01","Ashburn→Frankfurt","15s","PASS","16.2s RTO"),
-        ("2026-03-22","Full multi-region split","15s","PASS","18.1s avg"),
-    ]
+    # --- Topology SVG ---
+    tw, th = 700, 220
+    cx = [120, 350, 580]
+    cy = [110, 110, 110]
+    node_r = 48
+    topo = f'<rect width="{tw}" height="{th}" rx="8" fill="#0f172a"/>'
+    # Arrows
+    for src, dst, label in [(0, 1, "primary→secondary"), (1, 2, "secondary→DR")]:
+        x1 = cx[src] + node_r
+        x2 = cx[dst] - node_r
+        ymid = cy[src]
+        topo += f'<line x1="{x1}" y1="{ymid}" x2="{x2}" y2="{ymid}" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>'
+    topo += '<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#334155"/></marker></defs>'
+    # Nodes
+    for i, r in enumerate(REGIONS):
+        topo += f'<circle cx="{cx[i]}" cy="{cy[i]}" r="{node_r}" fill="#1e293b" stroke="{r["color"]}" stroke-width="3"/>'
+        topo += f'<text x="{cx[i]}" y="{cy[i]-14}" text-anchor="middle" fill="{r["color"]}" font-size="13" font-family="monospace" font-weight="bold">{r["name"]}</text>'
+        topo += f'<text x="{cx[i]}" y="{cy[i]+2}" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="monospace">{r["role"]}</text>'
+        topo += f'<text x="{cx[i]}" y="{cy[i]+16}" text-anchor="middle" fill="#f1f5f9" font-size="11" font-family="monospace">{r["health"]}%</text>'
+        lag_str = f'lag {r["lag"]}m' if r["lag"] else f'{r["load"]} req/hr'
+        topo += f'<text x="{cx[i]}" y="{cy[i]+30}" text-anchor="middle" fill="#64748b" font-size="10" font-family="monospace">{lag_str}</text>'
+    svg_topo = f'<svg width="{tw}" height="{th}">{topo}</svg>'
 
-    # topology SVG
-    sw, sh = 600, 220
-    topo = f'<svg width="{sw}" height="{sh}">'
-    positions = {"Ashburn":(120,110),"Phoenix":(300,60),"Frankfurt":(480,110)}
-    color_map = {"HEALTHY":"#22c55e","DEGRADED":"#f59e0b","DOWN":"#ef4444"}
-    # edges
-    for (r1,p1), (r2,p2) in [(("Ashburn",positions["Ashburn"]),("Phoenix",positions["Phoenix"])),
-                               (("Ashburn",positions["Ashburn"]),("Frankfurt",positions["Frankfurt"])),
-                               (("Phoenix",positions["Phoenix"]),("Frankfurt",positions["Frankfurt"]))]:
-        topo += f'<line x1="{p1[0]}" y1="{p1[1]}" x2="{p2[0]}" y2="{p2[1]}" stroke="#475569" stroke-width="2" stroke-dasharray="6,3"/>'
-    for name, role, health, util, lat, uptime in regions:
-        x, y = positions[name]
-        col = color_map[health]
-        topo += f'<circle cx="{x}" cy="{y}" r="38" fill="#1e293b" stroke="{col}" stroke-width="3"/>'
-        topo += f'<text x="{x}" y="{y-12}" text-anchor="middle" fill="{col}" font-size="11" font-weight="bold">{name}</text>'
-        topo += f'<text x="{x}" y="{y+2}" text-anchor="middle" fill="#e2e8f0" font-size="10">{role}</text>'
-        topo += f'<text x="{x}" y="{y+16}" text-anchor="middle" fill="#94a3b8" font-size="9">{lat}ms p50</text>'
-        topo += f'<text x="{x}" y="{y+28}" text-anchor="middle" fill="#94a3b8" font-size="9">{uptime}%</text>'
-    # failover arrows
-    topo += '<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#C74634"/></marker></defs>'
-    topo += f'<line x1="162" y1="95" x2="265" y2="75" stroke="#C74634" stroke-width="2" marker-end="url(#arr)" opacity="0.6"/>'
-    topo += f'<text x="210" y="72" fill="#C74634" font-size="9">failover</text>'
-    topo += '</svg>'
+    # --- RTO/RPO bar chart SVG ---
+    bw, bh = 700, 240
+    bar_group_w = 140
+    bar_w = 40
+    max_rto = 50
+    chart_h = 160
+    y_base = 190
+    bars = f'<rect width="{bw}" height="{bh}" rx="8" fill="#0f172a"/>'
+    bars += f'<text x="{bw//2}" y="20" text-anchor="middle" fill="#94a3b8" font-size="12" font-family="monospace">RTO (seconds) by Failover Scenario</text>'
+    for i, sc in enumerate(SCENARIOS):
+        gx = 40 + i * bar_group_w
+        rto_h = int(chart_h * sc["rto"] / max_rto)
+        bars += f'<rect x="{gx}" y="{y_base - rto_h}" width="{bar_w}" height="{rto_h}" rx="3" fill="#C74634"/>'
+        bars += f'<text x="{gx + bar_w//2}" y="{y_base - rto_h - 5}" text-anchor="middle" fill="#f1f5f9" font-size="11" font-family="monospace">{sc["rto"]}s</text>'
+        label = sc["name"].replace("_", "\n")
+        bars += f'<text x="{gx + bar_w//2}" y="{y_base + 16}" text-anchor="middle" fill="#94a3b8" font-size="10" font-family="monospace">{sc["name"].split("_")[0]}</text>'
+    bars += f'<line x1="30" y1="{y_base}" x2="{bw-20}" y2="{y_base}" stroke="#334155" stroke-width="1"/>'
+    svg_bars = f'<svg width="{bw}" height="{bh}">{bars}</svg>'
 
-    # RTO bar SVG
-    scenarios = [("primary→secondary",14.8),("primary→DR",16.2),("split",18.1),("full_reset",52.3)]
-    bar_svg = f'<svg width="500" height="130">'
-    for i, (s, rto) in enumerate(scenarios):
-        x = 140
-        y = 10 + i * 27
-        w = int(rto * 5)
-        col = "#22c55e" if rto < 30 else "#f59e0b"
-        bar_svg += f'<rect x="{x}" y="{y}" width="{w}" height="18" fill="{col}" rx="3"/>'
-        bar_svg += f'<text x="135" y="{y+13}" text-anchor="end" fill="#e2e8f0" font-size="10">{s[:14]}</text>'
-        bar_svg += f'<text x="{x+w+4}" y="{y+13}" fill="{col}" font-size="10">{rto}s</text>'
-    bar_svg += '<line x1="215" y1="5" x2="215" y2="120" stroke="#38bdf8" stroke-dasharray="4,3" stroke-width="1"/>'
-    bar_svg += '<text x="218" y="120" fill="#38bdf8" font-size="9">15s target</text>'
-    bar_svg += '</svg>'
+    # --- Drill table rows ---
+    drill_rows = ""
+    for d in DRILLS:
+        color = "#22c55e" if d["result"] == "PASSED" else "#ef4444"
+        drill_rows += f'<tr><td>{d["date"]}</td><td style="color:{color}">{d["result"]}</td><td>{d["actual_rto"]}s</td></tr>'
 
-    drill_rows = "".join([f'<tr><td>{d}</td><td>{sc}</td><td>{t}</td>'
-                          f'<td style="color:#22c55e">{res}</td><td>{notes}</td></tr>'
-                          for d, sc, t, res, notes in drills])
-
-    return f"""<!DOCTYPE html>
-<html><head><title>Multi-Region Failover v2 — Port {PORT}</title>
-<style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:20px}}
-h1{{color:#C74634}}h2{{color:#38bdf8;font-size:14px}}
-.card{{background:#1e293b;border-radius:8px;padding:16px;margin:12px 0}}
-.stat{{display:inline-block;margin:0 20px;text-align:center}}
-.big{{font-size:28px;font-weight:bold;color:#C74634}}
-table{{width:100%;border-collapse:collapse}}th,td{{padding:6px 10px;border-bottom:1px solid #334155}}th{{color:#94a3b8}}
+    return f"""<!DOCTYPE html><html><head><title>Multi-Region Failover v2</title>
+<style>body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:monospace;padding:24px}}
+h1{{color:#C74634;margin-bottom:4px}}h2{{color:#38bdf8;font-size:14px;margin:18px 0 8px}}
+.stats{{display:flex;gap:20px;margin:16px 0;flex-wrap:wrap}}.stat{{background:#1e293b;border-radius:8px;padding:12px 18px}}
+.stat .val{{font-size:20px;font-weight:bold;color:#38bdf8}}.stat .lbl{{font-size:11px;color:#94a3b8}}
+table{{border-collapse:collapse;margin-top:8px}}td,th{{padding:8px 18px;border:1px solid #334155;font-size:13px}}
+th{{background:#1e293b;color:#94a3b8}}
 </style></head><body>
-<h1>Multi-Region Failover v2 — Port {PORT}</h1>
-<div class="card">
-  <div class="stat"><div class="big">15s</div><div>RTO Target</div></div>
-  <div class="stat"><div class="big" style="color:#22c55e">3/3</div><div>Drills Passed</div></div>
-  <div class="stat"><div class="big" style="color:#22c55e">99.97%</div><div>Primary Uptime</div></div>
-  <div class="stat"><div class="big" style="color:#38bdf8">0</div><div>Unplanned Failovers</div></div>
+<h1>Multi-Region Failover v2</h1>
+<p style="color:#94a3b8;font-size:13px">Automated failover management across 3 OCI regions — Port {PORT}</p>
+<div class="stats">
+  <div class="stat"><div class="val">15s</div><div class="lbl">Automated Failover RTO</div></div>
+  <div class="stat"><div class="val">0s</div><div class="lbl">RPO (sync replication)</div></div>
+  <div class="stat"><div class="val">3/3</div><div class="lbl">Drills PASSED</div></div>
+  <div class="stat"><div class="val">99.97%</div><div class="lbl">Uptime Target</div></div>
 </div>
-<div class="card">
-  <h2>Region Topology</h2>
-  {topo}
-</div>
-<div class="card">
-  <h2>RTO by Scenario</h2>
-  {bar_svg}
-</div>
-<div class="card">
-  <h2>Failover Drill History</h2>
-  <table><tr><th>Date</th><th>Scenario</th><th>Target</th><th>Result</th><th>Notes</th></tr>
-  {drill_rows}
-  </table>
-</div>
+<h2>Region Topology</h2>{svg_topo}
+<h2>RTO by Scenario</h2>{svg_bars}
+<h2>Failover Drill History</h2>
+<table><tr><th>Date</th><th>Result</th><th>Actual RTO</th></tr>{drill_rows}</table>
 </body></html>"""
 
 if USE_FASTAPI:
