@@ -1,298 +1,213 @@
-"""NVIDIA Partnership Tracker — FastAPI service on port 8308.
-
-Tracks NVIDIA partnership milestones, co-engineering asks, and
-ecosystem integration progress for OCI Robot Cloud.
-"""
-
+"""NVIDIA Partnership Tracker — FastAPI port 8785"""
+import math, random
+from http.server import HTTPServer, BaseHTTPRequestHandler
 try:
     from fastapi import FastAPI
     from fastapi.responses import HTMLResponse
     import uvicorn
-    _HAS_FASTAPI = True
+    USE_FASTAPI = True
 except ImportError:
-    _HAS_FASTAPI = False
+    USE_FASTAPI = False
 
-import random
-import math
-import json
-from datetime import datetime
+PORT = 8785
 
-# ---------------------------------------------------------------------------
-# Mock data
-# ---------------------------------------------------------------------------
+def build_html():
+    random.seed(99)
 
-MILESTONES = [
-    {"id": "Greg_Pavlik_intro",         "status": "IN_PROGRESS", "pct": 40,  "start": "2026-01", "end": "2026-04", "owner": "Jun Qian",   "revenue_k": 0,    "blocker": "Oracle exec path pending"},
-    {"id": "Isaac_Sim_optimization",    "status": "DONE",        "pct": 100, "start": "2025-10", "end": "2026-02", "owner": "Eng Team",  "revenue_k": 120,  "blocker": None},
-    {"id": "Cosmos_weights_access",     "status": "PLANNED",     "pct": 10,  "start": "2026-04", "end": "2026-07", "owner": "Jun Qian",   "revenue_k": 200,  "blocker": "NVIDIA NDA required"},
-    {"id": "GR00T_co_engineering",      "status": "BLOCKED",     "pct": 5,   "start": "2026-05", "end": "2026-10", "owner": "TBD",        "revenue_k": 500,  "blocker": "Need intro via Greg Pavlik"},
-    {"id": "NVIDIA_partner_program",    "status": "IN_PROGRESS", "pct": 60,  "start": "2026-01", "end": "2026-05", "owner": "BD Team",   "revenue_k": 80,   "blocker": None},
-    {"id": "GTC_2027_talk",             "status": "IN_PROGRESS", "pct": 30,  "start": "2026-06", "end": "2027-03", "owner": "Jun Qian",   "revenue_k": 0,    "blocker": "Proposal drafted; CFP not open"},
-    {"id": "joint_eval_suite",          "status": "PLANNED",     "pct": 0,   "start": "2026-08", "end": "2026-12", "owner": "Eng Team",  "revenue_k": 150,  "blocker": "Depends on GR00T co-eng"},
-    {"id": "preferred_cloud_agreement", "status": "PLANNED",     "pct": 0,   "start": "2027-01", "end": "2027-06", "owner": "VP Sales",  "revenue_k": 2000, "blocker": "All prior milestones must complete"},
-]
-
-ECO_DIMENSIONS = [
-    {"name": "Isaac_Sim",   "current": 89, "target": 95},
-    {"name": "Cosmos",      "current": 15, "target": 80},
-    {"name": "GR00T_N1.6", "current": 72, "target": 90},
-    {"name": "Jetson",      "current": 65, "target": 85},
-    {"name": "Triton",      "current": 78, "target": 90},
-    {"name": "Omniverse",   "current": 30, "target": 75},
-]
-
-# ---------------------------------------------------------------------------
-# Helper — derived metrics
-# ---------------------------------------------------------------------------
-
-def _metrics():
-    done = sum(1 for m in MILESTONES if m["status"] == "DONE")
-    blocked = sum(1 for m in MILESTONES if m["status"] == "BLOCKED")
-    total_revenue = sum(m["revenue_k"] for m in MILESTONES)
-    completed_revenue = sum(m["revenue_k"] for m in MILESTONES if m["status"] == "DONE")
-    avg_progress = sum(m["pct"] for m in MILESTONES) / len(MILESTONES)
-    eco_score = sum(d["current"] for d in ECO_DIMENSIONS) / len(ECO_DIMENSIONS)
-    return {
-        "milestones_done": done,
-        "milestones_total": len(MILESTONES),
-        "blocked_count": blocked,
-        "avg_progress_pct": round(avg_progress, 1),
-        "total_revenue_potential_k": total_revenue,
-        "completed_revenue_k": completed_revenue,
-        "integration_depth_score": round(eco_score, 1),
-    }
-
-# ---------------------------------------------------------------------------
-# SVG generators
-# ---------------------------------------------------------------------------
-
-STATUS_COLOR = {
-    "DONE": "#22c55e",
-    "IN_PROGRESS": "#38bdf8",
-    "PLANNED": "#94a3b8",
-    "BLOCKED": "#ef4444",
-}
-
-
-def _gantt_svg() -> str:
-    """Gantt-style milestone progress SVG."""
-    W, H = 740, 320
-    row_h = 34
-    label_w = 220
-    bar_area = W - label_w - 20
-    # date range: 2025-10 to 2027-06  = 20 months
-    MONTHS = 20
-    month_w = bar_area / MONTHS
-
-    def month_idx(s: str) -> float:
-        y, m = map(int, s.split("-"))
-        return (y - 2025) * 12 + (m - 10)
-
-    lines = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
-        f'<rect width="{W}" height="{H}" fill="#1e293b" rx="8"/>',
-        # title
-        f'<text x="{W//2}" y="22" text-anchor="middle" fill="#f1f5f9" font-size="13" font-family="monospace" font-weight="bold">Partnership Milestone Gantt</text>',
+    # Partnership milestones with progress
+    milestones = [
+        {"name": "Isaac Sim Integration", "owner": "Robotics Infra", "status": "DONE", "progress": 100, "date": "2026-01-15"},
+        {"name": "GR00T N1.6 Deployment", "owner": "ML Platform", "status": "DONE", "progress": 100, "date": "2026-02-03"},
+        {"name": "Cosmos World Model API", "owner": "AI Research", "status": "DONE", "progress": 100, "date": "2026-02-28"},
+        {"name": "Joint Go-To-Market Plan", "owner": "BD", "status": "IN PROGRESS", "progress": 72, "date": "2026-04-10"},
+        {"name": "OCI x DGX Cloud Co-Sell", "owner": "Sales", "status": "IN PROGRESS", "progress": 55, "date": "2026-05-01"},
+        {"name": "NIM Microservices on OCI", "owner": "Partnerships", "status": "IN PROGRESS", "progress": 38, "date": "2026-05-20"},
+        {"name": "Joint Reference Architecture", "owner": "Solutions", "status": "PLANNED", "progress": 10, "date": "2026-06-30"},
+        {"name": "AI World Demo Co-Presentation", "owner": "Marketing", "status": "PLANNED", "progress": 5, "date": "2026-07-15"},
     ]
-    # today marker  (2026-03 = idx 17)
-    today_idx = month_idx("2026-03")
-    today_x = label_w + today_idx * month_w
-    lines.append(f'<line x1="{today_x:.1f}" y1="30" x2="{today_x:.1f}" y2="{H-10}" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="4,3"/>')
-    lines.append(f'<text x="{today_x+3:.1f}" y="42" fill="#fbbf24" font-size="9" font-family="monospace">TODAY</text>')
 
-    for i, ms in enumerate(MILESTONES):
-        y_top = 40 + i * row_h
-        cy = y_top + row_h // 2
-        # label
-        label = ms["id"].replace("_", " ")
-        lines.append(f'<text x="{label_w - 6}" y="{cy + 4}" text-anchor="end" fill="#cbd5e1" font-size="9" font-family="monospace">{label}</text>')
-        # bar background
-        s_idx = month_idx(ms["start"])
-        e_idx = month_idx(ms["end"])
-        bx = label_w + s_idx * month_w
-        bw = max(4, (e_idx - s_idx) * month_w)
-        lines.append(f'<rect x="{bx:.1f}" y="{y_top+4}" width="{bw:.1f}" height="{row_h-10}" fill="#334155" rx="3"/>')
-        # progress fill
-        fill_w = bw * ms["pct"] / 100
-        color = STATUS_COLOR.get(ms["status"], "#94a3b8")
-        lines.append(f'<rect x="{bx:.1f}" y="{y_top+4}" width="{fill_w:.1f}" height="{row_h-10}" fill="{color}" rx="3" opacity="0.85"/>')
-        # pct label
-        lines.append(f'<text x="{bx + fill_w + 4:.1f}" y="{cy+4}" fill="{color}" font-size="9" font-family="monospace">{ms["pct"]}%</text>')
+    # Engagement activity over 8 weeks (meetings, emails, events)
+    weeks = ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8"]
+    meetings = [random.randint(2, 7) for _ in weeks]
+    emails = [random.randint(5, 20) for _ in weeks]
+    events = [random.randint(0, 2) for _ in weeks]
 
-    # legend
-    lx = label_w
-    for k, c in STATUS_COLOR.items():
-        lines.append(f'<rect x="{lx}" y="{H-18}" width="10" height="10" fill="{c}" rx="2"/>')
-        lines.append(f'<text x="{lx+13}" y="{H-8}" fill="#94a3b8" font-size="9" font-family="monospace">{k}</text>')
-        lx += 110
+    # SVG stacked bar for engagement activity
+    bar_svg_w, bar_svg_h = 440, 130
+    bar_max = 28
+    bar_w = int((bar_svg_w - 40) / len(weeks))
+    bars_svg = ""
+    for idx, (w, m, e, ev) in enumerate(zip(weeks, meetings, emails, events)):
+        total = m + e + ev
+        bx = 20 + idx * bar_w + 3
+        # meetings (green)
+        mh = int((m / bar_max) * (bar_svg_h - 30))
+        eh = int((e / bar_max) * (bar_svg_h - 30))
+        evh = int((ev / bar_max) * (bar_svg_h - 30))
+        by_ev = bar_svg_h - 20 - evh
+        by_e = by_ev - eh
+        by_m = by_e - mh
+        bars_svg += f'<rect x="{bx}" y="{by_ev}" width="{bar_w-6}" height="{evh}" fill="#818cf8" rx="2"/>'
+        bars_svg += f'<rect x="{bx}" y="{by_e}" width="{bar_w-6}" height="{eh}" fill="#38bdf8" rx="2"/>'
+        bars_svg += f'<rect x="{bx}" y="{by_m}" width="{bar_w-6}" height="{mh}" fill="#34d399" rx="2"/>'
+        bars_svg += f'<text x="{bx + (bar_w-6)//2}" y="{bar_svg_h - 5}" fill="#64748b" font-size="9" text-anchor="middle">{w}</text>'
+        bars_svg += f'<text x="{bx + (bar_w-6)//2}" y="{by_m - 2}" fill="#e2e8f0" font-size="8" text-anchor="middle">{total}</text>'
 
-    lines.append('</svg>')
-    return "\n".join(lines)
+    # Radar chart for partnership health dimensions (SVG)
+    dimensions = ["Technical", "Commercial", "GTM", "Exec Alignment", "Field", "Marketing"]
+    scores = [round(random.uniform(0.55, 0.97), 2) for _ in dimensions]
+    radar_cx, radar_cy, radar_r = 140, 110, 85
+    n = len(dimensions)
+    radar_pts = []
+    for i, s in enumerate(scores):
+        angle = math.pi / 2 - 2 * math.pi * i / n
+        x = radar_cx + radar_r * s * math.cos(angle)
+        y = radar_cy - radar_r * s * math.sin(angle)
+        radar_pts.append((round(x, 1), round(y, 1)))
+    polygon_pts = " ".join(f"{x},{y}" for x, y in radar_pts)
+    # Axis lines + labels
+    axes_svg = ""
+    for i, lbl in enumerate(dimensions):
+        angle = math.pi / 2 - 2 * math.pi * i / n
+        ex = round(radar_cx + radar_r * math.cos(angle), 1)
+        ey = round(radar_cy - radar_r * math.sin(angle), 1)
+        lx = round(radar_cx + (radar_r + 18) * math.cos(angle), 1)
+        ly = round(radar_cy - (radar_r + 18) * math.sin(angle), 1)
+        axes_svg += f'<line x1="{radar_cx}" y1="{radar_cy}" x2="{ex}" y2="{ey}" stroke="#334155" stroke-width="1"/>'
+        axes_svg += f'<text x="{lx}" y="{ly}" fill="#94a3b8" font-size="9" text-anchor="middle" dominant-baseline="middle">{lbl}</text>'
+    # Grid circles
+    for r_frac in [0.33, 0.66, 1.0]:
+        axes_svg += f'<circle cx="{radar_cx}" cy="{radar_cy}" r="{int(radar_r * r_frac)}" fill="none" stroke="#1e3a5f" stroke-width="1"/>'
 
+    # KPIs
+    total_meetings = sum(meetings)
+    total_emails = sum(emails)
+    done_count = sum(1 for m in milestones if m["status"] == "DONE")
+    inprog_count = sum(1 for m in milestones if m["status"] == "IN PROGRESS")
+    health_score = round(sum(scores) / len(scores) * 100, 1)
+    pipeline_value = round(random.uniform(4.2, 6.8), 1)
 
-def _radar_svg() -> str:
-    """Ecosystem integration readiness radar SVG."""
-    W, H = 480, 380
-    cx, cy = W // 2, H // 2 + 10
-    R = 140
-    n = len(ECO_DIMENSIONS)
-    angles = [math.pi / 2 + 2 * math.pi * i / n for i in range(n)]
+    # Milestone table rows
+    milestone_rows = ""
+    status_class = {"DONE": "badge-ok", "IN PROGRESS": "badge-inprog", "PLANNED": "badge-plan"}
+    for m in milestones:
+        pct = m["progress"]
+        bar_color = "#34d399" if pct == 100 else "#38bdf8" if pct >= 50 else "#fbbf24"
+        prog_bar = f'<div style="background:#1e293b;border-radius:4px;height:8px;width:100px;display:inline-block;vertical-align:middle"><div style="background:{bar_color};width:{pct}px;height:8px;border-radius:4px"></div></div>'
+        sc = status_class.get(m["status"], "badge-plan")
+        milestone_rows += f"<tr><td>{m['name']}</td><td>{m['owner']}</td><td>{prog_bar} {pct}%</td><td><span class=\"badge {sc}\">{m['status']}</span></td><td style='color:#64748b'>{m['date']}</td></tr>"
 
-    def pt(r, a):
-        return cx + r * math.cos(a), cy - r * math.sin(a)
-
-    lines = [
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">',
-        f'<rect width="{W}" height="{H}" fill="#1e293b" rx="8"/>',
-        f'<text x="{W//2}" y="22" text-anchor="middle" fill="#f1f5f9" font-size="13" font-family="monospace" font-weight="bold">Ecosystem Integration Readiness</text>',
-    ]
-    # grid rings
-    for ring in [25, 50, 75, 100]:
-        pts = " ".join(f"{pt(R * ring/100, a)[0]:.1f},{pt(R * ring/100, a)[1]:.1f}" for a in angles)
-        lines.append(f'<polygon points="{pts}" fill="none" stroke="#334155" stroke-width="1"/>')
-        lines.append(f'<text x="{cx+4}" y="{cy - R*ring/100 - 2:.1f}" fill="#475569" font-size="8" font-family="monospace">{ring}%</text>')
-    # axes
-    for a in angles:
-        x2, y2 = pt(R, a)
-        lines.append(f'<line x1="{cx}" y1="{cy}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#334155" stroke-width="1"/>')
-    # target polygon
-    tpts = " ".join(f"{pt(R * d['target']/100, a)[0]:.1f},{pt(R * d['target']/100, a)[1]:.1f}" for d, a in zip(ECO_DIMENSIONS, angles))
-    lines.append(f'<polygon points="{tpts}" fill="#C74634" fill-opacity="0.12" stroke="#C74634" stroke-width="1.5" stroke-dasharray="5,3"/>')
-    # current polygon
-    cpts = " ".join(f"{pt(R * d['current']/100, a)[0]:.1f},{pt(R * d['current']/100, a)[1]:.1f}" for d, a in zip(ECO_DIMENSIONS, angles))
-    lines.append(f'<polygon points="{cpts}" fill="#38bdf8" fill-opacity="0.25" stroke="#38bdf8" stroke-width="2"/>')
-    # dots & labels
-    for d, a in zip(ECO_DIMENSIONS, angles):
-        x, y = pt(R * d["current"] / 100, a)
-        lines.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" fill="#38bdf8"/>')
-        lx, ly = pt(R * 1.18, a)
-        lines.append(f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="middle" fill="#cbd5e1" font-size="9" font-family="monospace">{d["name"]}</text>')
-        lines.append(f'<text x="{lx:.1f}" y="{ly+11:.1f}" text-anchor="middle" fill="#38bdf8" font-size="9" font-family="monospace">{d["current"]}% / {d["target"]}%</text>')
-    # legend
-    lines.append(f'<rect x="20" y="{H-22}" width="10" height="4" fill="#38bdf8" opacity="0.7"/>')
-    lines.append(f'<text x="34" y="{H-16}" fill="#94a3b8" font-size="9" font-family="monospace">Current</text>')
-    lines.append(f'<rect x="110" y="{H-22}" width="10" height="4" fill="#C74634" opacity="0.7"/>')
-    lines.append(f'<text x="124" y="{H-16}" fill="#94a3b8" font-size="9" font-family="monospace">Target</text>')
-    lines.append('</svg>')
-    return "\n".join(lines)
-
-
-# ---------------------------------------------------------------------------
-# HTML dashboard
-# ---------------------------------------------------------------------------
-
-def _html() -> str:
-    m = _metrics()
-    gantt = _gantt_svg()
-    radar = _radar_svg()
-    blockers_html = "".join(
-        f'<li style="color:#ef4444;margin:4px 0"><b>{ms["id"].replace("_"," ")}:</b> {ms["blocker"]}</li>'
-        for ms in MILESTONES if ms["blocker"]
-    )
-    milestone_rows = "".join(
-        f'<tr><td>{ms["id"].replace("_"," ")}</td>'
-        f'<td><span style="color:{STATUS_COLOR[ms["status"]]};font-weight:bold">{ms["status"]}</span></td>'
-        f'<td>{ms["pct"]}%</td>'
-        f'<td>{ms["owner"]}</td>'
-        f'<td>${ms["revenue_k"]:,}K</td></tr>'
-        for ms in MILESTONES
-    )
-    return f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8">
-<title>NVIDIA Partnership Tracker — Port 8308</title>
+    return f"""<!DOCTYPE html><html><head><title>NVIDIA Partnership Tracker</title>
 <style>
-  body{{background:#0f172a;color:#e2e8f0;font-family:monospace;margin:0;padding:20px}}
-  h1{{color:#C74634;margin:0 0 4px 0}}  .sub{{color:#94a3b8;font-size:12px;margin-bottom:20px}}
-  .kpi-row{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}}
-  .kpi{{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px 20px;min-width:140px}}
-  .kpi .val{{font-size:28px;font-weight:bold;color:#38bdf8}}
-  .kpi .lbl{{font-size:11px;color:#94a3b8;margin-top:2px}}
-  .kpi.red .val{{color:#C74634}}
-  .section{{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:18px}}
-  h2{{color:#38bdf8;font-size:14px;margin:0 0 12px 0}}
-  .charts{{display:flex;gap:16px;flex-wrap:wrap}}
-  table{{width:100%;border-collapse:collapse;font-size:12px}}
-  th{{color:#94a3b8;text-align:left;padding:6px 8px;border-bottom:1px solid #334155}}
-  td{{padding:6px 8px;border-bottom:1px solid #1e293b}}
-  ul{{margin:4px 0;padding-left:18px;font-size:12px}}
-</style></head><body>
+body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif;padding:20px}}
+h1{{color:#C74634;margin:0 0 4px 0;font-size:1.6rem}}
+h2{{color:#38bdf8;font-size:1rem;margin:0 0 10px 0}}
+.subtitle{{color:#64748b;font-size:0.85rem;margin-bottom:20px}}
+.grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}}
+.card{{background:#1e293b;padding:16px;border-radius:8px;border:1px solid #334155}}
+.metric{{font-size:1.8rem;font-weight:700;color:#f8fafc}}
+.label{{font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-top:4px}}
+.good{{color:#34d399}}.warn{{color:#fbbf24}}.inprog{{color:#38bdf8}}
+.chart-card{{background:#1e293b;padding:16px;border-radius:8px;border:1px solid #334155;margin-bottom:14px}}
+.row{{display:grid;grid-template-columns:2fr 1fr;gap:12px}}
+table{{width:100%;border-collapse:collapse;font-size:0.82rem}}
+th{{text-align:left;color:#64748b;padding:6px 8px;border-bottom:1px solid #334155;font-weight:500}}
+td{{padding:6px 8px;border-bottom:1px solid #1e293b}}
+.badge{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.72rem;font-weight:600}}
+.badge-ok{{background:#064e3b;color:#34d399}}
+.badge-inprog{{background:#0c4a6e;color:#38bdf8}}
+.badge-plan{{background:#1e1b4b;color:#818cf8}}
+.legend{{display:flex;gap:16px;font-size:0.75rem;margin-bottom:8px}}
+.dot{{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}}
+</style></head>
+<body>
 <h1>NVIDIA Partnership Tracker</h1>
-<div class="sub">OCI Robot Cloud · Port 8308 · {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC</div>
-<div class="kpi-row">
-  <div class="kpi"><div class="val">{m['milestones_done']}/{m['milestones_total']}</div><div class="lbl">Milestones Done</div></div>
-  <div class="kpi"><div class="val">{m['avg_progress_pct']}%</div><div class="lbl">Avg Progress</div></div>
-  <div class="kpi red"><div class="val">{m['blocked_count']}</div><div class="lbl">Blocked Items</div></div>
-  <div class="kpi"><div class="val">{m['integration_depth_score']}%</div><div class="lbl">Eco Depth Score</div></div>
-  <div class="kpi"><div class="val">${m['total_revenue_potential_k']:,}K</div><div class="lbl">Revenue Potential</div></div>
-  <div class="kpi"><div class="val">${m['completed_revenue_k']:,}K</div><div class="lbl">Completed Revenue</div></div>
-</div>
-<div class="section">
-  <h2>Milestone Gantt &amp; Ecosystem Radar</h2>
-  <div class="charts">
-    <div>{gantt}</div>
-    <div>{radar}</div>
+<div class="subtitle">Port {PORT} &nbsp;|&nbsp; OCI x NVIDIA Strategic Alliance &nbsp;|&nbsp; Robotics AI Go-To-Market &nbsp;|&nbsp; Updated 2026-03-30</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="metric good">{health_score}%</div>
+    <div class="label">Partnership Health Score</div>
+  </div>
+  <div class="card">
+    <div class="metric inprog">${pipeline_value}M</div>
+    <div class="label">Co-Sell Pipeline Value</div>
+  </div>
+  <div class="card">
+    <div class="metric">{done_count} / {len(milestones)}</div>
+    <div class="label">Milestones Completed</div>
+  </div>
+  <div class="card">
+    <div class="metric warn">{inprog_count}</div>
+    <div class="label">In-Progress Initiatives</div>
   </div>
 </div>
-<div class="section">
-  <h2>Milestone Details</h2>
-  <table><tr><th>Milestone</th><th>Status</th><th>Progress</th><th>Owner</th><th>Revenue Potential</th></tr>
-  {milestone_rows}
+
+<div class="row">
+  <div class="chart-card">
+    <h2>8-Week Engagement Activity</h2>
+    <div class="legend">
+      <span><span class="dot" style="background:#34d399"></span>Meetings</span>
+      <span><span class="dot" style="background:#38bdf8"></span>Emails</span>
+      <span><span class="dot" style="background:#818cf8"></span>Events</span>
+    </div>
+    <svg width="{bar_svg_w}" height="{bar_svg_h}" style="background:#0f172a;border-radius:6px">
+      {bars_svg}
+      <text x="15" y="14" fill="#64748b" font-size="8">28</text>
+      <text x="15" y="{bar_svg_h-22}" fill="#64748b" font-size="8">0</text>
+    </svg>
+    <div style="font-size:0.78rem;color:#64748b;margin-top:8px">
+      Total: <span style="color:#34d399">{total_meetings} meetings</span> &nbsp; <span style="color:#38bdf8">{total_emails} emails</span> &nbsp; <span style="color:#818cf8">{sum(events)} events</span> over 8 weeks
+    </div>
+  </div>
+  <div class="chart-card">
+    <h2>Partnership Health Radar</h2>
+    <svg width="280" height="220" style="background:#0f172a;border-radius:6px">
+      {axes_svg}
+      <polygon points="{polygon_pts}" fill="#38bdf820" stroke="#38bdf8" stroke-width="2"/>
+      {''.join(f'<circle cx="{x}" cy="{y}" r="3" fill="#38bdf8"/>' for x, y in radar_pts)}
+    </svg>
+  </div>
+</div>
+
+<div class="chart-card">
+  <h2>Initiative Milestones</h2>
+  <table>
+    <tr><th>Initiative</th><th>Owner</th><th>Progress</th><th>Status</th><th>Target Date</th></tr>
+    {milestone_rows}
   </table>
 </div>
-<div class="section">
-  <h2>Active Blockers</h2>
-  <ul>{blockers_html}</ul>
-</div>
+
 </body></html>"""
 
-
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
-
-if _HAS_FASTAPI:
-    app = FastAPI(title="NVIDIA Partnership Tracker", version="1.0.0")
-
+if USE_FASTAPI:
+    app = FastAPI(title="NVIDIA Partnership Tracker")
     @app.get("/", response_class=HTMLResponse)
-    def dashboard():
-        return HTMLResponse(content=_html())
-
-    @app.get("/api/metrics")
-    def metrics():
-        return _metrics()
-
-    @app.get("/api/milestones")
-    def milestones():
-        return {"milestones": MILESTONES}
-
-    @app.get("/api/ecosystem")
-    def ecosystem():
-        return {"dimensions": ECO_DIMENSIONS}
-
+    def index(): return build_html()
     @app.get("/health")
-    def health():
-        return {"status": "ok", "service": "nvidia_partnership_tracker", "port": 8308}
+    def health(): return {"status": "ok", "port": PORT}
+    @app.get("/summary")
+    def summary():
+        random.seed(99)
+        scores = [round(random.uniform(0.55, 0.97), 2) for _ in range(6)]
+        return {
+            "partnership_health_pct": round(sum(scores) / len(scores) * 100, 1),
+            "milestones_done": 3,
+            "milestones_total": 8,
+            "co_sell_pipeline_usd_millions": round(random.uniform(4.2, 6.8), 1),
+            "port": PORT
+        }
 
-else:
-    # stdlib fallback
-    from http.server import BaseHTTPRequestHandler, HTTPServer
-
-    class _Handler(BaseHTTPRequestHandler):
-        def do_GET(self):
-            body = _html().encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-
-        def log_message(self, fmt, *args):
-            pass
-
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html")
+        self.end_headers()
+        self.wfile.write(build_html().encode())
+    def log_message(self, *a): pass
 
 if __name__ == "__main__":
-    if _HAS_FASTAPI:
-        uvicorn.run(app, host="0.0.0.0", port=8308)
+    if USE_FASTAPI:
+        uvicorn.run(app, host="0.0.0.0", port=PORT)
     else:
-        print("fastapi not found — starting stdlib http.server on port 8308")
-        HTTPServer(("0.0.0.0", 8308), _Handler).serve_forever()
+        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
