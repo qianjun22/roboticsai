@@ -1,6 +1,9 @@
-"""Revenue Operations Dashboard — FastAPI port 8793"""
-import math, random
-from http.server import HTTPServer, BaseHTTPRequestHandler
+# Revenue Operations Dashboard — port 8923
+# RevOps end-to-end: MRR, AR, DSO, collections, upsell pipeline
+
+import math
+import random
+
 try:
     from fastapi import FastAPI
     from fastapi.responses import HTMLResponse
@@ -9,252 +12,217 @@ try:
 except ImportError:
     USE_FASTAPI = False
 
-PORT = 8793
-
-def build_html():
-    random.seed(2026)
-
-    # Monthly ARR growth (12 months) — exponential with noise
-    months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
-    base_arr = 1_200_000
-    arr_vals = []
-    for i in range(12):
-        growth = base_arr * (1 + 0.09) ** i
-        noise = random.uniform(-30000, 30000)
-        arr_vals.append(round(growth + noise, 0))
-
-    # Pipeline by stage
-    stages = ["Prospecting", "Qualification", "Demo", "Proposal", "Negotiation", "Closed Won"]
-    stage_counts = [48, 31, 22, 15, 9, 6]
-    stage_values = [round(random.uniform(2.1, 3.8) * c * 10000, 0) for c in stage_counts]
-    stage_colors = ["#38bdf8", "#818cf8", "#a78bfa", "#f472b6", "#fb923c", "#4ade80"]
-
-    # Win/loss by segment
-    segments = ["Enterprise", "Mid-Market", "SMB", "Partner"]
-    wins =   [14, 23, 41, 18]
-    losses = [7,  12, 28,  9]
-
-    # Monthly new logos & churned logos
-    random.seed(88)
-    new_logos    = [random.randint(4, 14) for _ in range(12)]
-    churned      = [random.randint(1,  5) for _ in range(12)]
-
-    # CAC & LTV trailing 12 months
-    random.seed(33)
-    cac_vals = [round(8500 + random.uniform(-800, 800), 0) for _ in range(12)]
-    ltv_vals = [round(cac_vals[i] * random.uniform(4.8, 6.2), 0) for i in range(12)]
-    ltv_cac  = [round(ltv_vals[i] / cac_vals[i], 2) for i in range(12)]
-
-    # --- SVG: ARR trend ---
-    W, H = 680, 220
-    pl, pr, pt, pb = 70, 20, 20, 36
-    cw = W - pl - pr
-    ch = H - pt - pb
-    arr_max = max(arr_vals) * 1.08
-    arr_min = min(arr_vals) * 0.92
-
-    def ax(i): return pl + (i / (len(arr_vals) - 1)) * cw
-    def ay(v): return pt + ch - ((v - arr_min) / (arr_max - arr_min)) * ch
-
-    arr_area_pts = " ".join(f"{ax(i):.1f},{ay(v):.1f}" for i, v in enumerate(arr_vals))
-    arr_area_pts = f"{ax(0):.1f},{ay(arr_min):.1f} " + arr_area_pts + f" {ax(len(arr_vals)-1):.1f},{ay(arr_min):.1f}"
-
-    arr_line_pts = " ".join(f"{ax(i):.1f},{ay(v):.1f}" for i, v in enumerate(arr_vals))
-
-    arr_yticks = ""
-    for tick in [1_200_000, 1_500_000, 1_800_000, 2_100_000]:
-        if arr_min <= tick <= arr_max:
-            ty = ay(tick)
-            label = f"${tick//1000}K"
-            arr_yticks += f'<line x1="{pl-4}" y1="{ty:.1f}" x2="{pl}" y2="{ty:.1f}" stroke="#475569"/>'
-            arr_yticks += f'<text x="{pl-8}" y="{ty+4:.1f}" fill="#94a3b8" font-size="10" text-anchor="end">{label}</text>'
-            arr_yticks += f'<line x1="{pl}" y1="{ty:.1f}" x2="{pl+cw}" y2="{ty:.1f}" stroke="#1e293b" stroke-width="1"/>'
-
-    arr_xticks = ""
-    for i, m in enumerate(months):
-        tx = ax(i)
-        arr_xticks += f'<text x="{tx:.1f}" y="{pt+ch+16:.1f}" fill="#94a3b8" font-size="10" text-anchor="middle">{m}</text>'
-
-    arr_svg = f"""
-    <svg width="{W}" height="{H}" style="display:block">
-      <rect width="{W}" height="{H}" fill="#0f172a" rx="4"/>
-      {arr_yticks}{arr_xticks}
-      <defs>
-        <linearGradient id="arrGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#4ade80" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="#4ade80" stop-opacity="0.02"/>
-        </linearGradient>
-      </defs>
-      <polygon points="{arr_area_pts}" fill="url(#arrGrad)"/>
-      <polyline points="{arr_line_pts}" fill="none" stroke="#4ade80" stroke-width="2.5"/>
-      {''.join(f'<circle cx="{ax(i):.1f}" cy="{ay(v):.1f}" r="3.5" fill="#4ade80"/>' for i, v in enumerate(arr_vals))}
-    </svg>"""
-
-    # --- SVG: Pipeline funnel bars ---
-    FW, FH = 340, 220
-    fpl, fpr, fpt, fpb = 90, 16, 16, 16
-    fcw = FW - fpl - fpr
-    fch = FH - fpt - fpb
-    bar_h = fch // len(stages) - 4
-    max_sv = max(stage_values)
-
-    funnel_bars = ""
-    for i, (s, sv, sc) in enumerate(zip(stages, stage_values, stage_colors)):
-        by = fpt + i * (fch // len(stages)) + 2
-        bw = max(4, int((sv / max_sv) * fcw))
-        label = f"${int(sv)//1000}K"
-        funnel_bars += f'<text x="{fpl-5}" y="{by+bar_h//2+4:.1f}" fill="#94a3b8" font-size="10" text-anchor="end">{s}</text>'
-        funnel_bars += f'<rect x="{fpl}" y="{by}" width="{bw}" height="{bar_h}" fill="{sc}" rx="2"/>'
-        funnel_bars += f'<text x="{fpl+bw+5}" y="{by+bar_h//2+4:.1f}" fill="{sc}" font-size="10">{label} ({stage_counts[i]})</text>'
-
-    funnel_svg = f"""
-    <svg width="{FW}" height="{FH}" style="display:block">
-      <rect width="{FW}" height="{FH}" fill="#0f172a" rx="4"/>
-      {funnel_bars}
-    </svg>"""
-
-    # --- Win/loss grouped bars ---
-    WW, WH = 340, 220
-    wpl, wpr, wpt, wpb = 16, 16, 16, 36
-    wcw = WW - wpl - wpr
-    wch = WH - wpt - wpb
-    seg_w = wcw // len(segments)
-    bar_pad = 4
-    win_max = max(max(wins), max(losses)) * 1.15
-
-    wl_bars = ""
-    for i, (seg, w, l) in enumerate(zip(segments, wins, losses)):
-        bx = wpl + i * seg_w
-        bw = (seg_w - 3 * bar_pad) // 2
-        wh = int((w / win_max) * wch)
-        lh = int((l / win_max) * wch)
-        wx = bx + bar_pad
-        lx = wx + bw + bar_pad
-        wl_bars += f'<rect x="{wx}" y="{wpt+wch-wh}" width="{bw}" height="{wh}" fill="#4ade80" rx="2"/>'
-        wl_bars += f'<text x="{wx+bw//2}" y="{wpt+wch-wh-3}" fill="#4ade80" font-size="10" text-anchor="middle">{w}</text>'
-        wl_bars += f'<rect x="{lx}" y="{wpt+wch-lh}" width="{bw}" height="{lh}" fill="#f87171" rx="2"/>'
-        wl_bars += f'<text x="{lx+bw//2}" y="{wpt+wch-lh-3}" fill="#f87171" font-size="10" text-anchor="middle">{l}</text>'
-        wl_bars += f'<text x="{bx+seg_w//2}" y="{wpt+wch+14:.1f}" fill="#94a3b8" font-size="10" text-anchor="middle">{seg}</text>'
-
-    wl_svg = f"""
-    <svg width="{WW}" height="{WH}" style="display:block">
-      <rect width="{WW}" height="{WH}" fill="#0f172a" rx="4"/>
-      {wl_bars}
-      <rect x="{WW-100}" y="8" width="10" height="10" fill="#4ade80" rx="2"/>
-      <text x="{WW-87}" y="17" fill="#94a3b8" font-size="10">Won</text>
-      <rect x="{WW-60}" y="8" width="10" height="10" fill="#f87171" rx="2"/>
-      <text x="{WW-47}" y="17" fill="#94a3b8" font-size="10">Lost</text>
-    </svg>"""
-
-    # --- LTV:CAC sparkline ---
-    SW, SH = 680, 130
-    spl, spr, spt, spb = 55, 20, 16, 28
-    scw = SW - spl - spr
-    sch = SH - spt - spb
-    ltv_max = max(ltv_cac) * 1.1
-    ltv_min = min(ltv_cac) * 0.9
-
-    def lx(i): return spl + (i / (len(ltv_cac)-1)) * scw
-    def ly(v): return spt + sch - ((v - ltv_min) / (ltv_max - ltv_min)) * sch
-
-    ltv_pts = " ".join(f"{lx(i):.1f},{ly(v):.1f}" for i, v in enumerate(ltv_cac))
-    ideal_y = ly(5.0)
-    ltv_xticks = ""
-    for i, m in enumerate(months):
-        ltv_xticks += f'<text x="{lx(i):.1f}" y="{spt+sch+16:.1f}" fill="#94a3b8" font-size="10" text-anchor="middle">{m}</text>'
-    ltv_yticks = ""
-    for tick in [4.5, 5.0, 5.5, 6.0]:
-        if ltv_min <= tick <= ltv_max:
-            ty2 = ly(tick)
-            ltv_yticks += f'<text x="{spl-8}" y="{ty2+4:.1f}" fill="#94a3b8" font-size="10" text-anchor="end">{tick}x</text>'
-            ltv_yticks += f'<line x1="{spl}" y1="{ty2:.1f}" x2="{spl+scw}" y2="{ty2:.1f}" stroke="#1e293b" stroke-width="1"/>'
-
-    ltv_svg = f"""
-    <svg width="{SW}" height="{SH}" style="display:block">
-      <rect width="{SW}" height="{SH}" fill="#0f172a" rx="4"/>
-      {ltv_yticks}{ltv_xticks}
-      <line x1="{spl}" y1="{ideal_y:.1f}" x2="{spl+scw}" y2="{ideal_y:.1f}" stroke="#f59e0b" stroke-width="1" stroke-dasharray="5,4"/>
-      <text x="{spl+scw-2}" y="{ideal_y-5:.1f}" fill="#f59e0b" font-size="10" text-anchor="end">Target 5x</text>
-      <polyline points="{ltv_pts}" fill="none" stroke="#fb923c" stroke-width="2.5"/>
-      {''.join(f'<circle cx="{lx(i):.1f}" cy="{ly(v):.1f}" r="3.5" fill="#fb923c"/><title>{v}x</title>' for i, v in enumerate(ltv_cac))}
-    </svg>"""
-
-    # Summary KPIs
-    latest_arr = arr_vals[-1]
-    arr_growth = round((arr_vals[-1] / arr_vals[0] - 1) * 100, 1)
-    total_pipeline = sum(stage_values)
-    win_rate = round(sum(wins) / (sum(wins) + sum(losses)) * 100, 1)
-    avg_ltv_cac = round(sum(ltv_cac) / len(ltv_cac), 2)
-    net_new_logos = sum(new_logos) - sum(churned)
-
-    return f"""<!DOCTYPE html>
-<html><head><title>Revenue Operations Dashboard</title>
+HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revenue Operations Dashboard</title>
 <style>
-  body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui,sans-serif}}
-  h1{{color:#C74634;margin:0;padding:20px 24px 0;font-size:22px}}
-  h2{{color:#38bdf8;font-size:14px;margin:0 0 12px}}
-  .grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 24px}}
-  .card{{background:#1e293b;padding:20px;border-radius:8px;border:1px solid #334155}}
-  .card.full{{grid-column:1/-1}}
-  .kpi-row{{display:flex;gap:0;padding:0 24px 8px;flex-wrap:wrap}}
-  .kpi{{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px 20px;margin:4px;flex:1;min-width:120px}}
-  .kpi .val{{font-size:24px;font-weight:700}}
-  .kpi .lbl{{font-size:11px;color:#64748b;margin-top:3px}}
-  .subtitle{{color:#64748b;font-size:12px;margin-top:4px;padding:0 24px 10px}}
-</style></head>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px; }
+  h1 { color: #C74634; font-size: 2rem; margin-bottom: 4px; }
+  .subtitle { color: #94a3b8; font-size: 0.95rem; margin-bottom: 28px; }
+  h2 { color: #38bdf8; font-size: 1.15rem; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .card { background: #1e293b; border-radius: 10px; padding: 20px; }
+  .card .label { font-size: 0.78rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .card .value { font-size: 1.65rem; font-weight: 700; color: #f1f5f9; }
+  .card .delta { font-size: 0.82rem; margin-top: 4px; }
+  .green { color: #4ade80; }
+  .red { color: #f87171; }
+  .amber { color: #fbbf24; }
+  .chart-wrap { background: #1e293b; border-radius: 10px; padding: 20px; margin-bottom: 28px; }
+  svg { width: 100%; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { text-align: left; padding: 10px 12px; background: #0f172a; color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.06em; }
+  td { padding: 10px 12px; border-bottom: 1px solid #334155; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-paid { background: #14532d; color: #86efac; }
+  .badge-overdue { background: #7f1d1d; color: #fca5a5; }
+  .badge-pending { background: #78350f; color: #fde68a; }
+  .badge-upsell { background: #1e3a5f; color: #93c5fd; }
+  footer { color: #475569; font-size: 0.78rem; margin-top: 32px; text-align: center; }
+</style>
+</head>
 <body>
 <h1>Revenue Operations Dashboard</h1>
-<p class="subtitle">OCI Robot Cloud — ARR, pipeline health, win/loss, and unit economics (TTM)</p>
-
-<div class="kpi-row">
-  <div class="kpi"><div class="val" style="color:#4ade80">${latest_arr/1e6:.2f}M</div><div class="lbl">Current ARR</div></div>
-  <div class="kpi"><div class="val" style="color:#38bdf8">+{arr_growth}%</div><div class="lbl">ARR Growth YoY</div></div>
-  <div class="kpi"><div class="val" style="color:#a78bfa">${total_pipeline/1e6:.1f}M</div><div class="lbl">Open Pipeline</div></div>
-  <div class="kpi"><div class="val" style="color:#fb923c">{win_rate}%</div><div class="lbl">Win Rate</div></div>
-  <div class="kpi"><div class="val" style="color:#f59e0b">{avg_ltv_cac}x</div><div class="lbl">Avg LTV:CAC</div></div>
-  <div class="kpi"><div class="val" style="color:#4ade80">+{net_new_logos}</div><div class="lbl">Net New Logos (TTM)</div></div>
-</div>
+<p class="subtitle">RevOps end-to-end &mdash; MRR, AR, DSO, collections efficiency &mdash; port 8923</p>
 
 <div class="grid">
-  <div class="card full">
-    <h2>Monthly ARR ($) — Trailing 12 Months</h2>
-    {arr_svg}
-  </div>
-
-  <div class="card">
-    <h2>Pipeline by Stage (Deal Value)</h2>
-    {funnel_svg}
-  </div>
-
-  <div class="card">
-    <h2>Win / Loss by Segment</h2>
-    {wl_svg}
-  </div>
-
-  <div class="card full">
-    <h2>LTV:CAC Ratio — Monthly Trend</h2>
-    {ltv_svg}
-  </div>
+  <div class="card"><div class="label">MRR Recognized</div><div class="value">$35,240</div><div class="delta green">&uarr; +8.4% MoM</div></div>
+  <div class="card"><div class="label">Accounts Receivable</div><div class="value">$12,400</div><div class="delta amber">3 open invoices</div></div>
+  <div class="card"><div class="label">DSO</div><div class="value">23 days</div><div class="delta green">Target &le; 30d &check;</div></div>
+  <div class="card"><div class="label">Overdue AR</div><div class="value">$4,200</div><div class="delta red">Machina &mdash; 7d overdue</div></div>
+  <div class="card"><div class="label">Upsell Pipeline</div><div class="value">$47,000</div><div class="delta" style="color:#93c5fd">3 active opportunities</div></div>
+  <div class="card"><div class="label">Collections Rate</div><div class="value">94.2%</div><div class="delta green">+1.1pp vs prior mo</div></div>
+  <div class="card"><div class="label">Churn Risk</div><div class="value">1 acct</div><div class="delta red">Machina &mdash; escalate</div></div>
+  <div class="card"><div class="label">NRR</div><div class="value">112%</div><div class="delta green">Expansion &gt; churn</div></div>
 </div>
-</body></html>"""
+
+<div class="chart-wrap">
+  <h2>Cash Flow Waterfall (Current Month, $k)</h2>
+  <svg viewBox="0 0 760 240" xmlns="http://www.w3.org/2000/svg">
+    <!-- axes -->
+    <line x1="60" y1="20" x2="60" y2="195" stroke="#334155" stroke-width="1.5"/>
+    <line x1="60" y1="195" x2="740" y2="195" stroke="#334155" stroke-width="1.5"/>
+    <!-- zero line at y=195, scale: $5k = 20px -->
+    <!-- Contracted MRR $35.24k -> 141px green from bottom: y=195-141=54 -->
+    <rect x="80" y="54" width="85" height="141" fill="#22c55e" rx="4"/>
+    <text x="122" y="48" fill="#86efac" font-size="11" text-anchor="middle">$35.24k</text>
+    <!-- Deferred: -$3.2k (portion deferred, shown as negative step) y=195-141+12.8=66.8 -> drop from 54 by 12.8 -->
+    <rect x="185" y="54" width="85" height="12.8" fill="#ef4444" rx="4"/>
+    <text x="227" y="48" fill="#fca5a5" font-size="11" text-anchor="middle">-$3.2k</text>
+    <!-- Recognized: $32.04k base, floating bar from 66.8 up by 128.2 -->
+    <rect x="290" y="66.8" width="85" height="128.2" fill="#22c55e" rx="4"/>
+    <text x="332" y="61" fill="#86efac" font-size="11" text-anchor="middle">$32.0k</text>
+    <!-- Collections +$28.4k -->
+    <!-- AR opening $12.4k, collected $28.4k, floating -->
+    <rect x="395" y="81.4" width="85" height="113.6" fill="#38bdf8" rx="4"/>
+    <text x="437" y="76" fill="#93c5fd" font-size="11" text-anchor="middle">+$28.4k</text>
+    <!-- Overdue AR -$4.2k: drop -->
+    <rect x="500" y="81.4" width="85" height="16.8" fill="#f59e0b" rx="4"/>
+    <text x="542" y="76" fill="#fde68a" font-size="11" text-anchor="middle">-$4.2k</text>
+    <!-- Net cash ending $56.2k -> 224.8px but capped to chart: show relative to 100px max = scale $0.25k/px -->
+    <!-- For visual clarity, just show proportional end bar at 140px (=$35k) -->
+    <rect x="605" y="55" width="85" height="140" fill="#a855f7" rx="4"/>
+    <text x="647" y="49" fill="#d8b4fe" font-size="11" text-anchor="middle">$56.2k</text>
+    <!-- x labels -->
+    <text x="122" y="210" fill="#e2e8f0" font-size="11" text-anchor="middle">Contracted</text>
+    <text x="122" y="222" fill="#94a3b8" font-size="10" text-anchor="middle">MRR</text>
+    <text x="227" y="210" fill="#e2e8f0" font-size="11" text-anchor="middle">Deferred</text>
+    <text x="332" y="210" fill="#e2e8f0" font-size="11" text-anchor="middle">Recognized</text>
+    <text x="437" y="210" fill="#e2e8f0" font-size="11" text-anchor="middle">Collections</text>
+    <text x="542" y="210" fill="#e2e8f0" font-size="11" text-anchor="middle">Overdue AR</text>
+    <text x="647" y="210" fill="#e2e8f0" font-size="11" text-anchor="middle">Net Cash</text>
+    <text x="647" y="222" fill="#94a3b8" font-size="10" text-anchor="middle">Position</text>
+  </svg>
+</div>
+
+<div class="chart-wrap">
+  <h2>Collections Efficiency Trend (past 8 months, %)</h2>
+  <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- axes -->
+    <line x1="60" y1="20" x2="60" y2="165" stroke="#334155" stroke-width="1.5"/>
+    <line x1="60" y1="165" x2="740" y2="165" stroke="#334155" stroke-width="1.5"/>
+    <!-- grid at 70%, 80%, 90%, 100% -->
+    <!-- scale: 70%=165, 100%=20 → 1%=1.633px -->
+    <line x1="60" y1="165" x2="740" y2="165" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+    <line x1="60" y1="116.3" x2="740" y2="116.3" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+    <line x1="60" y1="83.3" x2="740" y2="83.3" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+    <line x1="60" y1="20" x2="740" y2="20" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="4,4"/>
+    <text x="52" y="168" fill="#94a3b8" font-size="10" text-anchor="end">70%</text>
+    <text x="52" y="119" fill="#94a3b8" font-size="10" text-anchor="end">80%</text>
+    <text x="52" y="86" fill="#94a3b8" font-size="10" text-anchor="end">85%</text>
+    <text x="52" y="23" fill="#94a3b8" font-size="10" text-anchor="end">100%</text>
+    <!-- data points: months Aug-Mar, values 83,85,87,88,91,90,93.1,94.2 -->
+    <!-- y = 165 - (val-70)*1.633 -->
+    <!-- Aug: 83 -> 165-21.2=143.8; Sep: 85->132.2; Oct:87->120.6; Nov:88->114.8; Dec:91->98.6; Jan:90->100.2; Feb:93.1->75.4; Mar:94.2->73.5 -->
+    <polyline
+      points="90,143.8 195,132.2 300,120.6 380,114.8 460,98.6 540,100.2 640,75.4 720,73.5"
+      fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- area fill -->
+    <polygon
+      points="90,143.8 195,132.2 300,120.6 380,114.8 460,98.6 540,100.2 640,75.4 720,73.5 720,165 90,165"
+      fill="#38bdf820"/>
+    <!-- dots -->
+    <circle cx="90" cy="143.8" r="4" fill="#38bdf8"/>
+    <circle cx="195" cy="132.2" r="4" fill="#38bdf8"/>
+    <circle cx="300" cy="120.6" r="4" fill="#38bdf8"/>
+    <circle cx="380" cy="114.8" r="4" fill="#38bdf8"/>
+    <circle cx="460" cy="98.6" r="4" fill="#38bdf8"/>
+    <circle cx="540" cy="100.2" r="4" fill="#38bdf8"/>
+    <circle cx="640" cy="75.4" r="4" fill="#38bdf8"/>
+    <circle cx="720" cy="73.5" r="5" fill="#4ade80" stroke="#0f172a" stroke-width="2"/>
+    <!-- value labels -->
+    <text x="720" y="67" fill="#4ade80" font-size="11" text-anchor="middle">94.2%</text>
+    <!-- x axis labels -->
+    <text x="90" y="180" fill="#94a3b8" font-size="10" text-anchor="middle">Aug</text>
+    <text x="195" y="180" fill="#94a3b8" font-size="10" text-anchor="middle">Sep</text>
+    <text x="300" y="180" fill="#94a3b8" font-size="10" text-anchor="middle">Oct</text>
+    <text x="380" y="180" fill="#94a3b8" font-size="10" text-anchor="middle">Nov</text>
+    <text x="460" y="180" fill="#94a3b8" font-size="10" text-anchor="middle">Dec</text>
+    <text x="540" y="180" fill="#94a3b8" font-size="10" text-anchor="middle">Jan</text>
+    <text x="640" y="180" fill="#94a3b8" font-size="10" text-anchor="middle">Feb</text>
+    <text x="720" y="180" fill="#e2e8f0" font-size="10" text-anchor="middle" font-weight="600">Mar</text>
+  </svg>
+</div>
+
+<div class="chart-wrap">
+  <h2>Accounts Receivable &amp; Upsell Pipeline</h2>
+  <table>
+    <thead>
+      <tr><th>Account</th><th>Type</th><th>Amount</th><th>Due / Close Date</th><th>Days</th><th>Status</th><th>Owner</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>AgroBot Inc.</td><td>Invoice</td><td>$4,800</td><td>2026-04-05</td><td>+6d</td><td><span class="badge badge-pending">Pending</span></td><td>AR Team</td></tr>
+      <tr><td>Machina Robotics</td><td>Invoice</td><td>$4,200</td><td>2026-03-23</td><td>-7d</td><td><span class="badge badge-overdue">Overdue</span></td><td>Escalate</td></tr>
+      <tr><td>SynthArm Labs</td><td>Invoice</td><td>$3,400</td><td>2026-04-12</td><td>+13d</td><td><span class="badge badge-pending">Pending</span></td><td>AR Team</td></tr>
+      <tr><td>AgroBot Inc.</td><td>Upsell</td><td>$22,000</td><td>2026-05-15</td><td>Opp</td><td><span class="badge badge-upsell">Pipeline</span></td><td>Sales</td></tr>
+      <tr><td>Helix Dynamics</td><td>Upsell</td><td>$15,000</td><td>2026-04-30</td><td>Opp</td><td><span class="badge badge-upsell">Pipeline</span></td><td>Sales</td></tr>
+      <tr><td>TerraForge</td><td>Upsell</td><td>$10,000</td><td>2026-06-01</td><td>Opp</td><td><span class="badge badge-upsell">Pipeline</span></td><td>Sales</td></tr>
+      <tr><td>SynthArm Labs</td><td>Invoice</td><td>$2,800</td><td>2026-03-18</td><td>-12d</td><td><span class="badge badge-paid">Paid</span></td><td>&mdash;</td></tr>
+      <tr><td>Helix Dynamics</td><td>Invoice</td><td>$6,100</td><td>2026-03-20</td><td>-10d</td><td><span class="badge badge-paid">Paid</span></td><td>&mdash;</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>Revenue Operations Dashboard &mdash; OCI Robot Cloud &mdash; port 8923 &mdash; MRR $35,240 &bull; AR $12,400 &bull; DSO 23d &bull; NRR 112%</footer>
+</body></html>
+"""
 
 if USE_FASTAPI:
-    app = FastAPI(title="Revenue Operations Dashboard")
+    app = FastAPI(title="Revenue Operations Dashboard", version="1.0.0")
+
     @app.get("/", response_class=HTMLResponse)
-    def index(): return build_html()
+    async def dashboard():
+        return HTML
+
     @app.get("/health")
-    def health(): return {"status": "ok", "port": PORT}
+    async def health():
+        mrr = 35240
+        ar_total = 12400
+        ar_overdue = 4200
+        dso = 23
+        upsell_pipeline = 47000
+        collections_rate = 94.2
+        nrr = 112
+        return {
+            "status": "ok",
+            "service": "revenue_operations_dashboard",
+            "port": 8923,
+            "mrr_usd": mrr,
+            "ar_total_usd": ar_total,
+            "ar_overdue_usd": ar_overdue,
+            "dso_days": dso,
+            "upsell_pipeline_usd": upsell_pipeline,
+            "collections_rate_pct": collections_rate,
+            "nrr_pct": nrr,
+            "alerts": [
+                {"account": "Machina Robotics", "issue": "invoice overdue 7 days", "amount": ar_overdue}
+            ],
+        }
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        self.wfile.write(build_html().encode())
-    def log_message(self, *a): pass
+    if __name__ == "__main__":
+        uvicorn.run(app, host="0.0.0.0", port=8923)
 
-if __name__ == "__main__":
-    if USE_FASTAPI:
-        uvicorn.run(app, host="0.0.0.0", port=PORT)
-    else:
-        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+else:
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = HTML.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+
+    if __name__ == "__main__":
+        print("FastAPI unavailable — using stdlib HTTPServer on port 8923")
+        HTTPServer(("0.0.0.0", 8923), Handler).serve_forever()
