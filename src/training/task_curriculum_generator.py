@@ -702,6 +702,18 @@ def svg_transfer_matrix(
 # HTML report
 # ---------------------------------------------------------------------------
 
+def _build_task_difficulty_html() -> str:
+    parts = []
+    for t in TASKS:
+        name_padded = t["name"].replace("_", " ")
+        parts.append(
+            f'<div style="margin-bottom:3px;">'
+            f'<span style="color:#64748b;">{name_padded}</span> '
+            f'<span style="color:#7dd3fc;">diff={t["difficulty"]}</span></div>'
+        )
+    return "".join(parts)
+
+
 def generate_html_report(results: Dict, n_episodes: int, seed: int) -> str:
     strategies = ["fixed_order", "adaptive", "interleaved"]
     strategy_colors = {
