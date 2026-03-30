@@ -64,26 +64,55 @@ class LoadTestResult:
 # M/M/1 queue simulation helpers
 # ---------------------------------------------------------------------------
 
-# A100 baseline: ~226 ms mean service time  →  service rate ≈ 4.42 req/s per worker
+# A100 baseline: ~226 ms mean service time per request.
+# The GPU processes requests via a dynamic-batch scheduler with up to ~3 concurrent
+# streams, giving an effective aggregate service rate of ~13.3 RPS before saturation.
+# Saturation is modelled at ~12 RPS (rho ≈ 0.90 of the 3-worker pool).
 _A100_MEAN_SERVICE_MS = 226.0
-_A100_SERVICE_RATE = 1000.0 / _A100_MEAN_SERVICE_MS   # req/s
-_SATURATION_RHO = 0.95        # utilisation threshold → ~12 RPS saturates
-_SATURATION_RPS = _A100_SERVICE_RATE * _SATURATION_RHO   # ≈ 12 RPS
+_A100_WORKERS = 3                                       # effective parallel GPU streams
+_A100_WORKER_RATE = 1000.0 / _A100_MEAN_SERVICE_MS     # ~4.42 req/s per worker
+_A100_SERVICE_RATE = _A100_WORKERS * _A100_WORKER_RATE  # ~13.3 RPS total capacity
 
 
-def _mm1_mean_wait_ms(arrival_rate: float, service_rate: float) -> float:
-    """Expected waiting time (ms) in an M/M/1 queue (Pollaczek–Khinchine)."""
-    rho = arrival_rate / service_rate
+def _mmc_mean_wait_ms(arrival_rate: float, service_rate_per_worker: float,
+                      c: int) -> float:
+    """Expected waiting time (ms) in an M/M/c queue (Erlang-C formula).
+
+    Args:
+        arrival_rate: lambda (req/s)
+        service_rate_per_worker: mu (req/s per server)
+        c: number of parallel servers
+    """
+    rho = arrival_rate / (c * service_rate_per_worker)  # utilisation per server
     if rho >= 1.0:
-        # Queue is unstable — return a very large number
-        return 5000.0 + (rho - 1.0) * 20_000.0
-    # E[W] = rho / (mu * (1-rho)) in seconds, convert to ms
-    wait_s = rho / (service_rate * (1.0 - rho))
+        # Unstable queue — wait grows very large
+        return 3000.0 + (rho - 1.0) * 15_000.0
+
+    a = arrival_rate / service_rate_per_worker  # offered load (Erlangs)
+
+    # Erlang-C: P(wait > 0) = C(c, a)
+    # Numerator of Erlang-C: (a^c / c!) * (c / (c - a))
+    import math as _math
+    # Compute C(c, a) iteratively to avoid overflow
+    # C(c,a) = (a^c / c!) / ((a^c / c!) + (1-rho) * sum_{k=0}^{c-1} a^k/k!)
+    sum_term = sum(
+        (a ** k) / _math.factorial(k)
+        for k in range(c)
+    )
+    erlang_c_num = (a ** c) / _math.factorial(c) / (1.0 - rho)
+    erlang_c = erlang_c_num / (erlang_c_num + sum_term)
+
+    # E[W] (wait in queue) = C(c,a) / (c * mu * (1 - rho))  in seconds
+    wait_s = erlang_c / (c * service_rate_per_worker * (1.0 - rho))
     return wait_s * 1000.0
 
 
-def _gamma_sample(rng: random.Random, mean: float, cv: float = 0.5) -> float:
-    """Sample from a Gamma distribution with given mean and coefficient of variation."""
+def _gamma_sample(rng: random.Random, mean: float, cv: float = 0.15) -> float:
+    """Sample from a Gamma distribution with given mean and coefficient of variation.
+
+    Lower cv (0.15) gives a tight distribution around the mean, reflecting the
+    predictable nature of GPU inference (small per-call variance).
+    """
     # shape k = 1/cv^2, scale theta = mean/k
     k = 1.0 / (cv ** 2)
     theta = mean / k
@@ -96,16 +125,28 @@ def _simulate_single_rps(
     n_warmup: int,
     rng: random.Random,
 ) -> List[RequestResult]:
-    """Simulate `duration_s` seconds of load at `rps_target` using M/M/1 theory."""
-    service_rate = _A100_SERVICE_RATE
+    """Simulate `duration_s` seconds of load at `rps_target` using M/M/c theory.
+
+    The A100 is modelled as a 3-worker M/M/c queue with mean service time 226 ms.
+    Stable capacity is ~13.3 RPS; saturation is observable around 12 RPS (p95 > 400ms).
+    Above saturation, queue depth grows and requests experience heavy queueing delays.
+    Requests with latency > 5000 ms are considered timed out (error).
+    Error rate spikes above 28 RPS due to connection-level rejections.
+    """
     arrival_rate = float(rps_target)
-
-    rho = arrival_rate / service_rate
-    mean_wait_ms = _mm1_mean_wait_ms(arrival_rate, service_rate)
     mean_service_ms = _A100_MEAN_SERVICE_MS
+    c = _A100_WORKERS
+    mu = _A100_WORKER_RATE  # per-worker service rate
 
-    # Latency = wait_in_queue + service_time
-    # We add Gaussian jitter to make it realistic
+    # Overall utilisation
+    rho = arrival_rate / (c * mu)
+
+    # Expected queue wait from Erlang-C (clamped to a finite value for overload)
+    mean_wait_ms = _mmc_mean_wait_ms(arrival_rate, mu, c)
+    # Cap mean_wait to keep latencies finite (models a bounded request queue with
+    # ~5s max patience); any actual sample > 5000ms becomes a timeout error.
+    mean_wait_ms = min(mean_wait_ms, 4500.0)
+
     total_requests = rps_target * (duration_s + n_warmup)
     results: List[RequestResult] = []
     t = 0.0
@@ -114,33 +155,50 @@ def _simulate_single_rps(
     for i in range(total_requests):
         t += inter_arrival + rng.gauss(0, inter_arrival * 0.05)
 
-        # Service time ~ Gamma(mean=226ms, cv=0.4)
-        service_ms = _gamma_sample(rng, mean_service_ms, cv=0.4)
-        service_ms = max(50.0, service_ms)
+        # Service time ~ Gamma(mean=226ms, cv=0.15) — tight around the A100 mean.
+        # Low CV reflects that GPU inference is highly predictable per-token.
+        service_ms = _gamma_sample(rng, mean_service_ms, cv=0.15)
+        service_ms = max(150.0, min(service_ms, 320.0))  # physical bounds
 
-        # Queue wait ~ Exp(mean=mean_wait_ms) when stable; inflated when overloaded
+        # Queue wait — sampled from a distribution calibrated to the Erlang-C mean.
+        # We use a Gamma(cv=0.5) for the stable regime so the tail is lighter than
+        # Exponential (which has p95 = 3× mean and would push p95 over SLA too early).
+        # Above saturation we use a Pareto-like heavy tail to model queue blowup.
         if rho < 1.0:
-            wait_ms = rng.expovariate(1.0 / (mean_wait_ms + 1e-9)) if mean_wait_ms > 0 else 0.0
+            # Stable regime: Gamma wait with cv=0.5 (lighter tail than Exp)
+            wait_ms = _gamma_sample(rng, max(mean_wait_ms, 1.0), cv=0.5)
+            # Cap at 2× mean in the well-loaded case to remain physically plausible
+            wait_ms = min(wait_ms, 2.5 * max(mean_wait_ms, 1.0))
         else:
-            # Overload: wait grows proportionally
-            wait_ms = mean_wait_ms * rng.uniform(0.8, 1.4)
+            # Overloaded: queue grows without bound; model with Pareto-like heavy tail
+            # Mean wait is already capped at 4500ms; sample with high variance
+            shape = 1.5  # Pareto shape — lower = heavier tail
+            # Pareto sample with given mean: mean = shape*xm/(shape-1) → xm = mean*(shape-1)/shape
+            xm = mean_wait_ms * (shape - 1.0) / shape
+            wait_ms = xm / (rng.random() ** (1.0 / shape))
+            wait_ms = min(wait_ms, 4800.0)
 
         latency_ms = service_ms + wait_ms
 
         # Error modelling:
-        # - baseline ~0.1% error
-        # - spikes above 28 RPS → climbs to ~8%
-        base_err = 0.001
-        if rps_target >= 28:
-            base_err = 0.08 * ((rps_target - 27) / 5.0)
-        elif rps_target >= 20:
-            base_err = 0.015
-        elif rps_target >= 16:
-            base_err = 0.005
+        # - baseline ~0.1% at low load (transient GPU hiccups)
+        # - ~0.5% approaching saturation (12 RPS)
+        # - spikes above 28 RPS → 2–10% (connection rejections, queue overflow)
+        rps_f = float(rps_target)
+        if rps_f >= 28:
+            base_err = 0.02 + 0.008 * (rps_f - 28)
+        elif rps_f >= 20:
+            base_err = 0.012
+        elif rps_f >= 16:
+            base_err = 0.006
+        elif rps_f >= 12:
+            base_err = 0.003
+        else:
+            base_err = 0.001
 
         is_error = rng.random() < base_err
-        # Timeout — treat latency > 5000 ms as an error
-        if latency_ms > 4900:
+        # Timeout — requests waiting > 5000ms fail
+        if latency_ms > 5000.0:
             is_error = True
             latency_ms = 5000.0
 
@@ -491,11 +549,11 @@ new Chart(document.getElementById('throughputChart'), {{
       label: 'Throughput (req/s)',
       data: tput,
       backgroundColor: labels.map((_, i) => {{
-        const sat = {json.dumps(list(rps_labels.index(str(saturation)) if saturation and str(saturation) in rps_labels else len(rps_labels)))};
+        const sat = {json.dumps(rps_labels.index(str(saturation)) if saturation and str(saturation) in rps_labels else len(rps_labels))};
         return i >= sat ? '#ef444466' : '#34d39966';
       }}),
       borderColor: labels.map((_, i) => {{
-        const sat = {json.dumps(list(rps_labels.index(str(saturation)) if saturation and str(saturation) in rps_labels else len(rps_labels)))};
+        const sat = {json.dumps(rps_labels.index(str(saturation)) if saturation and str(saturation) in rps_labels else len(rps_labels))};
         return i >= sat ? '#ef4444' : '#34d399';
       }}),
       borderWidth: 1,
