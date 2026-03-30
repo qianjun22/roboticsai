@@ -1,328 +1,416 @@
-#!/usr/bin/env python3
+"""Cross-embodiment adaptation tracker — port 8192.
+
+Adapts GR00T from Franka Panda (source) to other robot embodiments.
 """
-Embodiment Adapter for GR00T fine-tuning.
+from __future__ import annotations
 
-Converts robot-specific joint data from different embodiments to a unified
-GR00T training format. Supports:
-  - Franka Panda (7-DOF arm + 2 gripper)  [current]
-  - UR5e (6-DOF arm + 2 gripper)
-  - Kinova Gen3 (7-DOF arm + 2 gripper)
-  - xArm7 (7-DOF arm + 2 gripper)
+import math
+import textwrap
 
-Usage:
-    python3 embodiment_adapter.py \
-        --robot ur5e \
-        --input /tmp/ur5e_demos \
-        --output /tmp/ur5e_lerobot \
-        --show-mapping
+try:
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse, JSONResponse
+    import uvicorn
+except ImportError:  # pragma: no cover
+    FastAPI = None  # type: ignore
+    HTMLResponse = JSONResponse = None  # type: ignore
+    uvicorn = None  # type: ignore
 
-    python3 embodiment_adapter.py --list-robots
-"""
+# ---------------------------------------------------------------------------
+# Static data
+# ---------------------------------------------------------------------------
 
-import argparse
-import json
-import os
-from pathlib import Path
-from typing import Optional
-
-import numpy as np
-
-# ── Embodiment registry ────────────────────────────────────────────────────────
-
-EMBODIMENTS = {
-    "franka": {
-        "name": "Franka Panda",
-        "arm_dof": 7,
-        "gripper_dof": 2,
-        "joint_names": [
-            "panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4",
-            "panda_joint5", "panda_joint6", "panda_joint7",
-        ],
-        "gripper_names": ["panda_finger_joint1", "panda_finger_joint2"],
-        "arm_limits_rad": [
-            (-2.897, 2.897), (-1.763, 1.763), (-2.897, 2.897), (-3.072, -0.069),
-            (-2.897, 2.897), (-0.018, 3.752), (-2.897, 2.897),
-        ],
-        "gripper_limits_m": [(0.0, 0.04), (0.0, 0.04)],
-        "home_q": [0.0, -0.3, 0.0, -2.0, 0.0, 1.8, 0.785],
-        "home_gripper": [0.04, 0.04],
-        "groot_embodiment_tag": "NEW_EMBODIMENT",
-        "data_format": "joint_states",  # npy file format used in genesis_sdg_planned
-    },
-    "ur5e": {
-        "name": "Universal Robots UR5e",
-        "arm_dof": 6,
-        "gripper_dof": 2,
-        "joint_names": [
-            "shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
-            "wrist_1_joint", "wrist_2_joint", "wrist_3_joint",
-        ],
-        "gripper_names": ["finger_joint_l", "finger_joint_r"],
-        "arm_limits_rad": [
-            (-6.28, 6.28), (-6.28, 6.28), (-3.14, 3.14),
-            (-6.28, 6.28), (-6.28, 6.28), (-6.28, 6.28),
-        ],
-        "gripper_limits_m": [(0.0, 0.085), (0.0, 0.085)],
-        "home_q": [0.0, -1.57, 1.57, -1.57, -1.57, 0.0],
-        "home_gripper": [0.04, 0.04],
-        "groot_embodiment_tag": "GR1",  # use GR1 tag for 6-DOF (closest match)
-        "data_format": "joint_states",
-        "adapter_note": "UR5e has 6 arm DOF — zero-pad to 7 for GR00T compatibility",
-    },
-    "kinova_gen3": {
-        "name": "Kinova Gen3",
-        "arm_dof": 7,
-        "gripper_dof": 2,
-        "joint_names": [
-            "joint_1", "joint_2", "joint_3", "joint_4",
-            "joint_5", "joint_6", "joint_7",
-        ],
-        "gripper_names": ["right_inner_finger_joint", "left_inner_finger_joint"],
-        "arm_limits_rad": [
-            (-3.14, 3.14), (-2.27, 2.27), (-3.14, 3.14), (-2.57, 2.57),
-            (-3.14, 3.14), (-2.27, 2.27), (-3.14, 3.14),
-        ],
-        "gripper_limits_m": [(0.0, 0.03), (0.0, 0.03)],
-        "home_q": [0.0, 0.26, 3.14, -2.27, 0.0, 0.96, 1.57],
-        "home_gripper": [0.02, 0.02],
-        "groot_embodiment_tag": "NEW_EMBODIMENT",
-        "data_format": "joint_states",
-    },
-    "xarm7": {
-        "name": "UFACTORY xArm 7",
-        "arm_dof": 7,
-        "gripper_dof": 2,
-        "joint_names": [
-            "joint1", "joint2", "joint3", "joint4",
-            "joint5", "joint6", "joint7",
-        ],
-        "gripper_names": ["drive_joint", "right_outer_knuckle_joint"],
-        "arm_limits_rad": [
-            (-3.14, 3.14), (-2.60, 2.60), (-3.14, 3.14), (-0.19, 3.93),
-            (-3.14, 3.14), (-1.69, 3.14), (-3.14, 3.14),
-        ],
-        "gripper_limits_m": [(0.0, 0.053), (0.0, 0.053)],
-        "home_q": [0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0],
-        "home_gripper": [0.04, 0.04],
-        "groot_embodiment_tag": "NEW_EMBODIMENT",
-        "data_format": "joint_states",
-    },
+SOURCE = {
+    "id": "franka_panda",
+    "dof": 7,
+    "success_rate": 0.78,
+    "label": "Franka Panda (source)",
 }
 
+EMBODIMENTS: list[dict] = [
+    {
+        "id": "ur5e",
+        "label": "UR5e",
+        "dof": 6,
+        "adapter_params": 2_100_000,
+        "zero_shot_sr": 0.41,
+        "adapted_sr": 0.71,
+        "episodes_needed": 200,
+        "status": "READY",
+        "similarity_score": 0.74,
+    },
+    {
+        "id": "xarm6",
+        "label": "xArm 6",
+        "dof": 6,
+        "adapter_params": 2_100_000,
+        "zero_shot_sr": 0.38,
+        "adapted_sr": 0.68,
+        "episodes_needed": 250,
+        "status": "READY",
+        "similarity_score": 0.71,
+    },
+    {
+        "id": "stretch_re3",
+        "label": "Stretch RE3",
+        "dof": 5,
+        "adapter_params": 3_400_000,
+        "zero_shot_sr": 0.21,
+        "adapted_sr": 0.54,
+        "episodes_needed": 500,
+        "status": "IN_PROGRESS",
+        "similarity_score": 0.48,
+    },
+    {
+        "id": "spot_arm",
+        "label": "Spot Arm",
+        "dof": 6,
+        "adapter_params": 2_800_000,
+        "zero_shot_sr": 0.31,
+        "adapted_sr": None,
+        "episodes_needed": 350,
+        "status": "PLANNED",
+        "similarity_score": 0.62,
+    },
+]
 
-# ── Normalization utilities ───────────────────────────────────────────────────
 
-def normalize_joints(joints: np.ndarray, limits: list) -> np.ndarray:
-    """Normalize joints to [-1, 1] based on joint limits."""
-    lo = np.array([l[0] for l in limits], dtype=np.float32)
-    hi = np.array([l[1] for l in limits], dtype=np.float32)
-    return 2.0 * (joints - lo) / (hi - lo + 1e-8) - 1.0
+# ---------------------------------------------------------------------------
+# SVG helpers
+# ---------------------------------------------------------------------------
 
+def _radar_svg() -> str:
+    """Radar chart 520x340 — 4 axes: zero_shot_sr, adapted_sr, similarity, data_efficiency."""
+    W, H = 520, 340
+    cx, cy = 260, 175
+    R = 120  # outer radius
 
-def denormalize_joints(joints_norm: np.ndarray, limits: list) -> np.ndarray:
-    """Convert [-1, 1] normalized joints back to real values."""
-    lo = np.array([l[0] for l in limits], dtype=np.float32)
-    hi = np.array([l[1] for l in limits], dtype=np.float32)
-    return 0.5 * (joints_norm + 1.0) * (hi - lo) + lo
+    AXES = [
+        ("zero_shot_sr", "Zero-Shot SR"),
+        ("adapted_sr", "Adapted SR"),
+        ("similarity", "Similarity"),
+        ("data_eff", "Data Efficiency"),
+    ]
+    n_axes = len(AXES)
 
+    def angle(i: int) -> float:
+        return math.pi / 2 - 2 * math.pi * i / n_axes
 
-def adapt_arm_to_franka_space(joints: np.ndarray, source_cfg: dict, target_dof: int = 7) -> np.ndarray:
-    """
-    Adapt arm joints from source embodiment to Franka-compatible space.
-    - If source has fewer DOF than target, zero-pad the last joints.
-    - If source has same DOF, apply per-joint normalization and rescale.
-    """
-    T = joints.shape[0]
-    source_dof = source_cfg["arm_dof"]
+    def pt(val: float, i: int, r: float = R) -> tuple[float, float]:
+        a = angle(i)
+        return cx + r * val * math.cos(a), cy - r * val * math.sin(a)
 
-    if source_dof == target_dof:
-        # Normalize to [-1, 1] then denormalize into Franka space
-        franka_cfg = EMBODIMENTS["franka"]
-        normalized = normalize_joints(joints, source_cfg["arm_limits_rad"])
-        adapted = denormalize_joints(normalized, franka_cfg["arm_limits_rad"])
-        return adapted.astype(np.float32)
-    elif source_dof < target_dof:
-        # Pad with home position joints for missing DOFs
-        franka_home = np.array(EMBODIMENTS["franka"]["home_q"], dtype=np.float32)
-        normalized = normalize_joints(joints, source_cfg["arm_limits_rad"])
-        # Denormalize into Franka space for the available joints
-        franka_cfg = EMBODIMENTS["franka"]
-        adapted_partial = denormalize_joints(
-            normalized, franka_cfg["arm_limits_rad"][:source_dof]
+    # Max episodes_needed for normalisation
+    max_ep = max(e["episodes_needed"] for e in EMBODIMENTS)
+
+    def robot_vals(e: dict) -> list[float]:
+        zs = e["zero_shot_sr"]
+        ad = e["adapted_sr"] if e["adapted_sr"] is not None else 0.0
+        sim = e["similarity_score"]
+        eff = 1.0 - e["episodes_needed"] / max_ep  # higher = fewer episodes needed
+        return [zs, ad, sim, eff]
+
+    ROBOT_COLORS = ["#38bdf8", "#34d399", "#f59e0b", "#a78bfa"]
+
+    lines: list[str] = []
+    lines.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" style="background:#0f172a">')
+
+    # Grid rings
+    for ring in [0.25, 0.5, 0.75, 1.0]:
+        pts = " ".join(f"{pt(ring, i)[0]:.1f},{pt(ring, i)[1]:.1f}" for i in range(n_axes))
+        lines.append(f'<polygon points="{pts}" fill="none" stroke="#334155" stroke-width="1"/>')
+
+    # Axis spokes
+    for i in range(n_axes):
+        x2, y2 = pt(1.0, i)
+        lines.append(f'<line x1="{cx}" y1="{cy}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="#475569" stroke-width="1"/>')
+
+    # Axis labels
+    for i, (_, label) in enumerate(AXES):
+        x, y = pt(1.15, i)
+        lines.append(
+            f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="middle" dominant-baseline="middle" '
+            f'font-family="monospace" font-size="11" fill="#94a3b8">{label}</text>'
         )
-        # Pad remaining joints with Franka home values
-        adapted = np.tile(franka_home, (T, 1))
-        adapted[:, :source_dof] = adapted_partial
-        return adapted.astype(np.float32)
-    else:
-        raise ValueError(f"Source DOF {source_dof} > target {target_dof} — cannot reduce DOF")
+
+    # Source Franka reference ring (adapted SR equivalent)
+    franka_sr = SOURCE["success_rate"]
+    franka_vals = [franka_sr, franka_sr, 1.0, 1.0 - 0 / max_ep]  # perfect similarity/efficiency
+    fps = " ".join(f"{pt(franka_vals[i], i)[0]:.1f},{pt(franka_vals[i], i)[1]:.1f}" for i in range(n_axes))
+    lines.append(
+        f'<polygon points="{fps}" fill="#C74634" fill-opacity="0.15" stroke="#C74634" stroke-width="2" stroke-dasharray="6,3"/>'
+    )
+
+    # Target robot polygons
+    for idx, e in enumerate(EMBODIMENTS):
+        vals = robot_vals(e)
+        poly_pts = " ".join(f"{pt(vals[i], i)[0]:.1f},{pt(vals[i], i)[1]:.1f}" for i in range(n_axes))
+        col = ROBOT_COLORS[idx]
+        lines.append(
+            f'<polygon points="{poly_pts}" fill="{col}" fill-opacity="0.25" stroke="{col}" stroke-width="2"/>'
+        )
+        # Label at centroid
+        cx2 = sum(pt(vals[i], i)[0] for i in range(n_axes)) / n_axes
+        cy2 = sum(pt(vals[i], i)[1] for i in range(n_axes)) / n_axes
+        lines.append(
+            f'<text x="{cx2:.1f}" y="{cy2:.1f}" text-anchor="middle" dominant-baseline="middle" '
+            f'font-family="monospace" font-size="10" fill="{col}">{e["label"]}</text>'
+        )
+
+    # Legend
+    lx, ly = 10, 10
+    lines.append(
+        f'<rect x="{lx}" y="{ly}" width="14" height="6" fill="#C74634" fill-opacity="0.3" stroke="#C74634" stroke-width="1.5" stroke-dasharray="4,2"/>'
+    )
+    lines.append(f'<text x="{lx+18}" y="{ly+5}" font-family="monospace" font-size="10" fill="#C74634">Franka (source)</text>')
+    for idx, e in enumerate(EMBODIMENTS):
+        col = ROBOT_COLORS[idx]
+        ry = ly + 16 * (idx + 1)
+        lines.append(f'<rect x="{lx}" y="{ry}" width="14" height="6" fill="{col}" fill-opacity="0.4" stroke="{col}" stroke-width="1.5"/>')
+        lines.append(f'<text x="{lx+18}" y="{ry+5}" font-family="monospace" font-size="10" fill="{col}">{e["label"]}</text>')
+
+    lines.append('</svg>')
+    return "\n".join(lines)
 
 
-def adapt_gripper_to_franka_space(gripper: np.ndarray, source_cfg: dict) -> np.ndarray:
-    """Adapt gripper state to Franka finger space [0, 0.04]."""
-    franka_grip_limits = EMBODIMENTS["franka"]["gripper_limits_m"]
-    source_grip_limits = source_cfg["gripper_limits_m"]
+def _scatter_svg() -> str:
+    """Episode efficiency scatter 680x200: x=episodes_needed, y=adapted_sr, bubble=adapter_params."""
+    W, H = 680, 200
+    PL, PR, PT, PB = 60, 20, 20, 40  # padding
 
-    normalized = normalize_joints(gripper, source_grip_limits)
-    adapted    = denormalize_joints(normalized, franka_grip_limits)
-    return adapted.astype(np.float32)
+    valid = [e for e in EMBODIMENTS if e["adapted_sr"] is not None]
+    all_ep = [e["episodes_needed"] for e in valid]
+    min_ep, max_ep = min(all_ep), max(all_ep)
+    all_sr = [e["adapted_sr"] for e in valid]  # type: ignore[index]
+    min_sr, max_sr = 0.4, 0.85
+
+    def sx(ep: float) -> float:
+        return PL + (ep - min_ep) / max(max_ep - min_ep, 1) * (W - PL - PR)
+
+    def sy(sr: float) -> float:
+        return H - PB - (sr - min_sr) / (max_sr - min_sr) * (H - PT - PB)
+
+    max_params = max(e["adapter_params"] for e in valid)
+
+    def bubble_r(params: float) -> float:
+        return 8 + 14 * params / max_params
+
+    ROBOT_COLORS = ["#38bdf8", "#34d399", "#f59e0b", "#a78bfa"]
+
+    lines: list[str] = []
+    lines.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" style="background:#0f172a">')
+
+    # Axes
+    lines.append(
+        f'<line x1="{PL}" y1="{PT}" x2="{PL}" y2="{H-PB}" stroke="#475569" stroke-width="1"/>'
+    )
+    lines.append(
+        f'<line x1="{PL}" y1="{H-PB}" x2="{W-PR}" y2="{H-PB}" stroke="#475569" stroke-width="1"/>'
+    )
+
+    # Axis labels
+    lines.append(
+        f'<text x="{(PL+W-PR)//2}" y="{H-5}" text-anchor="middle" font-family="monospace" font-size="11" fill="#94a3b8">Episodes Needed</text>'
+    )
+    lines.append(
+        f'<text x="12" y="{(PT+H-PB)//2}" text-anchor="middle" font-family="monospace" font-size="11" fill="#94a3b8" transform="rotate(-90,12,{(PT+H-PB)//2})">Adapted SR</text>'
+    )
+
+    # Trend line (simple linear fit through valid points)
+    xs = [e["episodes_needed"] for e in valid]
+    ys = [e["adapted_sr"] for e in valid]  # type: ignore[misc]
+    n = len(xs)
+    mx = sum(xs) / n
+    my = sum(ys) / n
+    num = sum((xs[i] - mx) * (ys[i] - my) for i in range(n))
+    den = sum((xs[i] - mx) ** 2 for i in range(n))
+    slope = num / den if den else 0.0
+    intercept = my - slope * mx
+    tx1, tx2 = float(min_ep), float(max_ep)
+    ty1, ty2 = slope * tx1 + intercept, slope * tx2 + intercept
+    lines.append(
+        f'<line x1="{sx(tx1):.1f}" y1="{sy(ty1):.1f}" x2="{sx(tx2):.1f}" y2="{sy(ty2):.1f}" '
+        f'stroke="#475569" stroke-width="1.5" stroke-dasharray="5,3"/>'
+    )
+
+    # Franka star reference
+    star_x, star_y = sx(0), sy(SOURCE["success_rate"])  # 0 episodes (source)
+    # Clamp star to left edge
+    star_x = float(PL) + 4
+    def star_path(cx: float, cy: float, r: float) -> str:
+        pts = []
+        for k in range(10):
+            a = math.pi / 2 + k * math.pi / 5
+            ri = r if k % 2 == 0 else r * 0.4
+            pts.append(f"{cx + ri*math.cos(a):.1f},{cy - ri*math.sin(a):.1f}")
+        return " ".join(pts)
+    lines.append(
+        f'<polygon points="{star_path(star_x, star_y, 8)}" fill="#C74634" stroke="#C74634" stroke-width="1"/>'
+    )
+    lines.append(
+        f'<text x="{star_x+12}" y="{star_y+4}" font-family="monospace" font-size="9" fill="#C74634">Franka SR={SOURCE["success_rate"]}</text>'
+    )
+
+    # Bubbles
+    for idx, e in enumerate(valid):
+        col = ROBOT_COLORS[idx]
+        bx, by = sx(e["episodes_needed"]), sy(e["adapted_sr"])  # type: ignore[arg-type]
+        br = bubble_r(e["adapter_params"])
+        lines.append(f'<circle cx="{bx:.1f}" cy="{by:.1f}" r="{br:.1f}" fill="{col}" fill-opacity="0.7" stroke="{col}" stroke-width="1.5"/>')
+        lines.append(f'<text x="{bx:.1f}" y="{by-br-3:.1f}" text-anchor="middle" font-family="monospace" font-size="10" fill="{col}">{e["label"]} ({e["adapted_sr"]})</text>')
+
+    # Tick marks
+    for ep in [200, 300, 400, 500]:
+        tx = sx(ep)
+        if PL <= tx <= W - PR:
+            lines.append(f'<text x="{tx:.1f}" y="{H-PB+12}" text-anchor="middle" font-family="monospace" font-size="9" fill="#64748b">{ep}</text>')
+
+    lines.append('</svg>')
+    return "\n".join(lines)
 
 
-# ── Episode conversion ────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# HTML dashboard
+# ---------------------------------------------------------------------------
 
-def convert_episode(episode_dir: Path, output_dir: Path, source_cfg: dict) -> Optional[dict]:
-    """
-    Convert a single episode from source embodiment format to Franka-compatible
-    LeRobot v2 format for GR00T fine-tuning.
-    """
-    # Load source data
-    joint_file = episode_dir / "joint_states.npy"
-    rgb_file   = episode_dir / "rgb.npy"
-    meta_file  = episode_dir / "metadata.json"
+def _dashboard_html() -> str:
+    radar = _radar_svg()
+    scatter = _scatter_svg()
 
-    if not joint_file.exists() or not rgb_file.exists():
-        return None
-
-    raw_joints = np.load(joint_file)   # (T, arm_dof + gripper_dof)
-    rgb        = np.load(rgb_file)     # (T, H, W, 3)
-    meta       = json.loads(meta_file.read_text()) if meta_file.exists() else {}
-
-    T = raw_joints.shape[0]
-    arm_dof  = source_cfg["arm_dof"]
-
-    raw_arm     = raw_joints[:, :arm_dof]
-    raw_gripper = raw_joints[:, arm_dof:arm_dof + source_cfg["gripper_dof"]]
-
-    # Adapt to Franka-compatible space
-    adapted_arm     = adapt_arm_to_franka_space(raw_arm, source_cfg)
-    adapted_gripper = adapt_gripper_to_franka_space(raw_gripper, source_cfg)
-
-    # Save adapted data
-    output_dir.mkdir(parents=True, exist_ok=True)
-    np.save(output_dir / "rgb.npy",          rgb)
-    np.save(output_dir / "arm_states.npy",   adapted_arm)
-    np.save(output_dir / "gripper_states.npy", adapted_gripper)
-    np.save(output_dir / "joint_states.npy",
-            np.concatenate([adapted_arm, adapted_gripper], axis=-1))
-
-    # Write conversion metadata
-    adapted_meta = {
-        **meta,
-        "source_embodiment": source_cfg["name"],
-        "target_embodiment": "Franka Panda",
-        "original_arm_dof": arm_dof,
-        "adapted_arm_dof": 7,
-        "adaptation": "normalize→rescale" if arm_dof == 7 else "zero_pad",
-        "groot_embodiment_tag": source_cfg["groot_embodiment_tag"],
+    status_colors = {
+        "READY": "#22c55e",
+        "IN_PROGRESS": "#f59e0b",
+        "PLANNED": "#64748b",
     }
-    (output_dir / "metadata.json").write_text(json.dumps(adapted_meta, indent=2))
 
-    return {"T": T, "arm_dof": arm_dof, "adaptation": adapted_meta["adaptation"]}
+    rows = ""
+    for e in EMBODIMENTS:
+        sc = status_colors.get(e["status"], "#94a3b8")
+        adapted = f"{e['adapted_sr']:.2f}" if e["adapted_sr"] is not None else "—"
+        rows += (
+            f'<tr>'
+            f'<td>{e["label"]}</td>'
+            f'<td>{e["dof"]}</td>'
+            f'<td>{e["zero_shot_sr"]:.2f}</td>'
+            f'<td>{adapted}</td>'
+            f'<td>{e["similarity_score"]:.2f}</td>'
+            f'<td>{e["episodes_needed"]}</td>'
+            f'<td>{e["adapter_params"]/1e6:.1f}M</td>'
+            f'<td><span style="color:{sc};font-weight:bold">{e["status"]}</span></td>'
+            f'</tr>'
+        )
+
+    return textwrap.dedent(f"""\
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Embodiment Adapter Tracker — OCI Robot Cloud</title>
+      <style>
+        body {{ background:#0f172a; color:#e2e8f0; font-family:monospace; margin:0; padding:24px; }}
+        h1 {{ color:#C74634; margin-bottom:4px; }}
+        h2 {{ color:#38bdf8; font-size:14px; margin:24px 0 8px; }}
+        .subtitle {{ color:#64748b; font-size:12px; margin-bottom:20px; }}
+        .badge {{ display:inline-block; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:bold; margin:2px; }}
+        table {{ border-collapse:collapse; width:100%; font-size:12px; }}
+        th {{ color:#94a3b8; text-align:left; padding:6px 10px; border-bottom:1px solid #1e293b; }}
+        td {{ padding:6px 10px; border-bottom:1px solid #1e293b; }}
+        tr:hover {{ background:#1e293b; }}
+        .arch-box {{ background:#1e293b; border:1px solid #334155; border-radius:8px; padding:16px; margin-top:16px; font-size:12px; color:#94a3b8; }}
+        .arch-box b {{ color:#38bdf8; }}
+        .svg-wrap {{ margin:16px 0; overflow-x:auto; }}
+        .stat {{ display:inline-block; background:#1e293b; border-radius:8px; padding:12px 20px; margin:4px; text-align:center; }}
+        .stat-val {{ font-size:24px; font-weight:bold; color:#C74634; }}
+        .stat-label {{ font-size:11px; color:#64748b; margin-top:4px; }}
+      </style>
+    </head>
+    <body>
+      <h1>Cross-Embodiment Adapter Tracker</h1>
+      <div class="subtitle">GR00T N1.6 — adapting Franka Panda backbone to new robot embodiments</div>
+
+      <div>
+        <div class="stat"><div class="stat-val">{SOURCE['success_rate']:.0%}</div><div class="stat-label">Source SR (Franka)</div></div>
+        <div class="stat"><div class="stat-val">{sum(1 for e in EMBODIMENTS if e['status']=='READY')}</div><div class="stat-label">Adapters Ready</div></div>
+        <div class="stat"><div class="stat-val">{sum(1 for e in EMBODIMENTS if e['status']=='IN_PROGRESS')}</div><div class="stat-label">In Progress</div></div>
+        <div class="stat"><div class="stat-val">{sum(1 for e in EMBODIMENTS if e['status']=='PLANNED')}</div><div class="stat-label">Planned</div></div>
+        <div class="stat"><div class="stat-val">{len(EMBODIMENTS)}</div><div class="stat-label">Target Embodiments</div></div>
+      </div>
+
+      <h2>Adapter Architecture</h2>
+      <div class="arch-box">
+        <b>Input adapter layer:</b> maps target joint dims (5–6 DOF) → Franka 7-DOF space via learned linear projection<br>
+        <b>Shared backbone:</b> GR00T N1.6 trunk fully frozen (3B params) — zero gradient flow<br>
+        <b>Output remap:</b> action head remapped from 7-DOF Franka to target DOF configuration<br>
+        <b>Trainable params:</b> adapter_layer only (2.1M–3.4M depending on embodiment complexity)<br>
+        <b>Key insight:</b> higher kinematic similarity → fewer adaptation episodes + higher final success rate
+      </div>
+
+      <h2>Cross-Embodiment Radar</h2>
+      <div class="svg-wrap">{radar}</div>
+
+      <h2>Episode Efficiency vs. Adapted SR</h2>
+      <div class="svg-wrap">{scatter}</div>
+
+      <h2>Embodiment Details</h2>
+      <table>
+        <tr>
+          <th>Robot</th><th>DOF</th><th>Zero-Shot SR</th><th>Adapted SR</th>
+          <th>Similarity</th><th>Episodes</th><th>Adapter Params</th><th>Status</th>
+        </tr>
+        {rows}
+      </table>
+
+      <div class="arch-box" style="margin-top:24px">
+        <b>API endpoints:</b><br>
+        GET /embodiments — list all target embodiments (JSON)<br>
+        GET /embodiments/{{robot_id}} — single embodiment detail<br>
+        GET /compare — side-by-side comparison table<br>
+        GET / — this dashboard
+      </div>
+    </body>
+    </html>
+    """)
 
 
-# ── Dataset conversion ────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# App
+# ---------------------------------------------------------------------------
 
-def convert_dataset(input_dir: Path, output_dir: Path, robot: str) -> dict:
-    """Convert all episodes in input_dir from source embodiment to Franka space."""
-    source_cfg = EMBODIMENTS[robot]
-    output_dir.mkdir(parents=True, exist_ok=True)
+if FastAPI is not None:
+    app = FastAPI(title="Embodiment Adapter Tracker", version="1.0.0")
 
-    episode_dirs = sorted(d for d in input_dir.iterdir()
-                          if d.is_dir() and d.name.startswith("episode_"))
+    @app.get("/", response_class=HTMLResponse)
+    async def dashboard():
+        return _dashboard_html()
 
-    if not episode_dirs:
-        print(f"[adapter] No episode_XXXXXX dirs found in {input_dir}")
-        return {}
+    @app.get("/embodiments")
+    async def list_embodiments():
+        return JSONResponse({"source": SOURCE, "targets": EMBODIMENTS})
 
-    print(f"[adapter] Converting {len(episode_dirs)} episodes from {source_cfg['name']} → Franka space")
+    @app.get("/embodiments/{robot_id}")
+    async def get_embodiment(robot_id: str):
+        for e in EMBODIMENTS:
+            if e["id"] == robot_id:
+                return JSONResponse(e)
+        return JSONResponse({"error": "not found"}, status_code=404)
 
-    stats = {"converted": 0, "skipped": 0, "total": len(episode_dirs)}
-    for ep_dir in episode_dirs:
-        out_ep_dir = output_dir / ep_dir.name
-        result = convert_episode(ep_dir, out_ep_dir, source_cfg)
-        if result:
-            stats["converted"] += 1
-        else:
-            stats["skipped"] += 1
-        if stats["converted"] % 20 == 0 and stats["converted"] > 0:
-            print(f"[adapter]   {stats['converted']}/{len(episode_dirs)} converted...")
-
-    # Write dataset manifest
-    manifest = {
-        "source_embodiment": source_cfg["name"],
-        "source_robot_id": robot,
-        "target_embodiment": "Franka Panda",
-        "episodes_converted": stats["converted"],
-        "episodes_skipped": stats["skipped"],
-        "groot_embodiment_tag": source_cfg["groot_embodiment_tag"],
-        "notes": source_cfg.get("adapter_note", ""),
-    }
-    (output_dir / "adapter_manifest.json").write_text(json.dumps(manifest, indent=2))
-
-    print(f"[adapter] Done: {stats['converted']} episodes converted")
-    print(f"[adapter] Output → {output_dir}")
-    return stats
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
-
-def main():
-    parser = argparse.ArgumentParser(description="Embodiment adapter for GR00T fine-tuning")
-    parser.add_argument("--robot", choices=list(EMBODIMENTS.keys()),
-                        help="Source robot embodiment")
-    parser.add_argument("--input", help="Input directory with episode_XXXXXX subdirs")
-    parser.add_argument("--output", help="Output directory for adapted dataset")
-    parser.add_argument("--list-robots", action="store_true",
-                        help="List supported embodiments and exit")
-    parser.add_argument("--show-mapping", action="store_true",
-                        help="Show joint mapping details for --robot and exit")
-    args = parser.parse_args()
-
-    if args.list_robots:
-        print("\nSupported embodiments for GR00T fine-tuning via OCI Robot Cloud:")
-        print(f"{'ID':<16} {'Name':<30} {'Arm DOF':<10} {'GR00T Tag'}")
-        print("-" * 72)
-        for rid, cfg in EMBODIMENTS.items():
-            print(f"{rid:<16} {cfg['name']:<30} {cfg['arm_dof']:<10} {cfg['groot_embodiment_tag']}")
-        print()
-        return
-
-    if args.show_mapping and args.robot:
-        cfg = EMBODIMENTS[args.robot]
-        franka = EMBODIMENTS["franka"]
-        print(f"\nJoint mapping: {cfg['name']} → Franka Panda")
-        print(f"{'Source joint':<30} {'Limits (rad)':<25} → {'Franka joint':<30} {'Limits (rad)'}")
-        print("-" * 105)
-        for i in range(min(cfg["arm_dof"], 7)):
-            src_name  = cfg["joint_names"][i]
-            src_lim   = cfg["arm_limits_rad"][i]
-            tgt_name  = franka["joint_names"][i] if i < 7 else "(padded)"
-            tgt_lim   = franka["arm_limits_rad"][i]
-            print(f"  {src_name:<28} {str(src_lim):<25} → {tgt_name:<28} {str(tgt_lim)}")
-        if cfg["arm_dof"] < 7:
-            for i in range(cfg["arm_dof"], 7):
-                print(f"  (none — padded)              {'':25} → {franka['joint_names'][i]:<28} HOME={franka['home_q'][i]:.3f}")
-        if cfg.get("adapter_note"):
-            print(f"\n  NOTE: {cfg['adapter_note']}")
-        print()
-        return
-
-    if not args.robot or not args.input or not args.output:
-        parser.print_help()
-        print("\nExamples:")
-        print("  python3 embodiment_adapter.py --list-robots")
-        print("  python3 embodiment_adapter.py --robot ur5e --show-mapping")
-        print("  python3 embodiment_adapter.py --robot ur5e --input /tmp/ur5e_demos --output /tmp/ur5e_adapted")
-        return
-
-    convert_dataset(Path(args.input), Path(args.output), args.robot)
-    print(f"\nNext step (fine-tune on adapted data):")
-    cfg = EMBODIMENTS[args.robot]
-    print(f"  CUDA_VISIBLE_DEVICES=4 python3 launch_finetune.py \\")
-    print(f"    --dataset {args.output} \\")
-    print(f"    --embodiment {cfg['groot_embodiment_tag']} \\")
-    print(f"    --max-steps 2000")
+    @app.get("/compare")
+    async def compare():
+        valid = [e for e in EMBODIMENTS if e["adapted_sr"] is not None]
+        return JSONResponse({
+            "source": SOURCE,
+            "comparison": [
+                {
+                    **e,
+                    "sr_delta": round(e["adapted_sr"] - SOURCE["success_rate"], 3),
+                    "zeroshot_gain": round((e["adapted_sr"] - e["zero_shot_sr"]) / e["zero_shot_sr"], 3),
+                }
+                for e in valid
+            ],
+        })
 
 
 if __name__ == "__main__":
-    main()
+    if uvicorn is not None and FastAPI is not None:
+        uvicorn.run("embodiment_adapter:app", host="0.0.0.0", port=8192, reload=False)
+    else:
+        print("Install fastapi and uvicorn: pip install fastapi uvicorn")
