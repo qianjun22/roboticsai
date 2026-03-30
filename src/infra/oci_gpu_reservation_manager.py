@@ -1,4 +1,4 @@
-"""DAgger Run 11 Launcher — FastAPI port 9024"""
+"""OCI GPU Reservation Manager — FastAPI port 9025"""
 import math, random
 from http.server import HTTPServer, BaseHTTPRequestHandler
 try:
@@ -9,7 +9,7 @@ try:
 except ImportError:
     USE_FASTAPI = False
 
-PORT = 9024
+PORT = 9025
 
 def build_html():
     data = [round(random.uniform(0.5, 1.0) * math.sin(i/3) + 1.5, 3) for i in range(10)]
@@ -17,15 +17,15 @@ def build_html():
         f'<rect x="{30+i*40}" y="{150-int(v*60)}" width="30" height="{int(v*60)}" fill="#C74634"/>'
         for i, v in enumerate(data)
     )
-    return f"""<!DOCTYPE html><html><head><title>DAgger Run 11 Launcher — Port 9024</title>
+    return f"""<!DOCTYPE html><html><head><title>OCI GPU Reservation Manager — Port 9025</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace}}
 h1{{color:#C74634;padding:20px}}svg{{display:block;margin:20px}}</style></head>
-<body><h1>DAgger Run 11 Launcher — Port 9024</h1>
+<body><h1>OCI GPU Reservation Manager — Port 9025</h1>
 <svg width="430" height="180" style="background:#1e293b;border-radius:8px">{bars}</svg>
-<p style="padding:20px;color:#38bdf8">status: operational | port: 9024</p></body></html>"""
+<p style="padding:20px;color:#38bdf8">status: operational | port: 9025</p></body></html>"""
 
 if USE_FASTAPI:
-    app = FastAPI(title="DAgger Run 11 Launcher")
+    app = FastAPI(title="OCI GPU Reservation Manager")
     @app.get("/", response_class=HTMLResponse)
     def index(): return build_html()
     @app.get("/health")
