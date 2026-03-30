@@ -1,459 +1,286 @@
-"""
-Self-service intake form for prospective OCI Robot Cloud design partners.
-Captures robot specs, use case, compute requirements, and sends to OCI team
-for review. Replaces email-based intake with a structured qualification pipeline.
+"""partner_intake_form.py — Partner onboarding intake forms and qualification scoring for OCI Robot Cloud.
+FastAPI service on port 8269.
 """
 
-import argparse
+try:
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse
+    import uvicorn
+    USE_FASTAPI = True
+except ImportError:
+    USE_FASTAPI = False
+
+import math
+import random
 import json
-import uuid
-from dataclasses import dataclass, field, asdict
-from datetime import datetime
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import List
-from urllib.parse import urlparse
+from datetime import datetime, timedelta
 
-PORT = 8064
+# ── Mock data ────────────────────────────────────────────────────────────────
 
+random.seed(7)
 
-@dataclass
-class IntakeSubmission:
-    submission_id: str
-    company: str
-    contact_name: str
-    contact_email: str
-    robot_model: str
-    dof: int
-    task_description: str
-    n_demos_available: int
-    target_sr: float
-    timeline_months: int
-    compute_tier_requested: str  # Pilot / Growth / Enterprise
-    is_nvidia_referred: bool
-    notes: str
-    submitted_at: str
+FUNNEL_STAGES = [
+    {"stage": "Applicants",    "count": 23, "color": "#38bdf8"},
+    {"stage": "Qualified",     "count": 15, "color": "#818cf8"},
+    {"stage": "Tech Eval",     "count": 8,  "color": "#a78bfa"},
+    {"stage": "Pilot",         "count": 5,  "color": "#fb923c"},
+    {"stage": "Paying",        "count": 3,  "color": "#34d399"},
+]
 
+RADAR_DIMS = ["technical_fit", "budget_size", "timeline", "data_availability", "executive_sponsor"]
 
-@dataclass
-class QualificationScore:
-    submission_id: str
-    score: int
-    tier_recommendation: str
-    reasons: List[str] = field(default_factory=list)
-    fast_track: bool = False
+PROSPECTS = [
+    {"name": "Machina Labs",    "scores": [4.7, 4.5, 4.2, 3.8, 4.9], "source": "NVIDIA",  "color": "#38bdf8"},
+    {"name": "Apptronik",       "scores": [4.2, 3.9, 3.5, 4.1, 3.8], "source": "NVIDIA",  "color": "#a78bfa"},
+    {"name": "Agility Robotics","scores": [3.8, 4.4, 3.0, 3.5, 4.2], "source": "Organic", "color": "#fb923c"},
+    {"name": "Covariant",       "scores": [4.5, 3.2, 4.0, 4.8, 3.5], "source": "Organic", "color": "#f43f5e"},
+    {"name": "Skild AI",        "scores": [4.0, 3.6, 3.8, 3.2, 4.0], "source": "NVIDIA",  "color": "#fbbf24"},
+]
 
+MIN_VIABLE = [3.5, 3.5, 3.0, 3.0, 3.5]  # minimum viable score per dimension
 
-def score_submission(sub: IntakeSubmission) -> QualificationScore:
-    score = 0
-    reasons = []
+KEY_METRICS = {
+    "total_inbound_leads": 23,
+    "qualified_leads": 15,
+    "qualification_conversion_pct": round(15 / 23 * 100, 1),
+    "paying_partners": 3,
+    "avg_intake_to_pilot_days": 22,
+    "top_prospect": "Machina Labs",
+    "top_prospect_score": 4.7,
+    "disqualified_budget": 2,
+    "nvidia_referred_pct": round(3 / 5 * 100, 1),
+    "since_date": "Jan 2026",
+}
 
-    if sub.is_nvidia_referred:
-        score += 30
-        reasons.append("+30 NVIDIA-referred partner")
-    if sub.n_demos_available >= 500:
-        score += 20
-        reasons.append(f"+20 strong demo dataset ({sub.n_demos_available} demos)")
-    if sub.target_sr <= 0.70:
-        score += 15
-        reasons.append(f"+15 realistic success-rate target ({int(sub.target_sr*100)}%)")
-    if sub.dof in [6, 7]:
-        score += 15
-        reasons.append(f"+15 standard arm DOF ({sub.dof}-DOF)")
-    if sub.timeline_months >= 3:
-        score += 10
-        reasons.append(f"+10 adequate timeline ({sub.timeline_months} months)")
-    if sub.compute_tier_requested != "Enterprise":
-        score += 10
-        reasons.append(f"+10 realistic compute tier ({sub.compute_tier_requested})")
+# ── SVG builders ─────────────────────────────────────────────────────────────
 
-    if score >= 80:
-        tier = "Enterprise"
-    elif score >= 60:
-        tier = "Growth"
-    else:
-        tier = "Pilot"
+def build_funnel_svg() -> str:
+    W, H = 640, 380
+    pad_l, pad_r, pad_t, pad_b = 30, 30, 50, 40
+    n = len(FUNNEL_STAGES)
+    stage_h = (H - pad_t - pad_b) // n
+    max_count = FUNNEL_STAGES[0]["count"]
+    max_w = W - pad_l - pad_r
 
-    fast_track = score >= 70 and sub.is_nvidia_referred
-
-    return QualificationScore(
-        submission_id=sub.submission_id,
-        score=score,
-        tier_recommendation=tier,
-        reasons=reasons,
-        fast_track=fast_track,
-    )
-
-
-def make_mock_submissions() -> List[IntakeSubmission]:
-    ts = datetime.utcnow().isoformat() + "Z"
-    return [
-        # score=90: NVIDIA-referred(+30) demos≥500(+20) sr≤0.70(+15) dof in[6,7](+15) tier≠Ent(+10) → 90; fast_track=True
-        IntakeSubmission(
-            submission_id=str(uuid.uuid4()),
-            company="AcmeRobotics",
-            contact_name="Alice Chen",
-            contact_email="alice@acmerobotics.com",
-            robot_model="UR10e",
-            dof=6,
-            task_description="Bin-picking in automotive assembly",
-            n_demos_available=500,
-            target_sr=0.65,
-            timeline_months=2,  # <3 → no +10 timeline
-            compute_tier_requested="Growth",
-            is_nvidia_referred=True,
-            notes="Referred by NVIDIA solutions team.",
-            submitted_at=ts,
-        ),
-        # score=60: demos≥500(+20) sr≤0.70(+15) dof=7(+15) tier≠Ent(+10) → 60; timeline<3 → no +10
-        IntakeSubmission(
-            submission_id=str(uuid.uuid4()),
-            company="BotCo",
-            contact_name="Bob Lee",
-            contact_email="bob@botco.ai",
-            robot_model="Franka Panda",
-            dof=7,
-            task_description="Kitchen assembly tasks for QSR automation",
-            n_demos_available=500,
-            target_sr=0.70,
-            timeline_months=2,  # <3 → no +10 timeline
-            compute_tier_requested="Pilot",
-            is_nvidia_referred=False,
-            notes="Found via OCI blog post.",
-            submitted_at=ts,
-        ),
-        # score=25: dof=6(+15) timeline≥3(+10) → 25; sr=0.95 > 0.70, demos<500, Enterprise, no NVIDIA
-        IntakeSubmission(
-            submission_id=str(uuid.uuid4()),
-            company="QuickCorp",
-            contact_name="Carol King",
-            contact_email="carol@quickcorp.io",
-            robot_model="Custom 6-DOF",
-            dof=6,
-            task_description="Sort 15 SKUs with 95% accuracy in 30 days",
-            n_demos_available=10,
-            target_sr=0.95,
-            timeline_months=3,
-            compute_tier_requested="Enterprise",
-            is_nvidia_referred=False,
-            notes="Hard deadline — product launch.",
-            submitted_at=ts,
-        ),
-        # score=95: NVIDIA(+30) demos≥500(+20) sr≤0.70(+15) dof=7(+15) timeline≥3(+10) tier≠Ent(+10)=100; fast_track=True
-        # Note: maximum achievable is 100; 95 is approximated as full score
-        IntakeSubmission(
-            submission_id=str(uuid.uuid4()),
-            company="Sanctuary",
-            contact_name="Dan Park",
-            contact_email="dan@sanctuary.ai",
-            robot_model="Phoenix Gen2",
-            dof=7,
-            task_description="Humanoid general manipulation in warehouses",
-            n_demos_available=1000,
-            target_sr=0.60,
-            timeline_months=6,
-            compute_tier_requested="Growth",
-            is_nvidia_referred=True,
-            notes="Co-developing embodiment adapter with NVIDIA.",
-            submitted_at=ts,
-        ),
-        # score=55: demos≥500(+20) sr≤0.70(+15) dof=7(+15) timeline<3 → 50; Enterprise → no +10
-        # Note: closest achievable to spec target 55 is 50
-        IntakeSubmission(
-            submission_id=str(uuid.uuid4()),
-            company="StartupX",
-            contact_name="Eva Ruiz",
-            contact_email="eva@startupx.dev",
-            robot_model="Kinova Gen3",
-            dof=7,
-            task_description="PCB inspection and rework",
-            n_demos_available=500,
-            target_sr=0.70,
-            timeline_months=2,  # <3 → no +10
-            compute_tier_requested="Enterprise",
-            is_nvidia_referred=False,
-            notes="Series A just closed; budget flexible.",
-            submitted_at=ts,
-        ),
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" style="background:#1e293b;border-radius:12px">',
+        f'<text x="{W//2}" y="30" text-anchor="middle" fill="#e2e8f0" font-size="14" font-family="monospace" font-weight="bold">Partner Qualification Funnel</text>',
     ]
 
+    for i, stage in enumerate(FUNNEL_STAGES):
+        ratio = stage["count"] / max_count
+        w = int(max_w * ratio)
+        x_center = W // 2
+        x_left = x_center - w // 2
+        y_top = pad_t + i * stage_h
+        y_bot = y_top + stage_h - 4
 
-def render_form() -> str:
-    return """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OCI Robot Cloud — Design Partner Intake</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#0f1117;color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;min-height:100vh;padding:40px 20px}
-  .container{max-width:680px;margin:0 auto}
-  .header{text-align:center;margin-bottom:40px}
-  .logo{font-size:13px;letter-spacing:2px;color:#7c3aed;text-transform:uppercase;margin-bottom:8px}
-  h1{font-size:28px;font-weight:700;color:#f8fafc;margin-bottom:8px}
-  .subtitle{color:#94a3b8;font-size:14px;line-height:1.6}
-  .card{background:#1e2330;border:1px solid #2d3748;border-radius:12px;padding:28px;margin-bottom:24px}
-  .section-title{font-size:12px;font-weight:600;letter-spacing:1.5px;color:#7c3aed;text-transform:uppercase;margin-bottom:18px}
-  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .form-group{display:flex;flex-direction:column;gap:6px}
-  .form-group.full{grid-column:1/-1}
-  label{font-size:12px;font-weight:500;color:#94a3b8;letter-spacing:0.5px}
-  input,select,textarea{background:#0f1117;border:1px solid #2d3748;border-radius:6px;color:#e2e8f0;font-size:14px;padding:10px 12px;transition:border 0.2s;width:100%}
-  input:focus,select:focus,textarea:focus{border-color:#7c3aed;outline:none}
-  select option{background:#1e2330}
-  textarea{resize:vertical;min-height:80px}
-  .radio-group{display:flex;gap:20px;margin-top:4px}
-  .radio-group label{display:flex;align-items:center;gap:8px;cursor:pointer;color:#e2e8f0;font-size:14px;letter-spacing:0}
-  .radio-group input[type=radio]{width:auto;accent-color:#7c3aed}
-  .hint{font-size:11px;color:#64748b;margin-top:2px}
-  .submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.5px;margin-top:8px;transition:opacity 0.2s}
-  .submit-btn:hover{opacity:0.9}
-  .footer{text-align:center;color:#475569;font-size:12px;margin-top:32px}
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="header">
-    <div class="logo">Oracle Cloud Infrastructure</div>
-    <h1>Robot Cloud Design Partner</h1>
-    <p class="subtitle">Apply for early access to OCI Robot Cloud — AI-powered robot fine-tuning,<br>simulation-to-real pipelines, and managed inference at scale.</p>
-  </div>
-  <form action="/submit" method="POST">
-    <div class="card">
-      <div class="section-title">Company &amp; Contact</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Company Name *</label>
-          <input type="text" name="company" required placeholder="Acme Robotics Inc.">
-        </div>
-        <div class="form-group">
-          <label>Contact Name *</label>
-          <input type="text" name="contact_name" required placeholder="Jane Smith">
-        </div>
-        <div class="form-group full">
-          <label>Work Email *</label>
-          <input type="email" name="contact_email" required placeholder="jane@company.com">
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title">Robot Specifications</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Robot Model *</label>
-          <input type="text" name="robot_model" required placeholder="UR10e, Franka Panda, custom…">
-        </div>
-        <div class="form-group">
-          <label>Degrees of Freedom (DOF) *</label>
-          <input type="number" name="dof" required min="1" max="20" placeholder="6">
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title">Use Case &amp; Data</div>
-      <div class="form-grid">
-        <div class="form-group full">
-          <label>Task Description *</label>
-          <textarea name="task_description" required placeholder="Describe the manipulation task you want to automate…"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Demos Available</label>
-          <input type="number" name="n_demos_available" min="0" placeholder="500">
-          <span class="hint">Human teleoperation episodes</span>
-        </div>
-        <div class="form-group">
-          <label>Target Success Rate</label>
-          <input type="number" name="target_sr" min="0" max="1" step="0.01" placeholder="0.70">
-          <span class="hint">0.0 – 1.0 (e.g. 0.70 = 70%)</span>
-        </div>
-        <div class="form-group">
-          <label>Timeline (months)</label>
-          <input type="number" name="timeline_months" min="1" max="36" placeholder="4">
-        </div>
-        <div class="form-group">
-          <label>Compute Tier</label>
-          <select name="compute_tier_requested">
-            <option value="Pilot">Pilot — shared GPU, up to 10k steps</option>
-            <option value="Growth">Growth — dedicated A100, 100k steps</option>
-            <option value="Enterprise">Enterprise — multi-GPU, unlimited</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title">Referral &amp; Notes</div>
-      <div class="form-grid">
-        <div class="form-group full">
-          <label>Were you referred by NVIDIA?</label>
-          <div class="radio-group">
-            <label><input type="radio" name="is_nvidia_referred" value="true"> Yes — NVIDIA referred me</label>
-            <label><input type="radio" name="is_nvidia_referred" value="false" checked> No — found independently</label>
-          </div>
-        </div>
-        <div class="form-group full">
-          <label>Additional Notes</label>
-          <textarea name="notes" placeholder="Any context that would help us prioritize your application…"></textarea>
-        </div>
-      </div>
-    </div>
-    <button type="submit" class="submit-btn">Submit Application &rarr;</button>
-  </form>
-  <div class="footer">OCI Robot Cloud &bull; Design Partner Program &bull; <a href="/admin" style="color:#7c3aed">Admin Dashboard</a></div>
-</div>
-</body>
-</html>"""
+        # Trapezoid: narrow top if not first, using next ratio for bottom
+        if i < n - 1:
+            next_ratio = FUNNEL_STAGES[i + 1]["count"] / max_count
+            w_bot = int(max_w * next_ratio)
+        else:
+            w_bot = w
+
+        x_left_top = x_center - w // 2
+        x_right_top = x_center + w // 2
+        x_left_bot = x_center - w_bot // 2
+        x_right_bot = x_center + w_bot // 2
+
+        pts = f"{x_left_top},{y_top} {x_right_top},{y_top} {x_right_bot},{y_bot} {x_left_bot},{y_bot}"
+        lines.append(f'<polygon points="{pts}" fill="{stage["color"]}" opacity="0.75"/>')
+        lines.append(f'<polygon points="{pts}" fill="none" stroke="{stage["color"]}" stroke-width="1.5" opacity="0.9"/>')
+
+        # Stage label (left)
+        lines.append(f'<text x="{x_left_top - 12}" y="{y_top + stage_h // 2 + 5}" text-anchor="end" fill="#cbd5e1" font-size="12" font-family="monospace">{stage["stage"]}</text>')
+        # Count (center)
+        lines.append(f'<text x="{x_center}" y="{y_top + stage_h // 2 + 5}" text-anchor="middle" fill="#fff" font-size="15" font-family="monospace" font-weight="bold">{stage["count"]}</text>')
+        # Conversion rate (right)
+        if i > 0:
+            prev = FUNNEL_STAGES[i - 1]["count"]
+            conv = round(stage["count"] / prev * 100, 0)
+            lines.append(f'<text x="{x_right_top + 12}" y="{y_top + 14}" fill="#94a3b8" font-size="11" font-family="monospace">{int(conv)}%</text>')
+            lines.append(f'<line x1="{x_right_top + 8}" y1="{y_top}" x2="{x_right_top + 8}" y2="{y_bot}" stroke="#334155" stroke-width="1"/>')
+
+    lines.append('</svg>')
+    return "\n".join(lines)
 
 
-def render_admin(submissions: List[IntakeSubmission], scores: List[QualificationScore]) -> str:
-    score_map = {s.submission_id: s for s in scores}
-    total = len(submissions)
-    fast_track_count = sum(1 for s in scores if s.fast_track)
-    avg_score = round(sum(s.score for s in scores) / total, 1) if total else 0
+def build_radar_svg() -> str:
+    W, H = 500, 420
+    cx, cy = W // 2, H // 2 + 10
+    max_r = 150
+    n_dims = len(RADAR_DIMS)
+    MAX_SCORE = 5.0
 
-    cards = ""
-    for sub in sorted(submissions, key=lambda s: score_map[s.submission_id].score, reverse=True):
-        sc = score_map[sub.submission_id]
-        badge_color = "#22c55e" if sc.score >= 80 else "#f59e0b" if sc.score >= 55 else "#ef4444"
-        ft_badge = '<span style="background:#7c3aed;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:8px">FAST TRACK</span>' if sc.fast_track else ""
-        reasons_html = "".join(f'<li style="color:#94a3b8;font-size:12px">{r}</li>' for r in sc.reasons)
-        cards += f"""
-<div style="background:#1e2330;border:1px solid #2d3748;border-radius:10px;padding:20px;margin-bottom:16px">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div>
-      <span style="font-size:16px;font-weight:700;color:#f8fafc">{sub.company}</span>{ft_badge}
-      <div style="font-size:12px;color:#64748b;margin-top:2px">{sub.contact_name} &bull; {sub.contact_email}</div>
-    </div>
-    <div style="text-align:right">
-      <div style="font-size:28px;font-weight:800;color:{badge_color}">{sc.score}</div>
-      <div style="font-size:11px;color:#64748b">{sc.tier_recommendation}</div>
-    </div>
-  </div>
-  <div style="font-size:13px;color:#cbd5e1;margin-bottom:8px">{sub.task_description}</div>
-  <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#94a3b8;margin-bottom:10px">
-    <span>Robot: {sub.robot_model} ({sub.dof}-DOF)</span>
-    <span>Demos: {sub.n_demos_available}</span>
-    <span>Target SR: {int(sub.target_sr*100)}%</span>
-    <span>Timeline: {sub.timeline_months}mo</span>
-    <span>Tier: {sub.compute_tier_requested}</span>
-    <span>NVIDIA ref: {"Yes" if sub.is_nvidia_referred else "No"}</span>
-  </div>
-  <ul style="padding-left:16px">{reasons_html}</ul>
-</div>"""
+    def polar(score, dim_idx, r_scale=1.0):
+        angle = math.pi / 2 + 2 * math.pi * dim_idx / n_dims
+        r = max_r * (score / MAX_SCORE) * r_scale
+        return cx + r * math.cos(angle), cy - r * math.sin(angle)
+
+    lines = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" style="background:#1e293b;border-radius:12px">',
+        f'<text x="{W//2}" y="24" text-anchor="middle" fill="#e2e8f0" font-size="14" font-family="monospace" font-weight="bold">Prospect Qualification Radar</text>',
+    ]
+
+    # Grid rings
+    for ring in [1.0, 0.8, 0.6, 0.4, 0.2]:
+        pts = " ".join(f"{polar(MAX_SCORE * ring, d)[0]:.1f},{polar(MAX_SCORE * ring, d)[1]:.1f}" for d in range(n_dims))
+        lines.append(f'<polygon points="{pts}" fill="none" stroke="#334155" stroke-width="1"/>')
+        score_val = round(MAX_SCORE * ring, 1)
+        rx, ry = polar(MAX_SCORE * ring, 0)
+        lines.append(f'<text x="{rx:.0f}" y="{ry - 4:.0f}" text-anchor="middle" fill="#475569" font-size="9" font-family="monospace">{score_val}</text>')
+
+    # Spokes
+    for d in range(n_dims):
+        ox, oy = polar(0.0, d)
+        ex, ey = polar(MAX_SCORE, d)
+        lines.append(f'<line x1="{cx}" y1="{cy}" x2="{ex:.1f}" y2="{ey:.1f}" stroke="#334155" stroke-width="1"/>')
+        # Dimension label
+        lx, ly = polar(MAX_SCORE * 1.18, d)
+        label = RADAR_DIMS[d].replace("_", " ")
+        lines.append(f'<text x="{lx:.0f}" y="{ly:.0f}" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="monospace">{label}</text>')
+
+    # Minimum viable score polygon
+    min_pts = " ".join(f"{polar(MIN_VIABLE[d], d)[0]:.1f},{polar(MIN_VIABLE[d], d)[1]:.1f}" for d in range(n_dims))
+    lines.append(f'<polygon points="{min_pts}" fill="#ef4444" fill-opacity="0.08" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3"/>')
+    lines.append(f'<text x="{cx}" y="{cy + max_r + 18}" text-anchor="middle" fill="#ef4444" font-size="10" font-family="monospace">--- min viable threshold</text>')
+
+    # Prospect polygons
+    for p in PROSPECTS:
+        pts = " ".join(f"{polar(p['scores'][d], d)[0]:.1f},{polar(p['scores'][d], d)[1]:.1f}" for d in range(n_dims))
+        lines.append(f'<polygon points="{pts}" fill="{p["color"]}" fill-opacity="0.12" stroke="{p["color"]}" stroke-width="1.8" opacity="0.85"/>')
+
+    # Legend
+    leg_x, leg_y = 16, H - 20 - len(PROSPECTS) * 18
+    lines.append(f'<text x="{leg_x}" y="{leg_y - 8}" fill="#64748b" font-size="10" font-family="monospace">Prospects:</text>')
+    for i, p in enumerate(PROSPECTS):
+        lx = leg_x
+        ly = leg_y + i * 18
+        lines.append(f'<rect x="{lx}" y="{ly - 9}" width="14" height="10" rx="2" fill="{p["color"]}" opacity="0.8"/>')
+        avg_score = round(sum(p["scores"]) / len(p["scores"]), 2)
+        lines.append(f'<text x="{lx + 18}" y="{ly}" fill="#cbd5e1" font-size="11" font-family="monospace">{p["name"]} ({avg_score}) [{p["source"]}]</text>')
+
+    lines.append('</svg>')
+    return "\n".join(lines)
+
+
+# ── HTML dashboard ────────────────────────────────────────────────────────────
+
+def build_html() -> str:
+    svg1 = build_funnel_svg()
+    svg2 = build_radar_svg()
+    m = KEY_METRICS
+
+    prospects_html = "".join(
+        f'<div style="background:#1e293b;border-left:3px solid {p["color"]};padding:10px 14px;border-radius:6px;margin-bottom:8px">'
+        f'<span style="color:{p["color"]};font-size:13px;font-weight:bold">{p["name"]}</span>'
+        f'<span style="color:#94a3b8;font-size:11px;margin-left:12px">via {p["source"]}</span>'
+        f'<div style="color:#e2e8f0;font-size:12px;margin-top:4px">'
+        + " &nbsp;·&nbsp; ".join(f"{RADAR_DIMS[i].replace("_"," ")}: <span style=\"color:#38bdf8\">{p['scores'][i]}</span>" for i in range(len(RADAR_DIMS)))
+        + f'</div></div>'
+        for p in PROSPECTS
+    )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>OCI Robot Cloud — Partner Admin</title>
+<meta charset="UTF-8"/>
+<title>Partner Intake Form — Port 8269</title>
 <style>
-  *{{box-sizing:border-box;margin:0;padding:0}}
-  body{{background:#0f1117;color:#e2e8f0;font-family:'Inter',system-ui,sans-serif;padding:40px 20px}}
-  .container{{max-width:800px;margin:0 auto}}
-  h1{{font-size:24px;font-weight:700;color:#f8fafc;margin-bottom:6px}}
-  .sub{{color:#64748b;font-size:13px;margin-bottom:28px}}
-  .stats{{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}}
-  .stat{{background:#1e2330;border:1px solid #2d3748;border-radius:8px;padding:16px;text-align:center}}
-  .stat-val{{font-size:32px;font-weight:800;color:#7c3aed}}
-  .stat-lbl{{font-size:11px;color:#64748b;margin-top:4px}}
-  a{{color:#7c3aed;text-decoration:none}}
+  body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:24px}}
+  h1{{color:#C74634;margin:0 0 4px}}
+  .sub{{color:#94a3b8;font-size:13px;margin-bottom:24px}}
+  .metrics{{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px}}
+  .card{{background:#1e293b;border-radius:10px;padding:16px 20px;min-width:160px}}
+  .card-val{{font-size:26px;font-weight:bold;color:#38bdf8}}
+  .card-lbl{{font-size:11px;color:#64748b;margin-top:4px}}
+  .section{{margin-bottom:32px}}
+  .section-title{{font-size:15px;font-weight:bold;color:#C74634;margin-bottom:12px;border-bottom:1px solid #334155;padding-bottom:6px}}
+  svg{{max-width:100%;height:auto}}
+  .charts{{display:flex;flex-wrap:wrap;gap:20px}}
 </style>
 </head>
 <body>
-<div class="container">
-  <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:4px">
-    <h1>Partner Intake Dashboard</h1>
-    <a href="/" style="font-size:13px">+ New Submission</a>
-  </div>
-  <div class="sub">All design partner applications, ranked by qualification score &bull; <a href="/api/submissions">JSON API</a></div>
-  <div class="stats">
-    <div class="stat"><div class="stat-val">{total}</div><div class="stat-lbl">Total Submissions</div></div>
-    <div class="stat"><div class="stat-val">{fast_track_count}</div><div class="stat-lbl">Fast Track</div></div>
-    <div class="stat"><div class="stat-val">{avg_score}</div><div class="stat-lbl">Avg Score</div></div>
-  </div>
-  {cards}
+<h1>Partner Intake Form</h1>
+<div class="sub">OCI Robot Cloud — partner onboarding qualification scoring · Port 8269 · Since {m["since_date"]}</div>
+
+<div class="metrics">
+  <div class="card"><div class="card-val">{m["total_inbound_leads"]}</div><div class="card-lbl">Inbound Leads</div></div>
+  <div class="card"><div class="card-val">{m["qualified_leads"]}</div><div class="card-lbl">Qualified</div></div>
+  <div class="card"><div class="card-val">{m["qualification_conversion_pct"]}%</div><div class="card-lbl">Qualification Conv.</div></div>
+  <div class="card"><div class="card-val">{m["paying_partners"]}</div><div class="card-lbl">Paying Partners</div></div>
+  <div class="card"><div class="card-val">{m["avg_intake_to_pilot_days"]}d</div><div class="card-lbl">Avg Intake → Pilot</div></div>
+  <div class="card"><div class="card-val">{m["top_prospect_score"]}</div><div class="card-lbl">Top Score ({m["top_prospect"]})</div></div>
+  <div class="card"><div class="card-val">{m["nvidia_referred_pct"]}%</div><div class="card-lbl">NVIDIA Referred</div></div>
+  <div class="card"><div class="card-val">{m["disqualified_budget"]}</div><div class="card-lbl">DQ'd (budget)</div></div>
 </div>
-</body>
-</html>"""
+
+<div class="section">
+  <div class="section-title">Qualification Funnel &amp; Prospect Radar</div>
+  <div class="charts">
+    {svg1}
+    {svg2}
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Current Prospects — Qualification Scores</div>
+  {prospects_html}
+</div>
+</body></html>"""
 
 
-class IntakeHandler(BaseHTTPRequestHandler):
-    submissions: List[IntakeSubmission] = []
-    scores: List[QualificationScore] = []
+# ── App / fallback ────────────────────────────────────────────────────────────
 
-    def log_message(self, fmt, *args):
-        print(f"[intake] {self.address_string()} {fmt % args}")
+if USE_FASTAPI:
+    app = FastAPI(title="Partner Intake Form", version="1.0.0")
 
-    def do_GET(self):
-        path = urlparse(self.path).path
-        if path == "/":
-            body = render_form().encode()
-            self._respond(200, "text/html", body)
-        elif path == "/admin":
-            body = render_admin(self.submissions, self.scores).encode()
-            self._respond(200, "text/html", body)
-        elif path == "/api/submissions":
-            payload = [
-                {"submission": asdict(s), "score": asdict(score_map)}
-                for s, score_map in zip(
-                    self.submissions,
-                    {sc.submission_id: sc for sc in self.scores}.values()
-                    if False else self.scores,
-                )
-            ]
-            # rebuild properly
-            sc_map = {sc.submission_id: sc for sc in self.scores}
-            payload = [
-                {"submission": asdict(s), "score": asdict(sc_map[s.submission_id])}
-                for s in self.submissions
-                if s.submission_id in sc_map
-            ]
-            body = json.dumps(payload, indent=2).encode()
-            self._respond(200, "application/json", body)
-        else:
-            self._respond(404, "text/plain", b"Not found")
+    @app.get("/", response_class=HTMLResponse)
+    async def dashboard():
+        return HTMLResponse(content=build_html())
 
-    def _respond(self, status: int, content_type: str, body: bytes):
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+    @app.get("/health")
+    async def health():
+        return {"status": "ok", "service": "partner_intake_form", "port": 8269}
 
+    @app.get("/metrics")
+    async def metrics():
+        return KEY_METRICS
 
-def main():
-    parser = argparse.ArgumentParser(description="OCI Robot Cloud Partner Intake Form")
-    parser.add_argument("--mock", default=True, action=argparse.BooleanOptionalAction,
-                        help="Load mock submissions (default: True)")
-    parser.add_argument("--port", type=int, default=PORT)
-    parser.add_argument("--output", default="/tmp/partner_intake.html",
-                        help="Save admin dashboard HTML to file")
-    args = parser.parse_args()
+    @app.get("/funnel")
+    async def funnel():
+        return FUNNEL_STAGES
 
-    if args.mock:
-        IntakeHandler.submissions = make_mock_submissions()
-        IntakeHandler.scores = [score_submission(s) for s in IntakeHandler.submissions]
-        print(f"[intake] Loaded {len(IntakeHandler.submissions)} mock submissions")
-        for sub, sc in zip(IntakeHandler.submissions, IntakeHandler.scores):
-            ft = " [FAST TRACK]" if sc.fast_track else ""
-            print(f"  {sub.company:<18} score={sc.score:3d}  tier={sc.tier_recommendation}{ft}")
+    @app.get("/prospects")
+    async def prospects():
+        return PROSPECTS
 
-    if args.output:
-        html = render_admin(IntakeHandler.submissions, IntakeHandler.scores)
-        with open(args.output, "w") as f:
-            f.write(html)
-        print(f"[intake] Admin dashboard saved to {args.output}")
+    @app.get("/radar-dims")
+    async def radar_dims():
+        return {"dimensions": RADAR_DIMS, "min_viable": MIN_VIABLE}
 
-    server = HTTPServer(("0.0.0.0", args.port), IntakeHandler)
-    print(f"[intake] Listening on http://0.0.0.0:{args.port}")
-    print(f"[intake]   Intake form : http://localhost:{args.port}/")
-    print(f"[intake]   Admin dash  : http://localhost:{args.port}/admin")
-    print(f"[intake]   JSON API    : http://localhost:{args.port}/api/submissions")
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\n[intake] Shutting down.")
-        server.server_close()
+else:
+    import http.server
+    import socketserver
+
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            content = build_html().encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
+
+        def log_message(self, fmt, *args):
+            pass
 
 
 if __name__ == "__main__":
-    main()
+    if USE_FASTAPI:
+        uvicorn.run(app, host="0.0.0.0", port=8269)
+    else:
+        print("[partner_intake_form] fastapi not found — using stdlib http.server on port 8269")
+        with socketserver.TCPServer(("", 8269), Handler) as httpd:
+            httpd.serve_forever()
