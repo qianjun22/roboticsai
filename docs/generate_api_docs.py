@@ -1,2406 +1,1441 @@
-#!/usr/bin/env python3
 """
-generate_api_docs.py — OCI Robot Cloud API Reference Generator
+generate_api_docs.py
 
-Produces a self-contained dark-theme HTML reference for every service
-in the OCI Robot Cloud platform (ports 8000–8080).
+Generates a unified HTML API reference for all 58 OCI Robot Cloud services
+(ports 8001-8058). Each service is linked to its corresponding script in the
+roboticsai repository. Output is a self-contained, dark-themed HTML file with
+a searchable sidebar and expandable endpoint cards.
 
 Usage:
-    python docs/generate_api_docs.py
-    python docs/generate_api_docs.py --output docs/API_REFERENCE.html
-
-No external dependencies — uses only the Python standard library.
+    python3 generate_api_docs.py --output /tmp/api_reference.html
 """
 
 import argparse
-import datetime
-from pathlib import Path
+from dataclasses import dataclass, field
+from typing import Dict, List
+
+
+@dataclass
+class EndpointDef:
+    method: str          # "GET" or "POST"
+    path: str
+    description: str
+    params: Dict[str, str]
+    returns: str
+
+
+@dataclass
+class ServiceDef:
+    port: int
+    name: str
+    script_path: str
+    description: str
+    endpoints: List[EndpointDef]
+    status: str          # "live" or "planned"
+
 
 # ---------------------------------------------------------------------------
-# Data model
+# Service definitions
 # ---------------------------------------------------------------------------
 
-SERVICES = [
-    # ── Core Inference ──────────────────────────────────────────────────────
-    {
-        "port": 8000,
-        "name": "OpenVLA Inference Server",
-        "title": "OCI Robot Cloud — Inference API",
-        "file": "src/inference/server.py",
-        "category": "Core Services",
-        "description": (
-            "Original OpenVLA-7B inference endpoint. Accepts camera images and "
-            "language instructions; returns joint-space action vectors. Supports "
-            "optional INT4/INT8 quantisation for reduced VRAM usage."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("POST", "/predict", "Run a single inference step; returns action array"),
-            ("GET",  "/health",  "Liveness check; returns model name and device"),
+SERVICES: List[ServiceDef] = [
+    ServiceDef(
+        port=8001,
+        name="groot_franka_server",
+        script_path="server/groot_franka_server.py",
+        description="Primary GR00T N1.6 inference endpoint for Franka Panda robot actions. "
+                    "Accepts vision + language observations and returns 7-DOF joint actions.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/health",    "Liveness probe",
+                        {},
+                        "{'status': 'ok', 'model': 'GR00T-N1.6', 'latency_ms': float}"),
+            EndpointDef("POST", "/predict",   "Run inference: image + instruction -> joint actions",
+                        {"image_b64": "base64-encoded RGB frame (str)",
+                         "instruction": "natural language task description (str)",
+                         "state": "current joint positions, 7-float list"},
+                        "{'actions': [[float]*7], 'latency_ms': float}"),
+            EndpointDef("GET",  "/model/info","Return loaded model metadata",
+                        {},
+                        "{'model_id': str, 'param_count': str, 'gpu_memory_gb': float}"),
         ],
-        "example": (
-            "curl -s -X POST http://localhost:8000/predict \\\n"
-            "  -F 'image=@frame.jpg' -F 'instruction=pick up the cube'"
-        ),
-    },
-    {
-        "port": 8001,
-        "name": "GR00T N1.6 Inference Server",
-        "title": "OCI Robot Cloud — GR00T N1.6 Inference API",
-        "file": "src/inference/groot_server.py",
-        "category": "Core Services",
-        "description": (
-            "Primary production inference server for NVIDIA GR00T N1.6 (6.7 GB, "
-            "227 ms median latency on A100). Accepts multi-modal observations "
-            "(RGB image + proprioception) and returns 16-step action chunks. "
-            "Supports --mock flag for CI/demo without GPU."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("POST", "/predict", "Action-chunk inference; returns List[float] of length 16×7"),
-            ("GET",  "/health",  "Returns model path, device, load time, and chunk size"),
+    ),
+    ServiceDef(
+        port=8002,
+        name="groot_inference_v2",
+        script_path="server/groot_inference_v2.py",
+        description="Second-generation GR00T inference service with batching support, "
+                    "multi-camera inputs, and proprioceptive state fusion.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/predict",       "Batched multi-camera inference",
+                        {"images": "list of base64 frames",
+                         "instruction": "str",
+                         "proprio": "14-float proprio state"},
+                        "{'actions': [[float]*7]*N, 'confidence': float}"),
+            EndpointDef("POST", "/predict/stream","Streaming action chunk generation (SSE)",
+                        {"image_b64": "str", "instruction": "str"},
+                        "Server-sent events: action chunks at 30 Hz"),
+            EndpointDef("GET",  "/stats",         "Runtime throughput and GPU utilization stats",
+                        {},
+                        "{'requests_total': int, 'avg_latency_ms': float, 'gpu_util': float}"),
         ],
-        "example": (
-            "curl -s http://localhost:8001/health\n"
-            "# POST with multipart: image (JPEG) + state (JSON float array)"
-        ),
-    },
-    {
-        "port": 8002,
-        "name": "GR00T Franka Inference Server",
-        "title": "OCI Robot Cloud — GR00T Franka Inference API",
-        "file": "src/inference/groot_franka_server.py",
-        "category": "Core Services",
-        "description": (
-            "Franka Panda–specific inference endpoint. Applies Franka joint-limit "
-            "clamping and IK post-processing to raw GR00T action chunks. Used by "
-            "DAgger training loop and the GTC live demo."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("GET",  "/",        "Service info page (HTML)"),
-            ("GET",  "/health",  "Returns model status and Franka config"),
-            ("POST", "/predict", "Franka-specific action prediction with joint clamping"),
-            ("GET",  "/model_info", "Model metadata: param count, chunk size, latency stats"),
+    ),
+    ServiceDef(
+        port=8003,
+        name="data_collection_api",
+        script_path="server/data_collection_api.py",
+        description="REST API for recording robot demonstrations, annotating episodes, "
+                    "and exporting LeRobot-format HDF5 datasets.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/episode/start",  "Begin a new demonstration recording session",
+                        {"task": "task name (str)", "robot_id": "str"},
+                        "{'episode_id': str, 'started_at': ISO8601}"),
+            EndpointDef("POST", "/episode/step",   "Append an observation-action step to open episode",
+                        {"episode_id": "str", "obs": "dict", "action": "[float]*7"},
+                        "{'step_idx': int}"),
+            EndpointDef("POST", "/episode/end",    "Finalize and save episode to dataset",
+                        {"episode_id": "str", "success": "bool"},
+                        "{'episode_id': str, 'steps': int, 'saved_path': str}"),
+            EndpointDef("GET",  "/dataset/list",   "List available datasets",
+                        {},
+                        "{'datasets': [{'name': str, 'episodes': int, 'size_mb': float}]}"),
         ],
-        "example": (
-            "python src/inference/groot_franka_server.py --port 8002 --mock\n"
-            "curl -s http://localhost:8002/model_info"
-        ),
-    },
-    {
-        "port": 8003,
-        "name": "Data Collection API",
-        "title": "OCI Robot Cloud — Data Collection API",
-        "file": "src/api/data_collection_api.py",
-        "category": "Core Services",
-        "description": (
-            "REST API for uploading robot demonstration episodes. Stores episodes "
-            "in LeRobot-compatible HDF5 format. Includes per-dataset quality scoring "
-            "and automatic trigger for fine-tuning when episode thresholds are met."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",    "/",                                 "Dashboard HTML"),
-            ("GET",    "/datasets",                         "List all datasets"),
-            ("GET",    "/datasets/{name}",                  "Dataset metadata and episode count"),
-            ("POST",   "/datasets/{name}/episodes",         "Upload a new episode (multipart)"),
-            ("POST",   "/datasets/{name}/finetune",         "Trigger GR00T fine-tune job"),
-            ("GET",    "/datasets/{name}/quality",          "Quality score for dataset"),
-            ("DELETE", "/datasets/{name}",                  "Delete dataset and all episodes"),
+    ),
+    ServiceDef(
+        port=8004,
+        name="simulation_bridge",
+        script_path="server/simulation_bridge.py",
+        description="WebSocket + REST bridge between Genesis/Isaac Sim simulation environments "
+                    "and the inference stack.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/sim/status",   "Current simulation state and episode info",
+                        {},
+                        "{'running': bool, 'episode': int, 'step': int, 'task': str}"),
+            EndpointDef("POST", "/sim/reset",    "Reset simulation to initial state",
+                        {"task": "str", "seed": "int (optional)"},
+                        "{'obs': dict, 'episode_id': str}"),
+            EndpointDef("POST", "/sim/step",     "Advance simulation by one control step",
+                        {"action": "[float]*7"},
+                        "{'obs': dict, 'reward': float, 'done': bool}"),
         ],
-        "example": (
-            "python src/api/data_collection_api.py\n"
-            "curl -s http://localhost:8003/datasets"
-        ),
-    },
-    {
-        "port": 8004,
-        "name": "Training Monitor",
-        "title": "OCI Robot Cloud Training Monitor",
-        "file": "src/api/training_monitor.py",
-        "category": "Core Services",
-        "description": (
-            "Real-time training metrics dashboard. Tails loss/grad-norm from "
-            "trainer log files and streams Server-Sent Events (SSE) to connected "
-            "browsers. Includes an HTML dashboard at /dashboard."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/stream",    "SSE stream: loss, grad_norm, step, elapsed"),
-            ("GET", "/status",    "Current training status JSON"),
-            ("GET", "/metrics",   "Full metrics history"),
-            ("GET", "/health",    "Service liveness"),
-            ("GET", "/dashboard", "HTML live-chart dashboard"),
+    ),
+    ServiceDef(
+        port=8005,
+        name="reward_model_server",
+        script_path="server/reward_model_server.py",
+        description="Vision-language reward model for online RL and DAgger success labeling.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/score",       "Score an observation-action trajectory",
+                        {"frames": "list[base64]", "instruction": "str"},
+                        "{'reward': float, 'success': bool, 'rationale': str}"),
+            EndpointDef("POST", "/label_batch", "Batch-label a set of episodes for DAgger",
+                        {"episode_ids": "list[str]"},
+                        "{'labels': {episode_id: bool}}"),
+            EndpointDef("GET",  "/model/version","Active reward model version",
+                        {},
+                        "{'version': str, 'accuracy': float}"),
         ],
-        "example": (
-            "python src/api/training_monitor.py --port 8004 --log /tmp/train.log\n"
-            "# Open http://localhost:8004/dashboard in browser"
-        ),
-    },
-    {
-        "port": 8005,
-        "name": "Cost Calculator",
-        "title": "OCI Robot Cloud Cost Calculator",
-        "file": "src/api/cost_calculator.py",
-        "category": "Infrastructure",
-        "description": (
-            "Interactive cost estimator for OCI Robot Cloud workloads. Computes "
-            "estimated USD cost for fine-tuning jobs given GPU shape, step count, "
-            "and dataset size. Exposes both a JSON API and a browser form."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",        "HTML cost calculator form"),
-            ("GET",  "/estimate","JSON cost estimate; query params: steps, gpus, shape"),
-            ("GET",  "/pricing", "Current GPU pricing table"),
-            ("GET",  "/health",  "Service liveness"),
+    ),
+    ServiceDef(
+        port=8006,
+        name="embodiment_adapter",
+        script_path="server/embodiment_adapter.py",
+        description="Translates generic GR00T action outputs to robot-specific joint formats "
+                    "(Franka, UR5, xArm, Spot).",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/robots",       "List supported robot embodiments",
+                        {},
+                        "{'robots': [{'id': str, 'dof': int, 'type': str}]}"),
+            EndpointDef("POST", "/translate",    "Convert canonical action to robot joint space",
+                        {"robot_id": "str", "action": "[float]*7"},
+                        "{'joint_positions': list[float], 'gripper': float}"),
+            EndpointDef("POST", "/calibrate",    "Update kinematic calibration for a robot",
+                        {"robot_id": "str", "calib_data": "dict"},
+                        "{'status': 'ok', 'rmse': float}"),
         ],
-        "example": (
-            "python src/api/cost_calculator.py --port 8005\n"
-            "curl 'http://localhost:8005/estimate?steps=5000&gpus=4&shape=A100'"
-        ),
-    },
-    {
-        "port": 8006,
-        "name": "Design Partner Portal",
-        "title": "OCI Robot Cloud Design Partner Portal",
-        "file": "src/api/design_partner_portal.py",
-        "category": "Partner",
-        "description": (
-            "Self-service portal for design-partner onboarding. Manages partner "
-            "accounts, quota allocations, API key issuance, and usage tracking. "
-            "Partners register here before accessing fine-tune or data APIs."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",    "/partners",               "List all design partners"),
-            ("POST",   "/partners",               "Register a new design partner"),
-            ("GET",    "/partners/{id}",           "Partner profile and quota"),
-            ("PUT",    "/partners/{id}/quota",     "Update GPU-hour quota"),
-            ("DELETE", "/partners/{id}",           "Offboard a partner"),
-            ("GET",    "/dashboard",               "HTML management dashboard"),
+    ),
+    ServiceDef(
+        port=8007,
+        name="policy_distillation_server",
+        script_path="server/policy_distillation_server.py",
+        description="Distills large teacher policies into lightweight student models for "
+                    "edge deployment on Jetson.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/distill/start",  "Launch a distillation job",
+                        {"teacher_checkpoint": "str", "student_arch": "str", "epochs": "int"},
+                        "{'job_id': str, 'estimated_minutes': int}"),
+            EndpointDef("GET",  "/distill/{job_id}","Poll distillation job status",
+                        {"job_id": "path param (str)"},
+                        "{'status': str, 'epoch': int, 'kl_loss': float}"),
+            EndpointDef("POST", "/distill/{job_id}/export", "Export distilled model to ONNX/TRT",
+                        {"format": "onnx|tensorrt"},
+                        "{'download_url': str, 'size_mb': float}"),
         ],
-        "example": (
-            "python src/api/design_partner_portal.py --port 8006\n"
-            "curl -s http://localhost:8006/partners"
-        ),
-    },
-    {
-        "port": 8007,
-        "name": "Real Data Ingestion API",
-        "title": "OCI Robot Cloud — Real Data Ingestion API",
-        "file": "src/api/real_data_ingestion.py",
-        "category": "Core Services",
-        "description": (
-            "High-throughput ingestion endpoint for real-robot telemetry. Accepts "
-            "streamed sensor bags (ROS2 / HDF5), validates joint-limit compliance, "
-            "deduplicates, converts to LeRobot format, and triggers the data flywheel."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/ingest",          "Upload raw sensor bag; returns dataset ID"),
-            ("GET",  "/ingest/{id}",     "Ingestion job status and validation report"),
-            ("GET",  "/datasets",        "List ingested datasets"),
-            ("GET",  "/health",          "Service liveness"),
+    ),
+    ServiceDef(
+        port=8008,
+        name="dataset_versioning_api",
+        script_path="server/dataset_versioning_api.py",
+        description="Semantic versioning, lineage tracking, and OCI Object Storage sync "
+                    "for robot demonstration datasets.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/datasets",           "List all versioned datasets",
+                        {},
+                        "{'datasets': [{'name': str, 'version': str, 'episodes': int}]}"),
+            EndpointDef("POST", "/datasets/{name}/tag","Tag current HEAD with a semantic version",
+                        {"version": "semver string", "notes": "str"},
+                        "{'tag': str, 'sha': str}"),
+            EndpointDef("GET",  "/datasets/{name}/diff","Diff two dataset versions",
+                        {"v1": "version str", "v2": "version str"},
+                        "{'added': int, 'removed': int, 'changed': int}"),
         ],
-        "example": (
-            "python src/api/real_data_ingestion.py --port 8007\n"
-            "curl -s -X POST http://localhost:8007/ingest -F 'bag=@run1.h5'"
-        ),
-    },
-    {
-        "port": 8008,
-        "name": "Fleet Dashboard",
-        "title": "OCI Robot Cloud — Fleet Dashboard",
-        "file": "src/api/deployment_dashboard.py",
-        "category": "Infrastructure",
-        "description": (
-            "Deployment and fleet management dashboard. Tracks deployed model "
-            "versions per robot, inference latency P50/P95, uptime SLA, and "
-            "Jetson / OCI GPU resource utilisation across the entire fleet."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",                   "HTML fleet overview dashboard"),
-            ("GET",  "/deployments",        "List all active deployments"),
-            ("POST", "/deployments",        "Register a new deployment"),
-            ("GET",  "/deployments/{id}",   "Deployment detail: version, metrics, SLA"),
-            ("GET",  "/metrics/summary",    "Aggregated latency and uptime stats"),
-            ("GET",  "/health",             "Service liveness"),
+    ),
+    ServiceDef(
+        port=8009,
+        name="model_registry_api",
+        script_path="server/model_registry_api.py",
+        description="Central registry for tracking trained model checkpoints, metrics, "
+                    "and deployment status.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/models",             "List all registered models",
+                        {},
+                        "{'models': [{'id': str, 'task': str, 'mae': float, 'status': str}]}"),
+            EndpointDef("POST", "/models/register",    "Register a new checkpoint",
+                        {"checkpoint_path": "str", "metrics": "dict", "task": "str"},
+                        "{'model_id': str, 'registered_at': ISO8601}"),
+            EndpointDef("POST", "/models/{id}/promote","Promote model to production",
+                        {"model_id": "path param"},
+                        "{'status': 'promoted', 'previous_model': str}"),
         ],
-        "example": (
-            "python src/api/deployment_dashboard.py --port 8008\n"
-            "curl -s http://localhost:8008/deployments"
-        ),
-    },
-    {
-        "port": 8009,
-        "name": "Inference Cache / Model Registry",
-        "title": "GR00T Inference Cache",
-        "file": "src/api/inference_cache.py  |  src/api/model_registry.py",
-        "category": "Core Services",
-        "description": (
-            "Dual-purpose port. inference_cache.py (default) is an in-memory "
-            "LRU cache layer sitting in front of the inference servers, reducing "
-            "repeated-scene latency by ~40%. model_registry.py is an alternative "
-            "that serves as a checkpoint database with promotion workflows."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/predict",             "Cache-aware predict (inference_cache mode)"),
-            ("GET",  "/cache/stats",         "Hit/miss ratio and entry count"),
-            ("GET",  "/checkpoints",         "All registered checkpoints (registry mode)"),
-            ("GET",  "/checkpoints/best",    "Best checkpoint by eval metric"),
-            ("POST", "/checkpoints",         "Register a new checkpoint"),
-            ("POST", "/checkpoints/{tag}/promote", "Promote checkpoint to production"),
-            ("GET",  "/dashboard",           "HTML registry dashboard"),
+    ),
+    ServiceDef(
+        port=8010,
+        name="dagger_orchestrator",
+        script_path="server/dagger_orchestrator.py",
+        description="Dataset Aggregation (DAgger) training loop orchestrator: manages "
+                    "rollout collection, expert correction, and iterative fine-tuning.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/run/start",    "Start a DAgger training run",
+                        {"task": "str", "base_checkpoint": "str", "n_rollouts": "int"},
+                        "{'run_id': str, 'iteration': int}"),
+            EndpointDef("GET",  "/run/{run_id}", "Get DAgger run status and metrics",
+                        {"run_id": "path param"},
+                        "{'iteration': int, 'success_rate': float, 'dataset_size': int}"),
+            EndpointDef("POST", "/run/{run_id}/correct", "Submit expert correction for a rollout",
+                        {"run_id": "str", "rollout_id": "str", "correction": "list[action]"},
+                        "{'correction_id': str, 'queued_for_training': bool}"),
+            EndpointDef("POST", "/run/{run_id}/stop", "Gracefully stop a DAgger run",
+                        {"run_id": "str"},
+                        "{'status': 'stopped', 'final_mae': float}"),
         ],
-        "example": (
-            "python src/api/inference_cache.py --port 8009\n"
-            "# or: python src/api/model_registry.py --port 8009"
-        ),
-    },
-    {
-        "port": 8010,
-        "name": "Cosmos World Model Server",
-        "title": "OCI Robot Cloud — Cosmos Augmentation Server",
-        "file": "src/simulation/cosmos_data_augmentation.py",
-        "category": "Core Services",
-        "description": (
-            "Serves NVIDIA Cosmos world-model augmentation. Takes real or simulated "
-            "episode frames and applies physics-consistent domain randomisation "
-            "(lighting, textures, clutter) to expand training diversity and "
-            "reduce the sim-to-real gap."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("POST", "/augment",   "Augment an episode HDF5; returns augmented dataset path"),
-            ("GET",  "/health",    "Returns Cosmos model status and GPU memory"),
+    ),
+    ServiceDef(
+        port=8011,
+        name="curriculum_scheduler",
+        script_path="server/curriculum_scheduler.py",
+        description="Automatic curriculum learning: schedules task difficulty progression "
+                    "based on agent success rate.",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/curriculum/current", "Get current task difficulty level",
+                        {},
+                        "{'level': int, 'task': str, 'success_threshold': float}"),
+            EndpointDef("POST", "/curriculum/advance", "Advance curriculum if threshold met",
+                        {"current_success_rate": "float"},
+                        "{'advanced': bool, 'new_level': int, 'new_task': str}"),
+            EndpointDef("GET",  "/curriculum/history", "Curriculum progression history",
+                        {},
+                        "{'history': [{'level': int, 'achieved_at': ISO8601, 'rate': float}]}"),
         ],
-        "example": (
-            "python src/simulation/cosmos_data_augmentation.py --serve --port 8010\n"
-            "curl -s -X POST http://localhost:8010/augment -F 'dataset=@ep.h5'"
-        ),
-    },
-    {
-        "port": 8011,
-        "name": "Live Eval Streamer",
-        "title": "OCI Robot Cloud — Live Eval Streamer",
-        "file": "src/eval/live_eval_streamer.py",
-        "category": "Evaluation",
-        "description": (
-            "Streams real-time evaluation results via SSE and WebSocket. Displays "
-            "per-episode success/failure, action MAE, and cumulative success rate "
-            "as a live HTML dashboard during long evaluation runs."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/",         "HTML live evaluation dashboard"),
-            ("GET", "/stream",   "SSE: episode results as they complete"),
-            ("GET", "/status",   "Current eval state: episode count, success rate"),
-            ("GET", "/health",   "Service liveness"),
+    ),
+    ServiceDef(
+        port=8012,
+        name="hyperparameter_optimizer",
+        script_path="server/hyperparameter_optimizer.py",
+        description="Bayesian hyperparameter search for fine-tuning GR00T policies.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/search/start",    "Launch HPO search",
+                        {"param_space": "dict", "n_trials": "int", "metric": "str"},
+                        "{'search_id': str, 'estimated_hours': float}"),
+            EndpointDef("GET",  "/search/{id}",     "Get HPO search progress",
+                        {"id": "path param"},
+                        "{'best_params': dict, 'best_score': float, 'trials_done': int}"),
+            EndpointDef("GET",  "/search/{id}/results", "Full trial results table",
+                        {},
+                        "{'trials': [{'params': dict, 'score': float, 'duration_s': float}]}"),
         ],
-        "example": (
-            "python src/eval/live_eval_streamer.py --port 8011\n"
-            "# Open http://localhost:8011 while running closed_loop_eval.py"
-        ),
-    },
-    {
-        "port": 8012,
-        "name": "Model Comparison Portal",
-        "title": "Model Comparison Portal",
-        "file": "src/api/model_comparison_portal.py",
-        "category": "Evaluation",
-        "description": (
-            "Side-by-side comparison of multiple GR00T checkpoints. Plots success "
-            "rate, action MAE, inference latency, and cost-per-episode for up to "
-            "four checkpoints simultaneously. Used for DAgger iteration reviews."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",                       "HTML comparison dashboard"),
-            ("POST", "/compare",                "Submit comparison job: list of checkpoint paths"),
-            ("GET",  "/compare/{job_id}",       "Comparison results with charts"),
-            ("GET",  "/health",                 "Service liveness"),
+    ),
+    ServiceDef(
+        port=8013,
+        name="sim_to_real_validator",
+        script_path="server/sim_to_real_validator.py",
+        description="Measures sim-to-real transfer gap by comparing policy behavior in "
+                    "simulation versus real robot telemetry.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/validate",        "Run sim-to-real comparison for a checkpoint",
+                        {"checkpoint": "str", "real_episodes": "list[str]"},
+                        "{'sim_success': float, 'real_success': float, 'gap': float}"),
+            EndpointDef("GET",  "/report/{run_id}", "Get detailed validation report",
+                        {"run_id": "path param"},
+                        "{'metrics': dict, 'failure_modes': list[str], 'recommendations': list}"),
+            EndpointDef("GET",  "/history",         "Historical sim-to-real gap over checkpoints",
+                        {},
+                        "{'checkpoints': [{'step': int, 'gap': float}]}"),
         ],
-        "example": (
-            "python src/api/model_comparison_portal.py --port 8012\n"
-            "curl -s http://localhost:8012/"
-        ),
-    },
-    {
-        "port": 8013,
-        "name": "Cost Optimizer / Partner Weekly Reports",
-        "title": "OCI Robot Cloud Cost Optimizer",
-        "file": "src/api/cost_optimizer.py  |  src/api/partner_weekly_report.py",
-        "category": "Infrastructure",
-        "description": (
-            "Dual-purpose port. cost_optimizer.py analyses training job history to "
-            "recommend optimal batch size, gradient checkpointing, and spot-instance "
-            "strategy. partner_weekly_report.py auto-generates weekly usage and "
-            "ROI summaries for design partners."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/recommendations",    "Cost optimisation recommendations JSON"),
-            ("POST", "/simulate",           "Simulate cost for a proposed job config"),
-            ("GET",  "/reports",            "List partner weekly reports (report mode)"),
-            ("GET",  "/reports/{id}",       "Rendered HTML/PDF weekly report"),
-            ("GET",  "/health",             "Service liveness"),
+    ),
+    ServiceDef(
+        port=8014,
+        name="teleoperation_collector",
+        script_path="server/teleoperation_collector.py",
+        description="Real-time teleoperation data collection via SpaceMouse, VR controller, "
+                    "or keyboard with live recording.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/session/start",  "Start teleoperation recording session",
+                        {"robot_id": "str", "task": "str", "device": "spacemouse|vr|keyboard"},
+                        "{'session_id': str, 'stream_url': str}"),
+            EndpointDef("POST", "/session/end",    "End session and save to dataset",
+                        {"session_id": "str"},
+                        "{'steps_recorded': int, 'saved_path': str}"),
+            EndpointDef("GET",  "/devices",        "List available teleoperation devices",
+                        {},
+                        "{'devices': [{'id': str, 'type': str, 'connected': bool}]}"),
         ],
-        "example": (
-            "python src/api/cost_optimizer.py --serve --port 8013\n"
-            "curl -s http://localhost:8013/recommendations"
-        ),
-    },
-    {
-        "port": 8014,
-        "name": "Retrain Scheduler",
-        "title": "OCI Robot Cloud — Retrain Scheduler",
-        "file": "src/api/retrain_scheduler.py",
-        "category": "Infrastructure",
-        "description": (
-            "Cron-style scheduler for automatic retraining. Monitors per-partner "
-            "data pipelines; triggers fine-tune jobs when new episode thresholds "
-            "are exceeded or scheduled intervals elapse. Integrates with the "
-            "training notifier (port 8052)."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",    "/schedules",           "List all retrain schedules"),
-            ("POST",   "/schedules",           "Create a new schedule"),
-            ("DELETE", "/schedules/{id}",      "Delete a schedule"),
-            ("POST",   "/schedules/{id}/trigger", "Manually trigger a scheduled retrain"),
-            ("GET",    "/history",             "Past retrain job history"),
-            ("GET",    "/health",              "Service liveness"),
+    ),
+    ServiceDef(
+        port=8015,
+        name="safety_monitor",
+        script_path="server/safety_monitor.py",
+        description="Real-time safety constraint enforcement: joint limits, workspace bounds, "
+                    "force torque thresholds, and collision detection.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/check",           "Validate an action against safety constraints",
+                        {"robot_id": "str", "action": "[float]*7", "state": "dict"},
+                        "{'safe': bool, 'violations': list[str], 'clipped_action': list}"),
+            EndpointDef("GET",  "/constraints/{robot_id}", "Get safety constraint profile",
+                        {"robot_id": "path param"},
+                        "{'joint_limits': dict, 'workspace_bbox': dict, 'max_torque': list}"),
+            EndpointDef("POST", "/emergency_stop",  "Trigger emergency stop for a robot",
+                        {"robot_id": "str", "reason": "str"},
+                        "{'stopped': bool, 'timestamp': ISO8601}"),
         ],
-        "example": (
-            "python src/api/retrain_scheduler.py --port 8014\n"
-            "curl -s http://localhost:8014/schedules"
-        ),
-    },
-    {
-        "port": 8015,
-        "name": "Teleoperation Collector",
-        "title": "OCI Teleop Collector",
-        "file": "src/api/teleoperation_collector.py",
-        "category": "Core Services",
-        "description": (
-            "WebSocket + REST API for collecting human teleoperation demonstrations. "
-            "Receives 6-DOF controller inputs at 30 Hz, time-stamps and stores them "
-            "as LeRobot HDF5 episodes, and optionally streams to the data collection "
-            "API (port 8003)."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",    "/",            "HTML teleop control panel"),
-            ("POST",   "/episodes",    "Start a new episode recording"),
-            ("PUT",    "/episodes/{id}/step", "Append a teleop step to episode"),
-            ("POST",   "/episodes/{id}/end", "Finalise and save episode"),
-            ("GET",    "/episodes",    "List saved episodes"),
-            ("GET",    "/health",      "Service liveness"),
+    ),
+    ServiceDef(
+        port=8016,
+        name="continuous_learning_manager",
+        script_path="server/continuous_learning_manager.py",
+        description="Manages online continual learning: detects distribution shift, "
+                    "triggers incremental fine-tuning, and prevents catastrophic forgetting.",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/drift/status",    "Check for distribution shift in recent data",
+                        {},
+                        "{'drift_detected': bool, 'drift_score': float, 'window_hours': int}"),
+            EndpointDef("POST", "/retrain/trigger", "Manually trigger an incremental retrain",
+                        {"reason": "str", "new_data_path": "str"},
+                        "{'job_id': str, 'started_at': ISO8601}"),
+            EndpointDef("GET",  "/forgetting/score","Measure catastrophic forgetting on held-out set",
+                        {},
+                        "{'score': float, 'tasks_affected': list[str]}"),
         ],
-        "example": (
-            "python src/api/teleoperation_collector.py --port 8015\n"
-            "# Open http://localhost:8015 for browser-based teleop UI"
-        ),
-    },
-    {
-        "port": 8016,
-        "name": "Safety Monitor",
-        "title": "OCI Robot Safety Monitor",
-        "file": "src/safety/safety_monitor.py",
-        "category": "Infrastructure",
-        "description": (
-            "Real-time safety enforcement service. Validates every action chunk "
-            "before it reaches the robot: joint-limit checks, velocity caps, "
-            "workspace boundary enforcement, and collision-probability estimation. "
-            "Raises alerts and optionally halts inference on violation."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/validate",       "Validate an action chunk; returns safe/unsafe + reason"),
-            ("GET",  "/violations",     "Recent violation log"),
-            ("GET",  "/config",         "Current safety parameters"),
-            ("PUT",  "/config",         "Update safety thresholds"),
-            ("GET",  "/health",         "Service liveness"),
+    ),
+    ServiceDef(
+        port=8017,
+        name="data_flywheel_api",
+        script_path="server/data_flywheel_api.py",
+        description="Closed-loop data flywheel: routes failed episodes to expert annotation, "
+                    "tracks annotation queue, and kicks off retraining.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/failures/submit", "Submit failed episode for expert review",
+                        {"episode_id": "str", "failure_mode": "str"},
+                        "{'queue_position': int, 'estimated_review_hours': float}"),
+            EndpointDef("GET",  "/queue",           "Current annotation queue status",
+                        {},
+                        "{'pending': int, 'in_review': int, 'completed_today': int}"),
+            EndpointDef("GET",  "/flywheel/stats",  "Flywheel throughput and quality metrics",
+                        {},
+                        "{'episodes_per_day': float, 'success_rate_trend': list[float]}"),
         ],
-        "example": (
-            "python src/safety/safety_monitor.py --port 8016\n"
-            "curl -s -X POST http://localhost:8016/validate -d '{\"actions\":[...]}'"
-        ),
-    },
-    {
-        "port": 8017,
-        "name": "Billing Integration",
-        "title": "OCI Robot Billing",
-        "file": "src/api/billing_integration.py",
-        "category": "Infrastructure",
-        "description": (
-            "Bridges OCI metering with partner billing. Tracks GPU-hour consumption "
-            "per tenant, applies contracted pricing tiers, generates invoices, and "
-            "pushes usage records to OCI Metering API. Supports prepaid and "
-            "pay-as-you-go models."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/usage",                  "Aggregated usage by tenant and period"),
-            ("GET",  "/usage/{tenant_id}",      "Per-tenant usage details"),
-            ("POST", "/invoice",                "Generate invoice for a billing period"),
-            ("GET",  "/rates",                  "Current pricing tiers"),
-            ("GET",  "/health",                 "Service liveness"),
+    ),
+    ServiceDef(
+        port=8018,
+        name="ab_test_manager",
+        script_path="server/ab_test_manager.py",
+        description="A/B testing framework for comparing policy checkpoints in deployment.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/experiments/create","Create a new A/B experiment",
+                        {"name": "str", "policy_a": "str", "policy_b": "str",
+                         "traffic_split": "float"},
+                        "{'experiment_id': str, 'started_at': ISO8601}"),
+            EndpointDef("GET",  "/experiments/{id}", "Get experiment results and significance",
+                        {"id": "path param"},
+                        "{'winner': str, 'p_value': float, 'success_a': float, 'success_b': float}"),
+            EndpointDef("POST", "/experiments/{id}/conclude", "Conclude experiment and promote winner",
+                        {"id": "str"},
+                        "{'promoted': str, 'improvement': float}"),
         ],
-        "example": (
-            "python src/api/billing_integration.py --port 8017\n"
-            "curl -s http://localhost:8017/usage"
-        ),
-    },
-    {
-        "port": 8018,
-        "name": "Continuous Learning Loop",
-        "title": "OCI Continuous Learning Loop",
-        "file": "src/training/continuous_learning.py",
-        "category": "Core Services",
-        "description": (
-            "Orchestrates the closed-loop continuous learning pipeline: collects "
-            "real-world failure episodes, merges them with the existing dataset, "
-            "triggers incremental fine-tuning, evaluates the new checkpoint, and "
-            "promotes it to production automatically when success rate improves."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("POST", "/cycle",          "Trigger one CL iteration"),
-            ("GET",  "/cycle/{id}",     "Cycle status: collect → train → eval → promote"),
-            ("GET",  "/history",        "CL iteration history with metrics"),
-            ("GET",  "/health",         "Service liveness"),
+    ),
+    ServiceDef(
+        port=8019,
+        name="auto_retrain_trigger",
+        script_path="server/auto_retrain_trigger.py",
+        description="Monitors production success rate and automatically schedules retraining "
+                    "when performance drops below configured thresholds.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/thresholds",      "Get current auto-retrain thresholds",
+                        {},
+                        "{'success_floor': float, 'drift_score_ceiling': float, 'window_hours': int}"),
+            EndpointDef("POST", "/thresholds",      "Update auto-retrain thresholds",
+                        {"success_floor": "float", "drift_score_ceiling": "float"},
+                        "{'updated': bool}"),
+            EndpointDef("GET",  "/triggers/recent", "Recent trigger events and outcomes",
+                        {},
+                        "{'triggers': [{'at': ISO8601, 'reason': str, 'job_id': str}]}"),
         ],
-        "example": (
-            "python src/training/continuous_learning.py --port 8018 --mock\n"
-            "curl -s -X POST http://localhost:8018/cycle"
-        ),
-    },
-    {
-        "port": 8019,
-        "name": "Experiment Tracker",
-        "title": "OCI Experiment Tracker",
-        "file": "src/eval/multimodal_experiment_tracker.py",
-        "category": "Evaluation",
-        "description": (
-            "MLflow-style experiment tracking for multi-modal robot-learning runs. "
-            "Records hyperparameters, training curves, eval metrics, and artifact "
-            "paths per experiment. Provides a sortable comparison table UI."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/experiments",              "Create a new experiment"),
-            ("GET",  "/experiments",              "List experiments with summary metrics"),
-            ("GET",  "/experiments/{id}",         "Full experiment detail"),
-            ("POST", "/experiments/{id}/runs",    "Add a training run to experiment"),
-            ("GET",  "/compare",                  "HTML comparison table"),
-            ("GET",  "/health",                   "Service liveness"),
+    ),
+    ServiceDef(
+        port=8020,
+        name="pipeline_orchestrator",
+        script_path="server/pipeline_orchestrator.py",
+        description="End-to-end pipeline orchestration: SDG -> dataset prep -> fine-tuning -> "
+                    "eval -> registry promotion.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/pipeline/run",    "Launch a full training pipeline",
+                        {"task": "str", "n_demos": "int", "eval_episodes": "int"},
+                        "{'pipeline_id': str, 'stages': list[str]}"),
+            EndpointDef("GET",  "/pipeline/{id}",   "Get pipeline status by stage",
+                        {"id": "path param"},
+                        "{'current_stage': str, 'stages': {str: {'status': str, 'pct': float}}}"),
+            EndpointDef("POST", "/pipeline/{id}/cancel", "Cancel a running pipeline",
+                        {"id": "str"},
+                        "{'cancelled': bool, 'at_stage': str}"),
+            EndpointDef("GET",  "/pipeline/history","Recent pipeline runs and outcomes",
+                        {},
+                        "{'runs': [{'id': str, 'task': str, 'final_mae': float, 'status': str}]}"),
         ],
-        "example": (
-            "python src/eval/multimodal_experiment_tracker.py --port 8019\n"
-            "curl -s http://localhost:8019/experiments"
-        ),
-    },
-    {
-        "port": 8020,
-        "name": "Data Flywheel",
-        "title": "OCI Data Flywheel",
-        "file": "src/api/data_flywheel.py",
-        "category": "Core Services",
-        "description": (
-            "Automates the data flywheel: ingestion → quality filter → diversity "
-            "sampling → augmentation → dataset versioning → fine-tune trigger. "
-            "Connects ports 8003, 8007, 8010, and 8014 into a single orchestrated "
-            "pipeline with configurable quality thresholds."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/pipeline/start",   "Start a flywheel pipeline run"),
-            ("GET",  "/pipeline/{id}",    "Pipeline run status with per-stage progress"),
-            ("GET",  "/pipeline",         "Recent pipeline runs"),
-            ("GET",  "/health",           "Service liveness"),
+    ),
+    ServiceDef(
+        port=8021,
+        name="multi_task_trainer",
+        script_path="server/multi_task_trainer.py",
+        description="Multi-task policy training across heterogeneous robot tasks with "
+                    "task-conditioned embeddings.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/train",           "Launch multi-task training job",
+                        {"tasks": "list[str]", "epochs": "int", "batch_size": "int"},
+                        "{'job_id': str, 'tasks_included': int}"),
+            EndpointDef("GET",  "/train/{job_id}",  "Multi-task training progress",
+                        {"job_id": "path param"},
+                        "{'per_task_loss': dict, 'global_step': int, 'eta_hours': float}"),
+            EndpointDef("GET",  "/tasks",           "List supported tasks and their data counts",
+                        {},
+                        "{'tasks': [{'name': str, 'episodes': int, 'success_rate': float}]}"),
         ],
-        "example": (
-            "python src/api/data_flywheel.py --port 8020\n"
-            "curl -s -X POST http://localhost:8020/pipeline/start"
-        ),
-    },
-    {
-        "port": 8021,
-        "name": "Webhook Notifications",
-        "title": "OCI Robot Cloud — Webhook Notifications",
-        "file": "src/api/webhook_notifications.py",
-        "category": "Infrastructure",
-        "description": (
-            "Manages webhook subscriptions for design partners. Partners register "
-            "HTTPS endpoints to receive real-time notifications for events: "
-            "job_complete, eval_done, threshold_exceeded, invoice_ready, and "
-            "safety_violation. Includes retry logic with exponential back-off."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",    "/webhooks",            "List registered webhooks"),
-            ("POST",   "/webhooks",            "Register a new webhook endpoint"),
-            ("DELETE", "/webhooks/{id}",       "Remove a webhook"),
-            ("POST",   "/webhooks/{id}/test",  "Send a test event"),
-            ("GET",    "/webhooks/{id}/log",   "Delivery log for a webhook"),
-            ("GET",    "/health",              "Service liveness"),
+    ),
+    ServiceDef(
+        port=8022,
+        name="jetson_deploy_server",
+        script_path="server/jetson_deploy_server.py",
+        description="Deploy and manage TensorRT-optimized policies on NVIDIA Jetson edge devices.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/devices",         "List registered Jetson devices",
+                        {},
+                        "{'devices': [{'id': str, 'model': str, 'ip': str, 'status': str}]}"),
+            EndpointDef("POST", "/deploy",          "Push a TRT policy to a Jetson device",
+                        {"device_id": "str", "model_id": "str"},
+                        "{'deployment_id': str, 'started_at': ISO8601}"),
+            EndpointDef("GET",  "/deploy/{id}",     "Deployment status",
+                        {"id": "path param"},
+                        "{'status': str, 'progress_pct': float, 'device_id': str}"),
         ],
-        "example": (
-            "python src/api/webhook_notifications.py --port 8021\n"
-            "curl -s http://localhost:8021/webhooks"
-        ),
-    },
-    {
-        "port": 8022,
-        "name": "SLA Monitor",
-        "title": "OCI Robot Cloud — SLA Monitor",
-        "file": "src/api/partner_sla_monitor.py",
-        "category": "Partner",
-        "description": (
-            "Continuously polls all registered services (ports 8001–8059) and "
-            "tracks uptime, P95 latency, and error rates against per-partner SLA "
-            "contracts. Fires webhook alerts when SLOs are breached."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/sla",                 "SLA status summary for all services"),
-            ("GET", "/sla/{service}",       "Per-service SLA metrics and breach history"),
-            ("GET", "/dashboard",           "HTML SLA dashboard with traffic-light status"),
-            ("GET", "/health",              "Service liveness"),
+    ),
+    ServiceDef(
+        port=8023,
+        name="multi_gpu_trainer",
+        script_path="server/multi_gpu_trainer.py",
+        description="DDP-based multi-GPU fine-tuning with automatic gradient accumulation "
+                    "and mixed precision.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/train/start",     "Launch DDP training job",
+                        {"checkpoint": "str", "dataset": "str", "n_gpus": "int", "steps": "int"},
+                        "{'job_id': str, 'gpus_allocated': int, 'throughput_it_s': float}"),
+            EndpointDef("GET",  "/train/{job_id}",  "Training progress and GPU metrics",
+                        {"job_id": "path param"},
+                        "{'step': int, 'loss': float, 'gpu_util': float, 'eta_min': int}"),
+            EndpointDef("POST", "/train/{job_id}/checkpoint", "Force save checkpoint",
+                        {"job_id": "str"},
+                        "{'saved_path': str, 'step': int}"),
         ],
-        "example": (
-            "python src/api/partner_sla_monitor.py --port 8022\n"
-            "curl -s http://localhost:8022/sla"
-        ),
-    },
-    {
-        "port": 8023,
-        "name": "Multi-Tenant Manager",
-        "title": "OCI Robot Cloud — Multi-Tenant Manager",
-        "file": "src/api/multi_tenant_manager.py",
-        "category": "Infrastructure",
-        "description": (
-            "Resource isolation and quota enforcement for multi-tenant deployments. "
-            "Maps partner API keys to OCI compartments, enforces GPU-hour and "
-            "storage quotas, provides per-tenant cost attribution, and controls "
-            "service access via RBAC."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/tenants",               "List tenants and quota status"),
-            ("POST", "/tenants",               "Provision a new tenant"),
-            ("GET",  "/tenants/{id}/usage",    "Real-time resource usage for tenant"),
-            ("PUT",  "/tenants/{id}/quota",    "Update quota limits"),
-            ("GET",  "/health",                "Service liveness"),
+    ),
+    ServiceDef(
+        port=8024,
+        name="cosmos_world_model",
+        script_path="server/cosmos_world_model.py",
+        description="NVIDIA Cosmos world model interface for generating synthetic robot "
+                    "video trajectories for SDG.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/generate",        "Generate synthetic video from text prompt",
+                        {"prompt": "str", "frames": "int", "resolution": "str"},
+                        "{'video_url': str, 'frames_generated': int, 'duration_s': float}"),
+            EndpointDef("POST", "/extract_demos",   "Extract demonstrations from generated video",
+                        {"video_url": "str", "task": "str"},
+                        "{'demos_extracted': int, 'dataset_path': str}"),
+            EndpointDef("GET",  "/quota",           "API quota and usage stats",
+                        {},
+                        "{'calls_today': int, 'quota_limit': int, 'cost_usd': float}"),
         ],
-        "example": (
-            "python src/api/multi_tenant_manager.py --port 8023\n"
-            "curl -s http://localhost:8023/tenants"
-        ),
-    },
-    {
-        "port": 8024,
-        "name": "Partner Onboarding Wizard",
-        "title": "OCI Robot Cloud — Partner Onboarding Wizard",
-        "file": "src/api/partner_onboarding_wizard.py",
-        "category": "Partner",
-        "description": (
-            "Step-by-step guided onboarding for new design partners. Walkthroughs "
-            "cover: OCI account setup, API key generation, first dataset upload, "
-            "first fine-tune job, and integration health check. Tracks completion "
-            "percentage per partner."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/onboarding/{partner_id}",          "Current onboarding progress"),
-            ("POST", "/onboarding/{partner_id}/step/{n}", "Complete a step"),
-            ("GET",  "/onboarding",                       "All partners and completion %"),
-            ("GET",  "/health",                           "Service liveness"),
+    ),
+    ServiceDef(
+        port=8025,
+        name="isaac_sim_sdg",
+        script_path="server/isaac_sim_sdg.py",
+        description="Isaac Sim RTX synthetic data generation with domain randomization: "
+                    "lighting, textures, object poses.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/sdg/start",       "Launch SDG batch",
+                        {"task": "str", "n_demos": "int", "randomization_profile": "str"},
+                        "{'job_id': str, 'estimated_minutes': int}"),
+            EndpointDef("GET",  "/sdg/{job_id}",    "SDG job status",
+                        {"job_id": "path param"},
+                        "{'demos_generated': int, 'total': int, 'fps': float}"),
+            EndpointDef("GET",  "/profiles",        "List domain randomization profiles",
+                        {},
+                        "{'profiles': [{'name': str, 'description': str}]}"),
         ],
-        "example": (
-            "python src/api/partner_onboarding_wizard.py --port 8024\n"
-            "curl -s http://localhost:8024/onboarding"
-        ),
-    },
-    {
-        "port": 8025,
-        "name": "Episode Playback Server",
-        "title": "Episode Playback Server",
-        "file": "src/demo/episode_playback_server.py",
-        "category": "Demo",
-        "description": (
-            "Serves recorded episodes as video streams for review and debugging. "
-            "Reads HDF5 episode files, renders joint-trajectory overlays and "
-            "camera frames, and streams them as MJPEG. Supports frame scrubbing "
-            "and annotation via the browser UI."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/",                       "HTML episode browser"),
-            ("GET", "/episodes",               "List available episodes"),
-            ("GET", "/episodes/{id}/stream",   "MJPEG stream of episode"),
-            ("GET", "/episodes/{id}/metadata", "Episode metadata and trajectory stats"),
-            ("GET", "/health",                 "Service liveness"),
+    ),
+    ServiceDef(
+        port=8026,
+        name="ik_motion_planner",
+        script_path="server/ik_motion_planner.py",
+        description="Inverse kinematics and motion planning service using cuRobo for "
+                    "generating collision-free trajectories.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/plan",            "Compute IK trajectory to target pose",
+                        {"robot_id": "str", "target_pose": "7-float [x,y,z,qx,qy,qz,qw]",
+                         "current_joints": "list[float]"},
+                        "{'trajectory': [[float]*7], 'plan_time_ms': float, 'collision_free': bool}"),
+            EndpointDef("POST", "/plan/grasp",      "Plan grasp approach for an object",
+                        {"object_pose": "dict", "robot_id": "str"},
+                        "{'approach_traj': list, 'grasp_traj': list, 'retreat_traj': list}"),
+            EndpointDef("GET",  "/workspace",       "Robot workspace bounds and obstacles",
+                        {},
+                        "{'bbox': dict, 'obstacles': list[dict]}"),
         ],
-        "example": (
-            "python src/demo/episode_playback_server.py --port 8025\n"
-            "# Open http://localhost:8025 for episode browser"
-        ),
-    },
-    {
-        "port": 8026,
-        "name": "Analytics Dashboard",
-        "title": "OCI Robot Cloud — Analytics Dashboard",
-        "file": "src/api/analytics_dashboard.py",
-        "category": "Infrastructure",
-        "description": (
-            "Business analytics dashboard aggregating usage, revenue, partner "
-            "activity, and model performance. Displays time-series charts for "
-            "GPU-hours consumed, inference request volume, fine-tune job counts, "
-            "and estimated MRR."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/",             "HTML analytics dashboard"),
-            ("GET", "/metrics",      "JSON metrics: usage, jobs, revenue, latency"),
-            ("GET", "/export",       "Export metrics as CSV"),
-            ("GET", "/health",       "Service liveness"),
+    ),
+    ServiceDef(
+        port=8027,
+        name="eval_harness",
+        script_path="server/eval_harness.py",
+        description="Automated policy evaluation in simulation with success rate, "
+                    "average reward, and episode statistics.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/eval/run",        "Run evaluation for a checkpoint",
+                        {"checkpoint": "str", "task": "str", "n_episodes": "int"},
+                        "{'eval_id': str, 'started_at': ISO8601}"),
+            EndpointDef("GET",  "/eval/{id}",       "Evaluation progress and partial results",
+                        {"id": "path param"},
+                        "{'done': int, 'total': int, 'success_rate': float, 'avg_reward': float}"),
+            EndpointDef("GET",  "/eval/{id}/report","Full evaluation report with per-episode data",
+                        {},
+                        "{'summary': dict, 'episodes': list[dict], 'failure_modes': dict}"),
         ],
-        "example": (
-            "python src/api/analytics_dashboard.py --port 8026\n"
-            "curl -s http://localhost:8026/metrics"
-        ),
-    },
-    {
-        "port": 8027,
-        "name": "Partner Usage Analytics",
-        "title": "Partner Usage Analytics",
-        "file": "src/api/partner_usage_analytics.py",
-        "category": "Partner",
-        "description": (
-            "Per-partner usage breakdown: API call counts, GPU-hours consumed, "
-            "dataset upload volumes, fine-tune job history, and success-rate "
-            "trends. Powers the partner self-service portal usage tab."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/partners/{id}/analytics",  "Full analytics for a partner"),
-            ("GET", "/partners/{id}/summary",    "7-day and 30-day usage summary"),
-            ("GET", "/report",                   "Cross-partner analytics report"),
-            ("GET", "/health",                   "Service liveness"),
+    ),
+    ServiceDef(
+        port=8028,
+        name="checkpoint_manager",
+        script_path="server/checkpoint_manager.py",
+        description="Training checkpoint storage, pruning, and OCI Object Storage sync.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/checkpoints",     "List all checkpoints",
+                        {},
+                        "{'checkpoints': [{'step': int, 'loss': float, 'path': str, 'size_mb': float}]}"),
+            EndpointDef("POST", "/checkpoints/prune","Prune old checkpoints keeping top-K",
+                        {"keep_top_k": "int", "metric": "str"},
+                        "{'pruned': int, 'freed_gb': float}"),
+            EndpointDef("POST", "/checkpoints/{step}/upload",
+                        "Upload checkpoint to OCI Object Storage",
+                        {"step": "path param"},
+                        "{'uploaded': bool, 'oci_path': str}"),
         ],
-        "example": (
-            "python src/api/partner_usage_analytics.py --port 8027\n"
-            "curl -s http://localhost:8027/report"
-        ),
-    },
-    {
-        "port": 8028,
-        "name": "Federated Training Coordinator",
-        "title": "Federated Training Coordinator",
-        "file": "src/training/federated_training.py",
-        "category": "Core Services",
-        "description": (
-            "Coordinates federated learning across N partner nodes. Runs on OCI "
-            "as the central aggregator: receives gradient updates from partner "
-            "edge nodes, performs FedAvg aggregation, broadcasts the updated model, "
-            "and tracks per-round convergence."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("POST", "/rounds",           "Start a new federated round"),
-            ("POST", "/rounds/{id}/grad", "Submit gradient update from a node"),
-            ("GET",  "/rounds/{id}",      "Round status: nodes joined, aggregation done"),
-            ("GET",  "/model/current",    "Current global model checkpoint URL"),
-            ("GET",  "/health",           "Service liveness"),
+    ),
+    ServiceDef(
+        port=8029,
+        name="docker_compose_api",
+        script_path="server/docker_compose_api.py",
+        description="REST wrapper around Docker Compose for managing the multi-service stack.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/services",        "List all compose services and their status",
+                        {},
+                        "{'services': [{'name': str, 'status': str, 'port': int}]}"),
+            EndpointDef("POST", "/services/{name}/restart", "Restart a specific service",
+                        {"name": "path param"},
+                        "{'restarted': bool, 'uptime_s': int}"),
+            EndpointDef("POST", "/services/scale",  "Scale a service to N replicas",
+                        {"service": "str", "replicas": "int"},
+                        "{'scaled': bool, 'replicas': int}"),
         ],
-        "example": (
-            "python src/training/federated_training.py --mode coordinator --port 8028\n"
-            "curl -s http://localhost:8028/rounds"
-        ),
-    },
-    {
-        "port": 8029,
-        "name": "Demo Request Portal",
-        "title": "OCI Robot Cloud Demo Portal",
-        "file": "src/api/demo_request_portal.py",
-        "category": "Demo",
-        "description": (
-            "Manages inbound demo requests from prospective customers and partners. "
-            "Provides a public-facing form, slots available demo slots from the "
-            "live demo scheduler (port 8031), sends confirmation emails via "
-            "webhook, and tracks conversion funnel."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",                   "HTML demo request form"),
-            ("POST", "/requests",           "Submit a demo request"),
-            ("GET",  "/requests",           "Admin: list all requests"),
-            ("PUT",  "/requests/{id}",      "Update request status"),
-            ("GET",  "/slots",              "Available demo time slots"),
-            ("GET",  "/health",             "Service liveness"),
+    ),
+    ServiceDef(
+        port=8030,
+        name="training_monitor",
+        script_path="server/training_monitor.py",
+        description="Real-time training metrics dashboard backend: loss curves, GPU stats, "
+                    "ETA, and Slack notifications.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/metrics/live",    "Live training metrics (SSE stream)",
+                        {},
+                        "Server-sent events: {step, loss, lr, gpu_util, eta_min}"),
+            EndpointDef("GET",  "/metrics/history", "Historical loss curve for current run",
+                        {},
+                        "{'steps': list[int], 'losses': list[float], 'lrs': list[float]}"),
+            EndpointDef("POST", "/notify",          "Send training milestone notification to Slack",
+                        {"milestone": "str", "metrics": "dict"},
+                        "{'sent': bool}"),
         ],
-        "example": (
-            "python src/api/demo_request_portal.py --port 8029\n"
-            "curl -s http://localhost:8029/slots"
-        ),
-    },
-    {
-        "port": 8030,
-        "name": "Multi-GPU Orchestrator",
-        "title": "Multi-GPU Training Orchestrator",
-        "file": "src/training/multi_gpu_orchestrator.py",
-        "category": "Core Services",
-        "description": (
-            "Manages multi-GPU DDP training jobs on OCI BM.GPU.A100.v2 shapes. "
-            "Handles torchrun process group setup, per-GPU health checks, "
-            "checkpoint synchronisation, and automatic fault recovery. "
-            "Achieved 3.07× throughput vs single-GPU baseline."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/jobs",            "Submit a multi-GPU training job"),
-            ("GET",  "/jobs/{id}",       "Job status: GPU utilisation, loss, ETA"),
-            ("GET",  "/jobs/{id}/logs",  "Streaming log output"),
-            ("DELETE", "/jobs/{id}",     "Cancel a running job"),
-            ("GET",  "/gpus",            "Real-time per-GPU utilisation"),
-            ("GET",  "/health",          "Service liveness"),
+    ),
+    ServiceDef(
+        port=8031,
+        name="live_demo_scheduler",
+        script_path="server/live_demo_scheduler.py",
+        description="Schedules and manages live robot demo sessions for external stakeholders "
+                    "and conference demonstrations.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/demos",           "List scheduled demo sessions",
+                        {},
+                        "{'demos': [{'id': str, 'audience': str, 'at': ISO8601, 'task': str}]}"),
+            EndpointDef("POST", "/demos/book",      "Book a new demo slot",
+                        {"audience": "str", "at": "ISO8601", "task": "str", "robot_id": "str"},
+                        "{'demo_id': str, 'confirmed': bool}"),
+            EndpointDef("POST", "/demos/{id}/run",  "Execute a scheduled demo",
+                        {"id": "path param"},
+                        "{'stream_url': str, 'started_at': ISO8601}"),
         ],
-        "example": (
-            "python src/training/multi_gpu_orchestrator.py --port 8030\n"
-            "curl -s http://localhost:8030/gpus"
-        ),
-    },
-    {
-        "port": 8031,
-        "name": "Live Demo Scheduler",
-        "title": "OCI Robot Cloud — Live Demo Scheduler",
-        "file": "src/api/live_demo_scheduler.py",
-        "category": "Demo",
-        "description": (
-            "Calendar-based scheduler for live robot demos. Books OCI GPU capacity "
-            "and Jetson hardware slots, coordinates with the GTC live demo (port 8050), "
-            "sends pre-demo system checks, and notifies presenters via Slack webhook."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/slots",           "Available demo slots (next 14 days)"),
-            ("POST", "/bookings",        "Book a demo slot"),
-            ("GET",  "/bookings",        "All upcoming bookings"),
-            ("DELETE", "/bookings/{id}", "Cancel a booking"),
-            ("GET",  "/preflight/{id}",  "Pre-demo system health check"),
-            ("GET",  "/health",          "Service liveness"),
+    ),
+    ServiceDef(
+        port=8032,
+        name="closed_loop_eval",
+        script_path="server/closed_loop_eval.py",
+        description="Closed-loop policy evaluation: robot executes policy autonomously in "
+                    "simulation or real with success/failure classification.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/eval/closed_loop","Run closed-loop evaluation",
+                        {"checkpoint": "str", "task": "str", "episodes": "int",
+                         "env": "sim|real"},
+                        "{'eval_id': str, 'env': str}"),
+            EndpointDef("GET",  "/eval/{id}/live",  "Live episode status during evaluation",
+                        {"id": "path param"},
+                        "{'episode': int, 'step': int, 'status': str, 'partial_success': float}"),
+            EndpointDef("GET",  "/eval/{id}/summary","Final evaluation summary",
+                        {},
+                        "{'success_rate': float, 'avg_steps': float, 'avg_time_s': float}"),
         ],
-        "example": (
-            "python src/api/live_demo_scheduler.py --port 8031\n"
-            "curl -s http://localhost:8031/slots"
-        ),
-    },
-    {
-        "port": 8032,
-        "name": "Customer Success Dashboard",
-        "title": "Customer Success Dashboard",
-        "file": "src/api/customer_success_dashboard.py",
-        "category": "Partner",
-        "description": (
-            "CS team dashboard tracking partner health scores, NPS, open support "
-            "tickets, upcoming renewals, and escalation flags. Aggregates data "
-            "from billing (8017), usage analytics (8027), and feedback tracker (8046)."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/",                    "HTML CS dashboard"),
-            ("GET", "/partners/health",     "Health score for all partners"),
-            ("GET", "/partners/{id}/health","Detailed health breakdown"),
-            ("GET", "/alerts",              "Active escalation alerts"),
-            ("GET", "/health",              "Service liveness"),
+    ),
+    ServiceDef(
+        port=8033,
+        name="sdk_documentation_server",
+        script_path="server/sdk_documentation_server.py",
+        description="Serves the oci-robot-cloud Python SDK documentation, interactive examples, "
+                    "and OpenAPI spec.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/",               "SDK documentation homepage (HTML)",
+                        {},
+                        "HTML page"),
+            EndpointDef("GET",  "/openapi.json",   "OpenAPI 3.0 spec for the SDK",
+                        {},
+                        "OpenAPI JSON schema"),
+            EndpointDef("GET",  "/examples/{name}","Fetch a runnable SDK example script",
+                        {"name": "example name (str)"},
+                        "{'code': str, 'language': 'python'}"),
         ],
-        "example": (
-            "python src/api/customer_success_dashboard.py --port 8032\n"
-            "curl -s http://localhost:8032/alerts"
-        ),
-    },
-    {
-        "port": 8033,
-        "name": "SDK Documentation Server",
-        "title": "OCI Robot Cloud SDK Docs",
-        "file": "src/api/sdk_documentation_server.py",
-        "category": "Partner",
-        "description": (
-            "Serves auto-generated SDK reference documentation. Extracts docstrings "
-            "from the oci-robot-cloud Python SDK, renders them as searchable HTML "
-            "with code examples, and provides a live API playground backed by the "
-            "mock inference server."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/",               "SDK docs landing page"),
-            ("GET", "/api/{module}",   "Module reference (HTML)"),
-            ("GET", "/search",         "Full-text search: ?q=query"),
-            ("GET", "/openapi.json",   "OpenAPI 3.0 spec for the SDK"),
-            ("GET", "/health",         "Service liveness"),
+    ),
+    ServiceDef(
+        port=8034,
+        name="inference_gateway",
+        script_path="server/inference_gateway.py",
+        description="Unified inference gateway with API key auth, rate limiting, routing "
+                    "to backend inference servers, and usage tracking.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/v1/predict",      "Authenticated inference (routes to 8001/8002)",
+                        {"X-API-Key": "header", "image_b64": "str", "instruction": "str"},
+                        "{'actions': list, 'latency_ms': float, 'backend': str}"),
+            EndpointDef("GET",  "/v1/usage",        "API key usage stats",
+                        {"X-API-Key": "header"},
+                        "{'requests_today': int, 'quota_remaining': int, 'tier': str}"),
+            EndpointDef("GET",  "/backends/status", "Backend server health",
+                        {},
+                        "{'backends': [{'port': int, 'healthy': bool, 'latency_ms': float}]}"),
         ],
-        "example": (
-            "python src/api/sdk_documentation_server.py --port 8033\n"
-            "curl -s http://localhost:8033/openapi.json | python -m json.tool"
-        ),
-    },
-    {
-        "port": 8034,
-        "name": "Inference Gateway",
-        "title": "OCI Robot Cloud — Inference Gateway",
-        "file": "src/api/inference_gateway.py",
-        "category": "Core Services",
-        "description": (
-            "Load-balancing gateway in front of all inference servers. Performs "
-            "round-robin or latency-weighted routing to GR00T N1.6 (8001), Franka "
-            "(8002), or cached (8009) endpoints. Exposes a single /predict surface "
-            "with circuit-breaker and request tracing."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/predict",   "Routed inference predict; auto-selects backend"),
-            ("GET",  "/health",    "Gateway and backend health summary"),
-            ("GET",  "/metrics",   "Request counts, latency P50/P95, error rate"),
-            ("POST", "/config",    "Update routing weights and circuit-breaker thresholds"),
-            ("GET",  "/",          "HTML gateway status dashboard"),
+    ),
+    ServiceDef(
+        port=8035,
+        name="multi_task_eval",
+        script_path="server/multi_task_eval.py",
+        description="Parallel evaluation of a policy across multiple tasks simultaneously "
+                    "with aggregated benchmark scores.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/eval/multi",      "Run multi-task evaluation",
+                        {"checkpoint": "str", "tasks": "list[str]",
+                         "episodes_per_task": "int"},
+                        "{'eval_id': str, 'tasks': int}"),
+            EndpointDef("GET",  "/eval/{id}",       "Multi-task evaluation results",
+                        {"id": "path param"},
+                        "{'per_task': {task: float}, 'aggregate': float, 'done': bool}"),
+            EndpointDef("GET",  "/benchmarks",      "Standard benchmark suite definitions",
+                        {},
+                        "{'benchmarks': [{'name': str, 'tasks': list, 'description': str}]}"),
         ],
-        "example": (
-            "python src/api/inference_gateway.py  # hardcoded port 8034\n"
-            "curl -s http://localhost:8034/metrics"
-        ),
-    },
-    {
-        "port": 8035,
-        "name": "Knowledge Base",
-        "title": "OCI Robot Cloud Knowledge Base",
-        "file": "src/api/knowledge_base.py",
-        "category": "Partner",
-        "description": (
-            "Searchable documentation and troubleshooting knowledge base for "
-            "design partners. Articles cover hardware setup, API integration, "
-            "dataset formatting, fine-tuning recipes, and common failure modes. "
-            "Includes a vector-search endpoint for semantic queries."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/articles",        "List all articles by category"),
-            ("GET",  "/articles/{id}",   "Article content (Markdown + HTML)"),
-            ("GET",  "/search",          "Keyword search: ?q=query"),
-            ("POST", "/search/semantic", "Semantic vector search over article corpus"),
-            ("GET",  "/health",          "Service liveness"),
+    ),
+    ServiceDef(
+        port=8036,
+        name="convergence_monitor",
+        script_path="server/convergence_monitor.py",
+        description="Detects training convergence via gradient norm, loss plateau, and "
+                    "validation metric stability.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/check",           "Check convergence for a training run",
+                        {"job_id": "str", "window": "int steps"},
+                        "{'converged': bool, 'plateau_steps': int, 'gradient_norm': float}"),
+            EndpointDef("GET",  "/signals/{job_id}","Real-time convergence signals",
+                        {"job_id": "path param"},
+                        "{'loss_std': float, 'grad_norm': float, 'val_delta': float}"),
+            EndpointDef("POST", "/early_stop",      "Trigger early stopping if converged",
+                        {"job_id": "str"},
+                        "{'stopped': bool, 'final_step': int}"),
         ],
-        "example": (
-            "python src/api/knowledge_base.py --port 8035\n"
-            "curl 'http://localhost:8035/search?q=franka+joint+limit'"
-        ),
-    },
-    {
-        "port": 8036,
-        "name": "NVIDIA Integration Tracker",
-        "title": "NVIDIA Integration Tracker",
-        "file": "src/api/nvidia_integration_tracker.py",
-        "category": "Partner",
-        "description": (
-            "Tracks milestones for the NVIDIA co-engineering partnership. Records "
-            "status of deliverables (Isaac Sim integration, Cosmos weights, GTC "
-            "talk confirmation, NGC listing) with target dates, owners, and "
-            "completion evidence."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/milestones",        "All integration milestones and status"),
-            ("PUT",  "/milestones/{id}",   "Update milestone status / evidence"),
-            ("GET",  "/summary",           "One-page partnership health summary"),
-            ("GET",  "/health",            "Service liveness"),
+    ),
+    ServiceDef(
+        port=8037,
+        name="failure_mode_analyzer",
+        script_path="server/failure_mode_analyzer.py",
+        description="Automatically classifies robot failure modes (grasp failure, path "
+                    "deviation, perception error) from episode recordings.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/analyze",         "Analyze failure modes in an episode",
+                        {"episode_id": "str"},
+                        "{'failure_type': str, 'confidence': float, 'frame_of_failure': int}"),
+            EndpointDef("GET",  "/distribution",    "Failure mode distribution over recent episodes",
+                        {},
+                        "{'modes': {str: int}, 'total_failures': int, 'period_hours': int}"),
+            EndpointDef("GET",  "/recommendations", "Remediation recommendations by failure mode",
+                        {},
+                        "{'recommendations': [{'mode': str, 'action': str, 'priority': str}]}"),
         ],
-        "example": (
-            "python src/api/nvidia_integration_tracker.py --port 8036\n"
-            "curl -s http://localhost:8036/summary"
-        ),
-    },
-    {
-        "port": 8037,
-        "name": "Auto SDG Pipeline",
-        "title": "Auto SDG Pipeline",
-        "file": "src/training/auto_sdg_pipeline.py",
-        "category": "Core Services",
-        "description": (
-            "Fully automated Synthetic Data Generation pipeline. Orchestrates "
-            "Genesis simulation scene building, IK motion planning, domain "
-            "randomisation, Cosmos augmentation, and export to LeRobot HDF5. "
-            "A single POST generates thousands of diverse training episodes."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("POST", "/generate",        "Start SDG job; params: scene, n_episodes, DR"),
-            ("GET",  "/jobs/{id}",       "Job status with per-stage progress"),
-            ("GET",  "/jobs",            "Recent SDG jobs"),
-            ("GET",  "/",               "HTML pipeline dashboard"),
-            ("GET",  "/health",          "Service liveness"),
+    ),
+    ServiceDef(
+        port=8038,
+        name="stats_significance_tester",
+        script_path="server/stats_significance_tester.py",
+        description="Statistical significance testing for policy comparison experiments "
+                    "(t-test, bootstrap CI, permutation test).",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/test",            "Run significance test between two policies",
+                        {"success_a": "list[bool]", "success_b": "list[bool]",
+                         "method": "ttest|bootstrap|permutation"},
+                        "{'p_value': float, 'significant': bool, 'ci_95': [float, float]}"),
+            EndpointDef("POST", "/power_analysis",  "Compute required sample size for given power",
+                        {"effect_size": "float", "power": "float", "alpha": "float"},
+                        "{'n_required': int}"),
+            EndpointDef("GET",  "/methods",         "List supported statistical test methods",
+                        {},
+                        "{'methods': [{'name': str, 'description': str}]}"),
         ],
-        "example": (
-            "python src/training/auto_sdg_pipeline.py --port 8037 --mock\n"
-            "curl -s -X POST http://localhost:8037/generate -d '{\"n_episodes\":100}'"
-        ),
-    },
-    {
-        "port": 8038,
-        "name": "Fine-tune Cost Estimator",
-        "title": "OCI Robot Cloud — Fine-tune Cost Estimator",
-        "file": "src/api/finetune_cost_estimator.py",
-        "category": "Infrastructure",
-        "description": (
-            "Detailed fine-tuning cost breakdown before job submission. Models "
-            "GPU-hour costs across BM.GPU shapes, estimates wall-clock time from "
-            "throughput benchmarks, and compares OCI vs GCP vs AWS pricing. "
-            "Includes per-step and per-episode cost projections."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/estimate",       "Cost estimate; query: steps, gpus, shape, region"),
-            ("GET",  "/compare",        "Multi-cloud cost comparison table"),
-            ("GET",  "/benchmarks",     "Throughput benchmarks by GPU shape"),
-            ("GET",  "/health",         "Service liveness"),
+    ),
+    ServiceDef(
+        port=8039,
+        name="training_curves_server",
+        script_path="server/training_curves_server.py",
+        description="Serves interactive Plotly training curve visualizations for all runs.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/curves/{job_id}", "HTML page with interactive loss curves",
+                        {"job_id": "path param"},
+                        "HTML page with Plotly charts"),
+            EndpointDef("GET",  "/curves/{job_id}/json", "Raw curve data as JSON",
+                        {"job_id": "path param"},
+                        "{'steps': list, 'train_loss': list, 'val_loss': list}"),
+            EndpointDef("GET",  "/compare",         "Compare curves across multiple runs",
+                        {"job_ids": "comma-separated str"},
+                        "HTML comparison page"),
         ],
-        "example": (
-            "python src/api/finetune_cost_estimator.py --serve --port 8038\n"
-            "curl 'http://localhost:8038/estimate?steps=5000&gpus=4&shape=A100'"
-        ),
-    },
-    {
-        "port": 8039,
-        "name": "Partner Support Portal",
-        "title": "OCI Robot Cloud Partner Support Portal",
-        "file": "src/api/partner_support_portal.py",
-        "category": "Partner",
-        "description": (
-            "Ticketing and escalation portal for design partners. Partners submit "
-            "support tickets tagged by category (infra, training, inference, "
-            "billing). CS team triages, assigns, and resolves via the admin UI. "
-            "SLA response-time tracking enforced."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",    "/tickets",           "List tickets (partner-scoped or all for admin)"),
-            ("POST",   "/tickets",           "Submit a new support ticket"),
-            ("GET",    "/tickets/{id}",      "Ticket detail with thread"),
-            ("POST",   "/tickets/{id}/reply","Reply to ticket"),
-            ("PUT",    "/tickets/{id}/status","Update ticket status"),
-            ("GET",    "/health",            "Service liveness"),
+    ),
+    ServiceDef(
+        port=8040,
+        name="ablation_runner",
+        script_path="server/ablation_runner.py",
+        description="Automated ablation study runner: sweeps over config components and "
+                    "measures each component's contribution.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/ablation/start",  "Define and launch an ablation study",
+                        {"base_config": "dict", "ablations": "list[dict]", "metric": "str"},
+                        "{'study_id': str, 'n_jobs': int}"),
+            EndpointDef("GET",  "/ablation/{id}",   "Ablation study results table",
+                        {"id": "path param"},
+                        "{'results': [{'ablation': str, 'metric': float, 'delta': float}]}"),
+            EndpointDef("GET",  "/ablation/{id}/report", "Formatted ablation report",
+                        {},
+                        "HTML or JSON ablation table"),
         ],
-        "example": (
-            "python src/api/partner_support_portal.py --port 8039\n"
-            "curl -s http://localhost:8039/tickets"
-        ),
-    },
-    {
-        "port": 8040,
-        "name": "Multi-Run Eval Dashboard",
-        "title": "Multi-Run Eval Dashboard",
-        "file": "src/eval/multi_run_dashboard.py",
-        "category": "Evaluation",
-        "description": (
-            "Aggregates results from multiple evaluation runs into a sortable "
-            "leaderboard. Plots success rate, action MAE, and inference latency "
-            "across checkpoints and DAgger iterations. Supports filtering by "
-            "task, embodiment, and date range."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",            "HTML leaderboard dashboard"),
-            ("GET",  "/runs",        "All eval runs with summary metrics"),
-            ("POST", "/runs",        "Register a completed eval run"),
-            ("GET",  "/runs/{id}",   "Full run detail with per-episode breakdown"),
-            ("GET",  "/health",      "Service liveness"),
+    ),
+    ServiceDef(
+        port=8041,
+        name="portal_customer",
+        script_path="server/portal_customer.py",
+        description="Customer-facing portal backend: project management, usage dashboards, "
+                    "and model deployment requests.",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/projects",        "List customer's projects",
+                        {"X-API-Key": "header"},
+                        "{'projects': [{'id': str, 'name': str, 'status': str}]}"),
+            EndpointDef("POST", "/projects/create", "Create a new project",
+                        {"name": "str", "task": "str", "robot_type": "str"},
+                        "{'project_id': str, 'onboarding_url': str}"),
+            EndpointDef("GET",  "/usage",           "Usage and billing summary",
+                        {"X-API-Key": "header"},
+                        "{'compute_hours': float, 'api_calls': int, 'cost_usd': float}"),
         ],
-        "example": (
-            "python src/eval/multi_run_dashboard.py --port 8040\n"
-            "curl -s http://localhost:8040/runs"
-        ),
-    },
-    {
-        "port": 8041,
-        "name": "Experiment Planner",
-        "title": "OCI Robot Cloud — Experiment Planner",
-        "file": "src/api/experiment_planner.py",
-        "category": "Evaluation",
-        "description": (
-            "Hyperparameter experiment planning tool. Generates experiment grids "
-            "from a YAML config (LR, batch size, LoRA rank, DAgger iterations), "
-            "estimates total compute cost via port 8038, submits to the "
-            "multi-GPU orchestrator (8030), and tracks results in the experiment "
-            "tracker (8019)."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/plans",           "Create an experiment plan from config YAML"),
-            ("GET",  "/plans/{id}",      "Plan status: queued / running / done experiments"),
-            ("GET",  "/plans",           "All experiment plans"),
-            ("GET",  "/health",          "Service liveness"),
+    ),
+    ServiceDef(
+        port=8042,
+        name="portal_internal",
+        script_path="server/portal_internal.py",
+        description="Internal OCI team portal: all customer accounts, deployments, "
+                    "infrastructure costs, and operational alerts.",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/customers",       "All customer accounts and tiers",
+                        {},
+                        "{'customers': [{'id': str, 'name': str, 'tier': str, 'mrr': float}]}"),
+            EndpointDef("GET",  "/infrastructure",  "Infrastructure cost breakdown",
+                        {},
+                        "{'total_monthly': float, 'by_service': dict, 'by_customer': dict}"),
+            EndpointDef("GET",  "/alerts",          "Active operational alerts",
+                        {},
+                        "{'alerts': [{'severity': str, 'service': str, 'message': str}]}"),
         ],
-        "example": (
-            "python src/api/experiment_planner.py --port 8041\n"
-            "curl -s http://localhost:8041/plans"
-        ),
-    },
-    {
-        "port": 8042,
-        "name": "ROI Calculator",
-        "title": "ROI Calculator",
-        "file": "src/api/roi_calculator.py",
-        "category": "Infrastructure",
-        "description": (
-            "Customer-facing ROI calculator. Takes inputs (robot count, task type, "
-            "current success rate, target success rate, labour cost) and computes "
-            "projected payback period, 3-year NPV, and cost-per-task improvement. "
-            "Used in sales motions and partner onboarding."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",         "HTML ROI calculator form"),
-            ("POST", "/calculate","JSON ROI calculation"),
-            ("GET",  "/examples", "Pre-filled industry vertical examples"),
-            ("GET",  "/health",   "Service liveness"),
+    ),
+    ServiceDef(
+        port=8043,
+        name="billing_api",
+        script_path="server/billing_api.py",
+        description="Usage-based billing computation, invoice generation, and OCI Billing "
+                    "integration.",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/invoices/{customer_id}", "Get invoices for a customer",
+                        {"customer_id": "path param"},
+                        "{'invoices': [{'id': str, 'amount': float, 'period': str, 'status': str}]}"),
+            EndpointDef("POST", "/invoices/generate","Generate monthly invoices for all customers",
+                        {"month": "YYYY-MM"},
+                        "{'generated': int, 'total_revenue': float}"),
+            EndpointDef("GET",  "/revenue/summary", "MRR, ARR, and growth metrics",
+                        {},
+                        "{'mrr': float, 'arr': float, 'growth_pct': float}"),
         ],
-        "example": (
-            "python src/api/roi_calculator.py --port 8042\n"
-            "curl -s http://localhost:8042/examples"
-        ),
-    },
-    {
-        "port": 8043,
-        "name": "Model Monitoring",
-        "title": "Model Monitoring",
-        "file": "src/api/model_monitoring.py",
-        "category": "Infrastructure",
-        "description": (
-            "Production model drift and performance monitoring. Tracks inference "
-            "output distributions over time and alerts on statistical drift from "
-            "the training distribution. Integrates with the auto-retrain trigger "
-            "to schedule retraining when drift exceeds configured thresholds."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/drift",              "Current drift scores per model and feature"),
-            ("GET",  "/alerts",             "Active drift alerts"),
-            ("POST", "/baseline",           "Set a new distribution baseline"),
-            ("GET",  "/dashboard",          "HTML monitoring dashboard"),
-            ("GET",  "/health",             "Service liveness"),
+    ),
+    ServiceDef(
+        port=8044,
+        name="journey_report_server",
+        script_path="server/journey_report_server.py",
+        description="Generates narrative training journey reports combining metrics, "
+                    "milestones, and visualizations.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/report/generate", "Generate a training journey report",
+                        {"job_id": "str", "format": "html|pdf|md"},
+                        "{'report_url': str, 'generated_at': ISO8601}"),
+            EndpointDef("GET",  "/report/{id}",     "Fetch a generated report",
+                        {"id": "path param"},
+                        "Report content (HTML/PDF/Markdown)"),
+            EndpointDef("GET",  "/milestones/{job_id}", "Key milestones for a training run",
+                        {"job_id": "path param"},
+                        "{'milestones': [{'step': int, 'event': str, 'metric': float}]}"),
         ],
-        "example": (
-            "python src/api/model_monitoring.py --port 8043\n"
-            "curl -s http://localhost:8043/drift"
-        ),
-    },
-    {
-        "port": 8044,
-        "name": "Data Marketplace",
-        "title": "OCI Robot Cloud — Data Marketplace",
-        "file": "src/api/data_marketplace.py",
-        "category": "Partner",
-        "description": (
-            "Marketplace for sharing and licensing robot demonstration datasets "
-            "across design partners. Partners list datasets with quality scores, "
-            "task tags, and licensing terms. Buyers purchase access; revenue is "
-            "split between contributor and OCI platform."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/listings",           "Browse dataset marketplace"),
-            ("POST", "/listings",           "List a dataset for sale"),
-            ("GET",  "/listings/{id}",      "Dataset details and preview"),
-            ("POST", "/listings/{id}/buy",  "Purchase access to a dataset"),
-            ("GET",  "/my/purchases",       "Datasets purchased by current partner"),
-            ("GET",  "/health",             "Service liveness"),
+    ),
+    ServiceDef(
+        port=8045,
+        name="eval_watcher",
+        script_path="server/eval_watcher.py",
+        description="Watches the checkpoints directory and automatically triggers evaluation "
+                    "when new checkpoints are saved.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/watching",        "List directories currently being watched",
+                        {},
+                        "{'dirs': [{'path': str, 'pattern': str, 'last_seen': ISO8601}]}"),
+            EndpointDef("POST", "/watch",           "Add a directory to watch",
+                        {"path": "str", "eval_config": "dict"},
+                        "{'watching': bool, 'watch_id': str}"),
+            EndpointDef("GET",  "/triggered",       "Recent auto-triggered evaluations",
+                        {},
+                        "{'evals': [{'checkpoint': str, 'eval_id': str, 'triggered_at': ISO8601}]}"),
         ],
-        "example": (
-            "python src/api/data_marketplace.py --port 8044\n"
-            "curl -s http://localhost:8044/listings"
-        ),
-    },
-    {
-        "port": 8045,
-        "name": "Telemetry Collector",
-        "title": "Telemetry Collector",
-        "file": "src/api/telemetry_collector.py",
-        "category": "Infrastructure",
-        "description": (
-            "Collects structured telemetry from all platform services: request "
-            "counts, error rates, latency histograms, GPU memory, and custom "
-            "business events. Stores in time-series format and forwards to the "
-            "analytics dashboard (8026) and SLA monitor (8022)."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/events",        "Ingest telemetry event batch"),
-            ("GET",  "/metrics",       "Query metrics by service and time range"),
-            ("GET",  "/summary",       "24-hour platform summary stats"),
-            ("GET",  "/health",        "Service liveness"),
+    ),
+    ServiceDef(
+        port=8046,
+        name="load_tester",
+        script_path="server/load_tester.py",
+        description="Load testing harness for inference endpoints: ramp profiles, "
+                    "latency percentiles, and throughput benchmarks.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/test/run",        "Run a load test against a target endpoint",
+                        {"target_url": "str", "rps": "int", "duration_s": "int"},
+                        "{'test_id': str, 'started_at': ISO8601}"),
+            EndpointDef("GET",  "/test/{id}/results","Load test results",
+                        {"id": "path param"},
+                        "{'p50_ms': float, 'p95_ms': float, 'p99_ms': float, 'errors': int}"),
+            EndpointDef("GET",  "/profiles",        "Pre-defined load test profiles",
+                        {},
+                        "{'profiles': [{'name': str, 'rps': int, 'duration_s': int}]}"),
         ],
-        "example": (
-            "python src/api/telemetry_collector.py --port 8045\n"
-            "curl -s http://localhost:8045/summary"
-        ),
-    },
-    {
-        "port": 8046,
-        "name": "Partner Feedback Tracker",
-        "title": "Partner Feedback Tracker",
-        "file": "src/api/partner_feedback_tracker.py",
-        "category": "Partner",
-        "description": (
-            "Structured feedback collection from design partners. Captures NPS "
-            "survey responses, feature requests, bug reports, and qualitative "
-            "interview notes. Tags items by product area and priority for "
-            "roadmap planning."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/feedback",           "Submit feedback item"),
-            ("GET",  "/feedback",           "Browse feedback (filterable by tag/priority)"),
-            ("GET",  "/feedback/{id}",      "Feedback item detail"),
-            ("PUT",  "/feedback/{id}/tag",  "Add tag or priority"),
-            ("GET",  "/nps/summary",        "NPS score trend"),
-            ("GET",  "/health",             "Service liveness"),
+    ),
+    ServiceDef(
+        port=8047,
+        name="preflight_checker",
+        script_path="server/preflight_checker.py",
+        description="Pre-flight system checks for demos and production deployments: GPU "
+                    "health, model loading, network connectivity.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/check",           "Run full preflight check suite",
+                        {"profile": "demo|production|training"},
+                        "{'passed': bool, 'checks': [{'name': str, 'ok': bool, 'detail': str}]}"),
+            EndpointDef("GET",  "/checks",          "List all available preflight checks",
+                        {},
+                        "{'checks': [{'name': str, 'category': str, 'timeout_s': int}]}"),
+            EndpointDef("POST", "/check/{name}",    "Run a single named preflight check",
+                        {"name": "path param"},
+                        "{'ok': bool, 'detail': str, 'duration_ms': float}"),
         ],
-        "example": (
-            "python src/api/partner_feedback_tracker.py --port 8046\n"
-            "curl -s http://localhost:8046/nps/summary"
-        ),
-    },
-    {
-        "port": 8047,
-        "name": "Real-Time Policy Visualiser",
-        "title": "GR00T Real-Time Policy Visualization",
-        "file": "src/eval/realtime_policy_viz.py",
-        "category": "Evaluation",
-        "description": (
-            "Visualises live inference in real time. Reads action chunks from the "
-            "GR00T server (8001/8002) and renders joint trajectories, end-effector "
-            "paths, and attention heatmaps as animated SVG in the browser. "
-            "Used for debugging and live demo presentations."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/",          "HTML real-time visualisation dashboard"),
-            ("GET", "/frames",    "SSE stream of latest rendered frames"),
-            ("GET", "/actions",   "Latest raw action chunk JSON"),
-            ("GET", "/health",    "Service liveness"),
+    ),
+    ServiceDef(
+        port=8048,
+        name="results_aggregator",
+        script_path="server/results_aggregator.py",
+        description="Aggregates evaluation results across runs, tasks, and checkpoints into "
+                    "summary tables and trend reports.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/leaderboard",     "Top checkpoints by task and metric",
+                        {},
+                        "{'leaderboard': [{'rank': int, 'checkpoint': str, 'score': float}]}"),
+            EndpointDef("POST", "/aggregate",       "Aggregate results for a set of eval IDs",
+                        {"eval_ids": "list[str]", "group_by": "task|checkpoint|date"},
+                        "{'table': list[dict], 'summary_stats': dict}"),
+            EndpointDef("GET",  "/trends",          "Success rate trends over time",
+                        {},
+                        "{'dates': list[str], 'success_rates': list[float]}"),
         ],
-        "example": (
-            "python src/eval/realtime_policy_viz.py --port 8047\n"
-            "# Point inference at port 8001 and open http://localhost:8047"
-        ),
-    },
-    {
-        "port": 8048,
-        "name": "GR00T Fine-tune API v2",
-        "title": "GR00T Fine-tune API v2",
-        "file": "src/api/finetune_api_v2.py",
-        "category": "Core Services",
-        "description": (
-            "Second-generation fine-tuning REST API with full job lifecycle "
-            "management. Supports full fine-tune, LoRA, and DAgger jobs. "
-            "Provides live log streaming, cost tracking per job, and automatic "
-            "checkpoint registration to the model registry (8009)."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("GET",    "/",                 "HTML job manager dashboard"),
-            ("GET",    "/health",           "Service liveness"),
-            ("POST",   "/jobs",             "Submit fine-tune job (full / LoRA / DAgger)"),
-            ("GET",    "/jobs",             "List all jobs with status"),
-            ("GET",    "/jobs/{id}",        "Job detail: config, progress, cost"),
-            ("DELETE", "/jobs/{id}",        "Cancel a running job"),
-            ("GET",    "/jobs/{id}/logs",   "Streaming log output"),
-            ("GET",    "/api/costs",        "Per-job cost breakdown"),
+    ),
+    ServiceDef(
+        port=8049,
+        name="checkpoint_comparator",
+        script_path="server/checkpoint_comparator.py",
+        description="Side-by-side comparison of two model checkpoints: parameter diffs, "
+                    "performance deltas, and behavioral divergence.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/compare",         "Compare two checkpoints",
+                        {"checkpoint_a": "str", "checkpoint_b": "str", "task": "str"},
+                        "{'delta_mae': float, 'delta_success': float, 'param_diff_pct': float}"),
+            EndpointDef("GET",  "/compare/{id}/behavioral", "Behavioral divergence analysis",
+                        {"id": "path param"},
+                        "{'kl_divergence': float, 'action_diff_mean': float}"),
+            EndpointDef("GET",  "/compare/{id}/report", "Full comparison report",
+                        {},
+                        "HTML report with charts and tables"),
         ],
-        "example": (
-            "python src/api/finetune_api_v2.py --port 8048 --mock\n"
-            "curl -s -X POST http://localhost:8048/jobs \\\n"
-            "  -H 'Content-Type: application/json' \\\n"
-            "  -d '{\"type\":\"lora\",\"dataset\":\"/tmp/dataset\",\"steps\":5000}'"
-        ),
-    },
-    {
-        "port": 8049,
-        "name": "Customer Onboarding Checklist",
-        "title": "Customer Onboarding Checklist",
-        "file": "src/api/customer_onboarding_checklist.py",
-        "category": "Partner",
-        "description": (
-            "Tracks completion of onboarding milestones for new customers. "
-            "Each customer has a checklist: account creation, hardware setup, "
-            "first dataset upload, first successful inference call, and first "
-            "fine-tune completion. CS team monitors all customers from the admin view."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/customers",               "All customers and checklist completion %"),
-            ("GET",  "/customers/{id}/checklist","Full checklist for a customer"),
-            ("POST", "/customers/{id}/check/{n}","Mark a checklist item complete"),
-            ("GET",  "/health",                  "Service liveness"),
+    ),
+    ServiceDef(
+        port=8050,
+        name="gtc_qna_server",
+        script_path="server/gtc_qna_server.py",
+        description="GTC talk Q&A assistant: indexes the OCI Robot Cloud presentation "
+                    "and answers audience questions in real time.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/ask",             "Ask a question about OCI Robot Cloud",
+                        {"question": "str", "context": "str (optional)"},
+                        "{'answer': str, 'sources': list[str], 'confidence': float}"),
+            EndpointDef("GET",  "/slides",          "List indexed slide topics",
+                        {},
+                        "{'slides': [{'idx': int, 'title': str, 'keywords': list[str]}]}"),
+            EndpointDef("POST", "/slides/reindex",  "Reindex slides after deck update",
+                        {"deck_path": "str"},
+                        "{'slides_indexed': int, 'duration_s': float}"),
         ],
-        "example": (
-            "python src/api/customer_onboarding_checklist.py  # port 8049 hardcoded\n"
-            "curl -s http://localhost:8049/customers"
-        ),
-    },
-    {
-        "port": 8050,
-        "name": "GTC 2027 Q&A Server",
-        "title": "GTC 2027 Q&A Server",
-        "file": "src/demo/gtc_qna_server.py",
-        "category": "Demo",
-        "description": (
-            "Live Q&A session management for the GTC 2027 talk. Audience members "
-            "submit questions via QR code; presenter sees a moderated queue ranked "
-            "by votes. Supports pre-loaded FAQ answers and can display answers on "
-            "the presentation screen via WebSocket broadcast."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",              "Audience question submission form"),
-            ("POST", "/questions",     "Submit a question"),
-            ("GET",  "/questions",     "Moderator: sorted question queue"),
-            ("POST", "/questions/{id}/vote", "Upvote a question"),
-            ("GET",  "/live",          "Presenter WebSocket feed"),
-            ("GET",  "/health",        "Service liveness"),
+    ),
+    ServiceDef(
+        port=8051,
+        name="model_versioning_api",
+        script_path="server/model_versioning_api.py",
+        description="Semantic versioning for production model releases with changelogs, "
+                    "rollback support, and canary deployments.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/versions",        "All model versions",
+                        {},
+                        "{'versions': [{'tag': str, 'model_id': str, 'released_at': ISO8601}]}"),
+            EndpointDef("POST", "/versions/release","Create a new versioned release",
+                        {"model_id": "str", "version": "semver", "changelog": "str"},
+                        "{'version': str, 'released': bool}"),
+            EndpointDef("POST", "/versions/{ver}/rollback", "Rollback to a previous version",
+                        {"ver": "path param"},
+                        "{'rolled_back': bool, 'active_version': str}"),
         ],
-        "example": (
-            "python src/demo/gtc_qna_server.py --port 8050\n"
-            "# Share http://localhost:8050 QR code with audience"
-        ),
-    },
-    {
-        "port": 8051,
-        "name": "Model Versioning API",
-        "title": "OCI Robot Cloud — Model Version Management API",
-        "file": "src/api/model_versioning_api.py",
-        "category": "Infrastructure",
-        "description": (
-            "Manages model version lineage across the full fine-tuning history. "
-            "Tracks parent–child checkpoint relationships, metadata (training config, "
-            "eval results, data provenance), blue-green deployment rollout, and "
-            "rollback. Powers the model registry dashboard."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/models",                      "All model lineages"),
-            ("POST", "/models",                      "Register a new model version"),
-            ("GET",  "/models/{id}",                 "Model version detail with lineage graph"),
-            ("POST", "/models/{id}/promote",         "Promote to staging or production"),
-            ("POST", "/models/{id}/rollback",        "Rollback to a previous version"),
-            ("GET",  "/models/{id}/diff",            "Diff two model versions' eval metrics"),
-            ("GET",  "/health",                      "Service liveness"),
+    ),
+    ServiceDef(
+        port=8052,
+        name="training_notifier",
+        script_path="server/training_notifier.py",
+        description="Sends Slack and email notifications for training milestones, failures, "
+                    "and convergence events.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/notify/slack",    "Send a Slack notification",
+                        {"channel": "str", "message": "str",
+                         "attachments": "list (optional)"},
+                        "{'sent': bool, 'ts': str}"),
+            EndpointDef("POST", "/notify/email",    "Send an email notification",
+                        {"to": "str", "subject": "str", "body_html": "str"},
+                        "{'sent': bool, 'message_id': str}"),
+            EndpointDef("GET",  "/subscriptions",   "List notification subscriptions",
+                        {},
+                        "{'subscriptions': [{'event': str, 'channel': str, 'email': str}]}"),
         ],
-        "example": (
-            "python src/api/model_versioning_api.py  # port 8051 hardcoded\n"
-            "curl -s http://localhost:8051/models"
-        ),
-    },
-    {
-        "port": 8052,
-        "name": "Training Notifier",
-        "title": "OCI Robot Cloud — Training Notifier",
-        "file": "src/api/training_notifier.py",
-        "category": "Infrastructure",
-        "description": (
-            "Sends notifications when training events occur: job start/complete, "
-            "loss plateau detection, checkpoint saved, eval score improved, "
-            "and GPU OOM errors. Dispatches via Slack webhook, email, and "
-            "the webhook notification service (8021)."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/notify",            "Trigger a notification event"),
-            ("GET",  "/subscriptions",     "List notification subscriptions"),
-            ("POST", "/subscriptions",     "Create a subscription (channel + event type)"),
-            ("DELETE", "/subscriptions/{id}", "Remove a subscription"),
-            ("GET",  "/history",           "Recent notification history"),
-            ("GET",  "/health",            "Service liveness"),
+    ),
+    ServiceDef(
+        port=8053,
+        name="api_key_manager",
+        script_path="server/api_key_manager.py",
+        description="API key lifecycle management: provisioning, rotation, scoping, "
+                    "rate limit configuration, and revocation.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/keys/create",     "Create a new API key",
+                        {"customer_id": "str", "tier": "free|starter|enterprise",
+                         "scopes": "list[str]"},
+                        "{'api_key': str, 'key_id': str, 'expires_at': ISO8601}"),
+            EndpointDef("POST", "/keys/{id}/rotate","Rotate an API key",
+                        {"id": "path param"},
+                        "{'new_key': str, 'old_key_expires_in_s': int}"),
+            EndpointDef("DELETE", "/keys/{id}",     "Revoke an API key",
+                        {"id": "path param"},
+                        "{'revoked': bool}"),
+            EndpointDef("GET",  "/keys",            "List all keys for a customer",
+                        {"customer_id": "query param"},
+                        "{'keys': [{'id': str, 'tier': str, 'active': bool}]}"),
         ],
-        "example": (
-            "python src/api/training_notifier.py --port 8052\n"
-            "curl -s http://localhost:8052/subscriptions"
-        ),
-    },
-    {
-        "port": 8053,
-        "name": "API Key Manager",
-        "title": "OCI Robot Cloud — API Key Manager",
-        "file": "src/api/api_key_manager.py",
-        "category": "Infrastructure",
-        "description": (
-            "Issues, rotates, and revokes API keys for design partners. Keys are "
-            "scoped to allowed endpoints (inference / training / data) with "
-            "configurable rate limits. Integrates with the multi-tenant manager "
-            "(8023) for per-key quota enforcement."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",    "/keys",            "List API keys for a partner"),
-            ("POST",   "/keys",            "Issue a new API key with scope and limits"),
-            ("DELETE", "/keys/{id}",       "Revoke an API key"),
-            ("POST",   "/keys/{id}/rotate","Rotate (reissue) an API key"),
-            ("GET",    "/keys/{id}/usage", "Per-key request count and quota remaining"),
-            ("GET",    "/health",          "Service liveness"),
+    ),
+    ServiceDef(
+        port=8054,
+        name="health_aggregator",
+        script_path="server/health_aggregator.py",
+        description="Aggregates health checks from all 58 services into a unified status "
+                    "dashboard with historical uptime.",
+        status="live",
+        endpoints=[
+            EndpointDef("GET",  "/health",          "Overall system health summary",
+                        {},
+                        "{'healthy': int, 'degraded': int, 'down': int, 'uptime_pct': float}"),
+            EndpointDef("GET",  "/health/services", "Per-service health status",
+                        {},
+                        "{'services': [{'port': int, 'name': str, 'status': str, "
+                        "'latency_ms': float}]}"),
+            EndpointDef("GET",  "/health/history",  "24-hour uptime history per service",
+                        {},
+                        "{'history': {port: [{'time': ISO8601, 'up': bool}]}}"),
         ],
-        "example": (
-            "python src/api/api_key_manager.py  # port 8053 hardcoded\n"
-            "curl -s http://localhost:8053/keys?partner=acme"
-        ),
-    },
-    {
-        "port": 8054,
-        "name": "Health Aggregator",
-        "title": "Health Aggregator",
-        "file": "src/api/health_aggregator.py",
-        "category": "Infrastructure",
-        "description": (
-            "Single pane of glass for platform health. Polls /health on all "
-            "registered services (ports 8001–8059), aggregates results into an "
-            "overall status page, and exposes a Prometheus-compatible /metrics "
-            "endpoint for Grafana dashboards."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/health",   "Overall platform health (aggregated)"),
-            ("GET", "/services", "Per-service health status JSON"),
-            ("GET", "/metrics",  "Prometheus text format metrics"),
-            ("GET", "/",         "HTML status page with service grid"),
+    ),
+    ServiceDef(
+        port=8055,
+        name="contract_generator",
+        script_path="server/contract_generator.py",
+        description="Auto-generates partner and customer contracts from templates with "
+                    "pricing, SLA terms, and legal clauses.",
+        status="planned",
+        endpoints=[
+            EndpointDef("POST", "/contracts/generate","Generate a contract from template",
+                        {"template": "str", "parties": "dict", "pricing": "dict"},
+                        "{'contract_id': str, 'pdf_url': str, 'docx_url': str}"),
+            EndpointDef("GET",  "/templates",       "List available contract templates",
+                        {},
+                        "{'templates': [{'id': str, 'name': str, 'type': str}]}"),
+            EndpointDef("GET",  "/contracts/{id}",  "Fetch a generated contract",
+                        {"id": "path param"},
+                        "PDF or DOCX binary"),
         ],
-        "example": (
-            "python src/api/health_aggregator.py --serve  # port 8054 hardcoded\n"
-            "curl -s http://localhost:8054/services"
-        ),
-    },
-    {
-        "port": 8055,
-        "name": "Contract Generator",
-        "title": "OCI Robot Cloud Contract Generator",
-        "file": "src/api/contract_generator.py",
-        "category": "Partner",
-        "description": (
-            "Auto-generates design partner and commercial contracts. Takes partner "
-            "tier, committed GPU-hours, pricing schedule, and SLA terms as inputs "
-            "and produces a DocX/PDF contract from an Oracle-approved template. "
-            "Routes for legal review and e-signature via webhook."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("POST", "/contracts",          "Generate a contract from template + inputs"),
-            ("GET",  "/contracts",          "List all contracts by status"),
-            ("GET",  "/contracts/{id}",     "Contract detail and download URL"),
-            ("POST", "/contracts/{id}/send","Send for e-signature"),
-            ("GET",  "/templates",          "Available contract templates"),
-            ("GET",  "/health",             "Service liveness"),
+    ),
+    ServiceDef(
+        port=8056,
+        name="revenue_dashboard",
+        script_path="server/revenue_dashboard.py",
+        description="Real-time revenue dashboard: MRR, ARR, churn, customer cohorts, "
+                    "and pipeline forecast.",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/metrics",         "Key revenue metrics",
+                        {},
+                        "{'mrr': float, 'arr': float, 'churn_rate': float, 'customers': int}"),
+            EndpointDef("GET",  "/forecast",        "12-month revenue forecast",
+                        {},
+                        "{'months': list[str], 'projected_mrr': list[float], 'scenarios': dict}"),
+            EndpointDef("GET",  "/cohorts",         "Customer cohort retention analysis",
+                        {},
+                        "{'cohorts': [{'month': str, 'retention': list[float]}]}"),
         ],
-        "example": (
-            "python src/api/contract_generator.py --serve --port 8055\n"
-            "curl -s http://localhost:8055/templates"
-        ),
-    },
-    {
-        "port": 8056,
-        "name": "Revenue Dashboard",
-        "title": "OCI Robot Cloud Revenue Dashboard",
-        "file": "src/api/revenue_dashboard.py",
-        "category": "Infrastructure",
-        "description": (
-            "Executive revenue dashboard. Shows MRR, ARR, GPU-hour revenue, "
-            "partner count by tier, churn indicators, and pipeline projections. "
-            "Data sourced from billing (8017) and usage analytics (8027). "
-            "Role-gated to Oracle executive access."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET", "/",            "HTML executive revenue dashboard"),
-            ("GET", "/metrics",     "Revenue KPIs: MRR, ARR, growth, churn"),
-            ("GET", "/breakdown",   "Revenue breakdown by partner tier and region"),
-            ("GET", "/forecast",    "3-month revenue forecast"),
-            ("GET", "/health",      "Service liveness"),
+    ),
+    ServiceDef(
+        port=8057,
+        name="gtc_talk_timer",
+        script_path="server/gtc_talk_timer.py",
+        description="GTC talk presentation timer with slide-by-slide time budgets, "
+                    "pace alerts, and rehearsal logging.",
+        status="live",
+        endpoints=[
+            EndpointDef("POST", "/session/start",   "Start a timed presentation session",
+                        {"deck_id": "str", "total_minutes": "int"},
+                        "{'session_id': str, 'slide_budgets': list[float]}"),
+            EndpointDef("POST", "/session/{id}/advance",
+                        "Advance to next slide (records timing)",
+                        {"id": "path param"},
+                        "{'slide': int, 'time_spent_s': float, 'on_pace': bool}"),
+            EndpointDef("GET",  "/session/{id}/summary", "Post-presentation timing summary",
+                        {"id": "path param"},
+                        "{'total_s': float, 'per_slide': list[float], 'over_budget': list[int]}"),
         ],
-        "example": (
-            "python src/api/revenue_dashboard.py --port 8056\n"
-            "curl -s http://localhost:8056/metrics"
-        ),
-    },
-    {
-        "port": 8057,
-        "name": "GTC Talk Timer",
-        "title": "GTC 2027 Talk Timer",
-        "file": "src/demo/gtc_talk_timer.py",
-        "category": "Demo",
-        "description": (
-            "Presenter-facing countdown timer for the GTC 2027 talk. Displays "
-            "current slide, time remaining per section, and overall progress. "
-            "Supports auto-advance mode, manual slide control via keyboard, and "
-            "a stage-facing display at a configurable secondary URL."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",              "HTML presenter timer view"),
-            ("POST", "/advance",       "Advance to next slide/section"),
-            ("POST", "/back",          "Go back to previous section"),
-            ("POST", "/reset",         "Reset timer to start"),
-            ("GET",  "/status",        "Current slide, elapsed, remaining JSON"),
-            ("GET",  "/health",        "Service liveness"),
+    ),
+    ServiceDef(
+        port=8058,
+        name="nvidia_partnership_tracker",
+        script_path="server/nvidia_partnership_tracker.py",
+        description="Tracks NVIDIA partnership milestones, joint GTM activities, co-sell "
+                    "opportunities, and integration dependencies.",
+        status="planned",
+        endpoints=[
+            EndpointDef("GET",  "/milestones",      "All partnership milestones and status",
+                        {},
+                        "{'milestones': [{'id': str, 'title': str, 'status': str, 'due': str}]}"),
+            EndpointDef("POST", "/milestones/{id}/complete",
+                        "Mark a milestone as complete",
+                        {"id": "path param", "notes": "str"},
+                        "{'completed': bool, 'completed_at': ISO8601}"),
+            EndpointDef("GET",  "/opportunities",   "Joint co-sell pipeline",
+                        {},
+                        "{'opportunities': [{'account': str, 'stage': str, 'acv': float}]}"),
         ],
-        "example": (
-            "python src/demo/gtc_talk_timer.py --web --port 8057\n"
-            "# Open http://localhost:8057 on presenter display"
-        ),
-    },
-    {
-        "port": 8058,
-        "name": "A/B Test Framework",
-        "title": "OCI Robot Cloud — A/B Test Framework",
-        "file": "src/eval/ab_test_framework.py",
-        "category": "Evaluation",
-        "description": (
-            "Statistical A/B testing framework for comparing policy variants. "
-            "Routes inference requests to two checkpoints according to a "
-            "configurable traffic split, collects success/failure outcomes, "
-            "and computes statistical significance (Mann-Whitney U, bootstrap CI). "
-            "Automatically promotes the winner."
-        ),
-        "mock": True,
-        "endpoints": [
-            ("POST", "/experiments",           "Create A/B experiment with checkpoint pair"),
-            ("GET",  "/experiments",           "List experiments with interim results"),
-            ("GET",  "/experiments/{id}",      "Full results with significance stats"),
-            ("POST", "/experiments/{id}/stop", "Stop experiment and promote winner"),
-            ("GET",  "/health",                "Service liveness"),
-        ],
-        "example": (
-            "python src/eval/ab_test_framework.py --port 8058\n"
-            "curl -s http://localhost:8058/experiments"
-        ),
-    },
-    {
-        "port": 8059,
-        "name": "NVIDIA Partnership CRM",
-        "title": "NVIDIA Partnership CRM",
-        "file": "src/api/nvidia_crm.py",
-        "category": "Partner",
-        "description": (
-            "Internal CRM for managing the NVIDIA co-engineering partnership. "
-            "Tracks contacts, meeting notes, deliverable commitments, escalation "
-            "paths, and co-marketing activities. Integrates with the integration "
-            "tracker (8036) for milestone status."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/contacts",           "NVIDIA team contacts"),
-            ("POST", "/meetings",           "Log a meeting note"),
-            ("GET",  "/meetings",           "Meeting history with NVIDIA"),
-            ("GET",  "/deliverables",       "Joint deliverable tracker"),
-            ("PUT",  "/deliverables/{id}",  "Update deliverable status"),
-            ("GET",  "/health",             "Service liveness"),
-        ],
-        "example": (
-            "python src/api/nvidia_crm.py  # port 8059 hardcoded\n"
-            "curl -s http://localhost:8059/deliverables"
-        ),
-    },
-    {
-        "port": 8080,
-        "name": "OCI Robot Cloud API (Main)",
-        "title": "OCI Robot Cloud API",
-        "file": "src/api/robot_cloud_api.py",
-        "category": "Core Services",
-        "description": (
-            "Primary customer-facing REST API. Accepts fine-tune job submissions, "
-            "returns job status and results, manages deployment of trained models "
-            "back to the inference servers, and exposes pricing. This is the "
-            "canonical endpoint documented in the public SDK."
-        ),
-        "mock": False,
-        "endpoints": [
-            ("GET",  "/",                       "Service info JSON"),
-            ("GET",  "/health",                 "Liveness check"),
-            ("POST", "/jobs/train",             "Submit a fine-tune job"),
-            ("GET",  "/jobs/{job_id}/status",   "Poll job status"),
-            ("GET",  "/jobs/{job_id}/results",  "Retrieve completed job results"),
-            ("POST", "/jobs/{job_id}/deploy",   "Deploy model to inference server"),
-            ("GET",  "/jobs",                   "List all jobs for caller"),
-            ("GET",  "/pricing",                "Current GPU pricing table"),
-        ],
-        "example": (
-            "python src/api/robot_cloud_api.py  # port 8080\n"
-            "curl -s http://localhost:8080/health\n"
-            "curl -s -X POST http://localhost:8080/jobs/train \\\n"
-            "  -H 'Content-Type: application/json' \\\n"
-            "  -d '{\"dataset_path\":\"/tmp/dataset\",\"num_steps\":5000,\"num_gpus\":4}'"
-        ),
-    },
+    ),
 ]
 
-# ---------------------------------------------------------------------------
-# CLI scripts reference
-# ---------------------------------------------------------------------------
-
-CLI_SCRIPTS = [
-    {
-        "name": "dagger_train.py",
-        "path": "src/training/dagger_train.py",
-        "description": "DAgger (Dataset Aggregation) iterative training loop for GR00T closed-loop improvement.",
-        "args": [
-            ("--server-url", "str", "http://localhost:8002", "GR00T inference server URL"),
-            ("--output-dir", "str", "/tmp/dagger_run", "Directory for checkpoints and logs"),
-            ("--dagger-iters", "int", "5", "Number of DAgger iterations"),
-            ("--episodes-per-iter", "int", "20", "Episodes to collect per iteration"),
-            ("--finetune-steps", "int", "500", "Fine-tune steps per iteration"),
-            ("--max-steps", "int", "100", "Max sim steps per episode"),
-            ("--beta-start", "float", "0.9", "Initial expert mixing coefficient"),
-            ("--beta-decay", "float", "0.7", "Beta multiplier per iteration"),
-            ("--gpu-id", "int", "4", "CUDA GPU index"),
-            ("--base-model", "str", "/tmp/finetune_500_5k/checkpoint-5000", "Starting checkpoint path"),
-            ("--dry-run", "flag", "", "Validate config without running"),
-        ],
-    },
-    {
-        "name": "lora_finetune.py",
-        "path": "src/training/lora_finetune.py",
-        "description": "LoRA (Low-Rank Adaptation) fine-tuning for GR00T — lower VRAM, faster iteration than full fine-tune.",
-        "args": [
-            ("--base-model", "str", "/tmp/finetune_1000_5k/checkpoint-5000", "Base checkpoint to adapt"),
-            ("--dataset", "str", "/tmp/sdg_1000_lerobot", "LeRobot-format HDF5 dataset"),
-            ("--output-dir", "str", "/tmp/lora_run", "Output directory for LoRA weights"),
-            ("--rank", "int", "8", "LoRA rank (r)"),
-            ("--alpha", "float", "16.0", "LoRA scaling factor (alpha)"),
-            ("--n-steps", "int", "3000", "Training steps"),
-            ("--lr", "float", "2e-4", "Learning rate"),
-            ("--batch-size", "int", "32", "Batch size"),
-            ("--mock", "flag", "", "Use mock model (no GPU required)"),
-            ("--merge", "flag", "", "Merge LoRA weights into base model"),
-            ("--lora-path", "str", "", "Path to existing LoRA weights (for --merge)"),
-            ("--report", "str", "/tmp/lora_report.html", "Output HTML training report"),
-            ("--compare-ranks", "flag", "", "Run rank ablation study"),
-            ("--seed", "int", "42", "Random seed"),
-        ],
-    },
-    {
-        "name": "closed_loop_eval.py",
-        "path": "src/eval/closed_loop_eval.py",
-        "description": "Runs closed-loop policy evaluation in Genesis/LIBERO simulation, reporting per-episode success rate and action MAE.",
-        "args": [
-            ("--checkpoint", "str", "", "Checkpoint path (mutually exclusive with --server-url)"),
-            ("--server-url", "str", "", "Running inference server URL (mutually exclusive with --checkpoint)"),
-            ("--num-episodes", "int", "20", "Number of evaluation episodes"),
-            ("--max-steps", "int", "500", "Max steps per episode before timeout"),
-            ("--sim-steps-per-action", "int", "2", "Physics steps per action chunk step"),
-            ("--gpu-id", "int", "0", "CUDA GPU index"),
-            ("--output", "str", "/tmp/eval_results.json", "JSON output path"),
-            ("--cuda / --no-cuda", "flag", "", "Enable/disable CUDA"),
-            ("--mock", "flag", "", "Mock evaluation (no GPU/sim required)"),
-        ],
-    },
-    {
-        "name": "hpo_search.py",
-        "path": "src/training/hpo_search.py",
-        "description": "Hyperparameter optimisation search using random/grid/Bayesian strategies.",
-        "args": [
-            ("--strategy", "str", "random", "Search strategy: random | grid | bayesian"),
-            ("--n-trials", "int", "20", "Number of HPO trials"),
-            ("--budget-hours", "float", "4.0", "Wall-clock budget in hours"),
-            ("--output", "str", "/tmp/hpo_results.json", "Results output path"),
-            ("--mock", "flag", "", "Mock training (no GPU required)"),
-        ],
-    },
-    {
-        "name": "benchmark_throughput.py",
-        "path": "src/training/benchmark_throughput.py",
-        "description": "Measures training throughput (it/s) across GPU counts and batch sizes.",
-        "args": [
-            ("--gpus", "int", "1", "Number of GPUs to test"),
-            ("--batch-size", "int", "32", "Batch size"),
-            ("--steps", "int", "100", "Benchmark steps"),
-            ("--output", "str", "/tmp/throughput.json", "Results JSON"),
-        ],
-    },
-    {
-        "name": "checkpoint_compare.py",
-        "path": "src/eval/checkpoint_compare.py",
-        "description": "Side-by-side evaluation of two checkpoints; auto-starts inference servers on ports 8010/8011.",
-        "args": [
-            ("--ckpt-a", "str", "", "Path to checkpoint A"),
-            ("--ckpt-b", "str", "", "Path to checkpoint B"),
-            ("--port-a", "int", "8010", "Port for checkpoint A server"),
-            ("--port-b", "int", "8011", "Port for checkpoint B server"),
-            ("--episodes", "int", "20", "Evaluation episodes per checkpoint"),
-            ("--output", "str", "/tmp/compare.json", "Comparison results JSON"),
-        ],
-    },
-    {
-        "name": "sim_to_real_gap.py",
-        "path": "src/eval/sim_to_real_gap.py",
-        "description": "Quantifies the sim-to-real performance gap by comparing simulated vs real-robot eval metrics.",
-        "args": [
-            ("--sim-results", "str", "", "JSON file with simulation eval results"),
-            ("--real-results", "str", "", "JSON file with real-robot eval results"),
-            ("--output", "str", "/tmp/gap_report.html", "HTML gap analysis report"),
-        ],
-    },
-    {
-        "name": "genesis_sdg.py",
-        "path": "src/simulation/genesis_sdg.py",
-        "description": "Synthetic Data Generation using Genesis physics simulator with IK motion planning.",
-        "args": [
-            ("--scene", "str", "lift_cube", "Scene name: lift_cube | stack_blocks | pour_liquid"),
-            ("--n-episodes", "int", "1000", "Episodes to generate"),
-            ("--output-dir", "str", "/tmp/sdg_dataset", "LeRobot output directory"),
-            ("--domain-rand", "flag", "", "Enable domain randomisation"),
-            ("--gpu-id", "int", "0", "CUDA GPU for rendering"),
-            ("--mock", "flag", "", "Mock generation (no simulator required)"),
-        ],
-    },
-    {
-        "name": "jetson_benchmark.py",
-        "path": "src/inference/jetson_benchmark.py",
-        "description": "Benchmarks GR00T inference performance on Jetson AGX Orin edge devices.",
-        "args": [
-            ("--server-url", "str", "http://localhost:8002", "GR00T server URL"),
-            ("--n-requests", "int", "100", "Number of benchmark requests"),
-            ("--model-variant", "str", "full", "Model variant: full | quantized | distilled"),
-            ("--output", "str", "/tmp/jetson_bench.json", "Results JSON"),
-        ],
-    },
-    {
-        "name": "policy_distillation.py",
-        "path": "src/training/policy_distillation.py",
-        "description": "Distils a large GR00T policy into a smaller student model for edge deployment.",
-        "args": [
-            ("--teacher", "str", "", "Teacher checkpoint path"),
-            ("--student-size", "str", "small", "Student model size: small | medium"),
-            ("--dataset", "str", "", "LeRobot dataset for distillation"),
-            ("--steps", "int", "10000", "Distillation steps"),
-            ("--output-dir", "str", "/tmp/distilled", "Output checkpoint directory"),
-            ("--mock", "flag", "", "Mock distillation"),
-        ],
-    },
-    {
-        "name": "results_aggregator.py",
-        "path": "src/eval/results_aggregator.py",
-        "description": "Aggregates eval results across multiple runs into a unified report with statistics.",
-        "args": [
-            ("--results-dir", "str", "/tmp/eval_runs", "Directory of JSON eval result files"),
-            ("--output", "str", "/tmp/aggregated.json", "Aggregated results JSON"),
-            ("--report", "str", "/tmp/agg_report.html", "HTML summary report"),
-        ],
-    },
-    {
-        "name": "curriculum_dagger.py",
-        "path": "src/training/curriculum_dagger.py",
-        "description": "Curriculum-ordered DAgger training: progressively increases task difficulty across iterations.",
-        "args": [
-            ("--curriculum", "str", "easy_to_hard", "Curriculum strategy: easy_to_hard | hard_first | random"),
-            ("--tasks", "str", "lift_cube,stack_blocks", "Comma-separated task list"),
-            ("--iters", "int", "10", "Total curriculum iterations"),
-            ("--server-url", "str", "http://localhost:8002", "Inference server"),
-            ("--output-dir", "str", "/tmp/curriculum_run", "Output directory"),
-        ],
-    },
-]
 
 # ---------------------------------------------------------------------------
-# Category order and colours
+# HTML renderer
 # ---------------------------------------------------------------------------
 
-CATEGORY_ORDER = [
-    "Core Services",
-    "Training",
-    "Evaluation",
-    "Infrastructure",
-    "Demo",
-    "Partner",
-]
-
-CATEGORY_COLORS = {
-    "Core Services":  "#3b82f6",  # blue
-    "Training":       "#8b5cf6",  # purple
-    "Evaluation":     "#f59e0b",  # amber
-    "Infrastructure": "#10b981",  # emerald
-    "Demo":           "#ef4444",  # red
-    "Partner":        "#06b6d4",  # cyan
+METHOD_COLORS = {
+    "GET":    "#10B981",
+    "POST":   "#3B82F6",
+    "DELETE": "#EF4444",
+    "PUT":    "#F59E0B",
+    "PATCH":  "#8B5CF6",
 }
 
-# ---------------------------------------------------------------------------
-# HTML generation
-# ---------------------------------------------------------------------------
 
-def method_badge(method: str) -> str:
-    colors = {
-        "GET":    "#3b82f6",
-        "POST":   "#10b981",
-        "PUT":    "#f59e0b",
-        "DELETE": "#ef4444",
-        "PATCH":  "#8b5cf6",
-    }
-    bg = colors.get(method.upper(), "#6b7280")
+def _endpoint_html(ep: EndpointDef, svc_port: int, ep_idx: int) -> str:
+    color = METHOD_COLORS.get(ep.method, "#6B7280")
+    card_id = f"ep-{svc_port}-{ep_idx}"
+    if ep.params:
+        params_rows = "".join(
+            f"<tr><td class='param-name'>{k}</td>"
+            f"<td class='param-desc'>{v}</td></tr>"
+            for k, v in ep.params.items()
+        )
+    else:
+        params_rows = "<tr><td colspan='2' class='no-params'>No parameters</td></tr>"
     return (
-        f'<span style="background:{bg};color:#fff;font-size:0.68rem;'
-        f'font-weight:700;padding:2px 7px;border-radius:4px;'
-        f'letter-spacing:.04em;font-family:monospace">{method.upper()}</span>'
+        f'<div class="endpoint-card" id="{card_id}">'
+        f'<div class="ep-header" onclick="toggleEndpoint(\'{card_id}\')">'
+        f'<span class="method-badge" style="background:{color}">{ep.method}</span>'
+        f'<span class="ep-path">{ep.path}</span>'
+        f'<span class="ep-desc">{ep.description}</span>'
+        f'<span class="ep-chevron">&#9662;</span>'
+        f'</div>'
+        f'<div class="ep-body">'
+        f'<table class="params-table">'
+        f'<thead><tr><th>Parameter</th><th>Description</th></tr></thead>'
+        f'<tbody>{params_rows}</tbody>'
+        f'</table>'
+        f'<div class="returns-row">'
+        f'<span class="returns-label">Returns:</span>'
+        f'<code class="returns-code">{ep.returns}</code>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
     )
 
 
-def build_sidebar(services: list) -> str:
-    by_cat: dict = {c: [] for c in CATEGORY_ORDER}
-    for s in services:
-        cat = s.get("category", "Core Services")
-        if cat not in by_cat:
-            by_cat[cat] = []
-        by_cat[cat].append(s)
+def render_html(services: List[ServiceDef]) -> str:
+    total_endpoints = sum(len(s.endpoints) for s in services)
+    live_count = sum(1 for s in services if s.status == "live")
+    planned_count = len(services) - live_count
 
-    html = '<nav id="sidebar">\n'
-    html += '<div id="sidebar-header"><span id="logo">&#x1F916;</span> OCI Robot Cloud</div>\n'
-    html += '<div id="search-wrap"><input id="search" placeholder="Search services…" autocomplete="off"></div>\n'
-    html += '<ul id="nav-list">\n'
-
-    for cat in CATEGORY_ORDER:
-        if not by_cat.get(cat):
-            continue
-        color = CATEGORY_COLORS.get(cat, "#9ca3af")
-        html += (
-            f'<li class="nav-category" style="color:{color}">'
-            f'{cat}</li>\n'
-        )
-        for s in by_cat[cat]:
-            html += (
-                f'<li><a class="nav-link" href="#svc-{s["port"]}" '
-                f'data-name="{s["name"].lower()}" '
-                f'data-port="{s["port"]}" '
-                f'data-desc="{s["description"][:80].lower()}">'
-                f'<span class="nav-port">{s["port"]}</span>'
-                f'<span class="nav-name">{s["name"]}</span>'
-                f'</a></li>\n'
-            )
-
-    html += "</ul>\n"
-
-    # Quick-reference card
-    html += '<div id="quick-ref">\n'
-    html += '<div class="qr-title">Quick Reference</div>\n'
-    for s in sorted(services, key=lambda x: x["port"]):
-        html += (
-            f'<div class="qr-row" data-port="{s["port"]}">'
-            f'<span class="qr-port">{s["port"]}</span>'
-            f'<span class="qr-name">{s["name"]}</span>'
-            f'</div>\n'
-        )
-    html += "</div>\n"
-    html += "</nav>\n"
-    return html
-
-
-def build_service_card(s: dict) -> str:
-    port = s["port"]
-    name = s["name"]
-    cat = s.get("category", "Core Services")
-    cat_color = CATEGORY_COLORS.get(cat, "#9ca3af")
-    mock_badge = (
-        '<span class="mock-badge">MOCK SUPPORTED</span>'
-        if s.get("mock") else ""
+    sidebar_items = "\n".join(
+        f'<li class="sidebar-item {s.status}" '
+        f'data-port="{s.port}" data-name="{s.name}" '
+        f'onclick="scrollToService(\'{s.port}\')">'
+        f'<span class="sb-port">{s.port}</span>'
+        f'<span class="sb-name">{s.name}</span>'
+        f'<span class="sb-badge sb-{s.status}">{s.status}</span>'
+        f'</li>'
+        for s in services
     )
 
-    # Endpoint table
-    ep_rows = ""
-    for method, path, desc in s.get("endpoints", []):
-        ep_rows += (
-            f'<tr>'
-            f'<td>{method_badge(method)}</td>'
-            f'<td><code>{path}</code></td>'
-            f'<td class="ep-desc">{desc}</td>'
-            f'</tr>\n'
+    service_cards = ""
+    for svc in services:
+        eps_html = "".join(
+            _endpoint_html(ep, svc.port, i)
+            for i, ep in enumerate(svc.endpoints)
+        )
+        status_class = "live" if svc.status == "live" else "planned"
+        service_cards += (
+            f'<section class="service-card" id="svc-{svc.port}">'
+            f'<div class="svc-header">'
+            f'<div class="svc-title-row">'
+            f'<span class="svc-port">:{svc.port}</span>'
+            f'<h2 class="svc-name">{svc.name}</h2>'
+            f'<span class="status-pill {status_class}">{svc.status}</span>'
+            f'</div>'
+            f'<p class="svc-desc">{svc.description}</p>'
+            f'<div class="svc-script">'
+            f'<span class="script-label">Script:</span>'
+            f'<code class="script-path">{svc.script_path}</code>'
+            f'</div>'
+            f'</div>'
+            f'<div class="endpoints-list">{eps_html}</div>'
+            f'</section>'
         )
 
-    ep_table = ""
-    if ep_rows:
-        ep_table = (
-            '<div class="section-label">Endpoints</div>'
-            '<table class="ep-table">'
-            '<thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>'
-            f'<tbody>{ep_rows}</tbody>'
-            '</table>'
-        )
+    css = """
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0F172A; --surface: #1E293B; --surface2: #263348;
+      --border: #334155; --text: #E2E8F0; --muted: #94A3B8;
+      --accent: #38BDF8; --green: #10B981; --gray: #6B7280;
+      --sidebar-w: 280px;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg);
+           color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+    #topbar { position: fixed; top: 0; left: 0; right: 0; height: 56px;
+              background: var(--surface); border-bottom: 1px solid var(--border);
+              display: flex; align-items: center; padding: 0 24px; z-index: 100;
+              gap: 24px; }
+    #topbar .logo { font-size: 1.1rem; font-weight: 700; color: var(--accent);
+                    white-space: nowrap; }
+    #topbar .stats { display: flex; gap: 20px; font-size: 0.8rem; color: var(--muted); }
+    #topbar .stats span strong { color: var(--text); }
+    #search { flex: 1; max-width: 400px; background: var(--surface2);
+              border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+              padding: 6px 14px; font-size: 0.9rem; outline: none; }
+    #search:focus { border-color: var(--accent); }
+    #search::placeholder { color: var(--muted); }
+    #sidebar { position: fixed; top: 56px; left: 0; bottom: 0; width: var(--sidebar-w);
+               background: var(--surface); border-right: 1px solid var(--border);
+               overflow-y: auto; padding: 12px 0; }
+    #main { margin-top: 56px; margin-left: var(--sidebar-w); flex: 1; overflow-y: auto;
+            padding: 32px; height: calc(100vh - 56px); }
+    .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+                    cursor: pointer; border-left: 3px solid transparent;
+                    transition: background .15s; font-size: 0.82rem; }
+    .sidebar-item:hover { background: var(--surface2); }
+    .sidebar-item.live { border-left-color: var(--green); }
+    .sidebar-item.planned { border-left-color: var(--gray); }
+    .sb-port { color: var(--accent); font-family: monospace; font-size: 0.78rem;
+               min-width: 42px; }
+    .sb-name { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis;
+               white-space: nowrap; }
+    .sb-badge { font-size: 0.65rem; padding: 1px 6px; border-radius: 10px;
+                text-transform: uppercase; font-weight: 600; }
+    .sb-live { background: #064e3b; color: var(--green); }
+    .sb-planned { background: #1f2937; color: var(--gray); }
+    .service-card { background: var(--surface); border: 1px solid var(--border);
+                    border-radius: 12px; margin-bottom: 28px; overflow: hidden; }
+    .svc-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .svc-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .svc-port { font-family: monospace; font-size: 1.1rem; color: var(--accent);
+                font-weight: 700; }
+    .svc-name { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+    .status-pill { font-size: 0.7rem; padding: 2px 10px; border-radius: 12px;
+                   text-transform: uppercase; font-weight: 700; }
+    .status-pill.live { background: #064e3b; color: var(--green); }
+    .status-pill.planned { background: #1f2937; color: var(--gray); }
+    .svc-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 10px; }
+    .svc-script { font-size: 0.8rem; }
+    .script-label { color: var(--muted); margin-right: 6px; }
+    .script-path { background: var(--surface2); padding: 2px 8px; border-radius: 4px;
+                   color: #F472B6; font-size: 0.8rem; }
+    .endpoints-list { padding: 16px 24px; display: flex; flex-direction: column; gap: 8px; }
+    .endpoint-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .ep-header { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+                 cursor: pointer; background: var(--surface2); user-select: none;
+                 transition: background .15s; }
+    .ep-header:hover { background: #2d3f58; }
+    .method-badge { font-family: monospace; font-size: 0.72rem; font-weight: 700;
+                    padding: 2px 8px; border-radius: 4px; color: #fff; min-width: 54px;
+                    text-align: center; }
+    .ep-path { font-family: monospace; font-size: 0.88rem; color: var(--text);
+               min-width: 160px; }
+    .ep-desc { color: var(--muted); font-size: 0.83rem; flex: 1; }
+    .ep-chevron { color: var(--muted); transition: transform .2s; margin-left: auto; }
+    .ep-body { display: none; padding: 14px 16px; background: var(--bg);
+               border-top: 1px solid var(--border); }
+    .ep-body.open { display: block; }
+    .ep-chevron.open { transform: rotate(180deg); }
+    .params-table { width: 100%; border-collapse: collapse; font-size: 0.83rem;
+                    margin-bottom: 12px; }
+    .params-table th { text-align: left; padding: 6px 10px; color: var(--muted);
+                       border-bottom: 1px solid var(--border); font-weight: 600; }
+    .params-table td { padding: 6px 10px; border-bottom: 1px solid #1e2d3d;
+                       vertical-align: top; }
+    .param-name { font-family: monospace; color: var(--accent); }
+    .param-desc { color: var(--muted); }
+    .no-params { color: var(--muted); font-style: italic; }
+    .returns-row { font-size: 0.83rem; }
+    .returns-label { color: var(--muted); margin-right: 8px; }
+    .returns-code { background: var(--surface2); padding: 4px 10px; border-radius: 4px;
+                    color: #86EFAC; font-size: 0.8rem; word-break: break-all; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .hidden { display: none !important; }
+    """
 
-    # Example block
-    example_html = ""
-    if s.get("example"):
-        escaped = s["example"].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        example_html = (
-            '<div class="section-label">Example</div>'
-            f'<pre class="code-block">{escaped}</pre>'
-        )
-
-    html = f"""
-<section id="svc-{port}" class="svc-card">
-  <div class="svc-header">
-    <div class="svc-title-row">
-      <span class="svc-port">:{port}</span>
-      <h2 class="svc-name">{name}</h2>
-      {mock_badge}
-      <span class="cat-badge" style="background:{cat_color}22;color:{cat_color};border:1px solid {cat_color}44">{cat}</span>
-    </div>
-    <div class="svc-file"><code>{s.get("file","")}</code></div>
-  </div>
-  <p class="svc-desc">{s["description"]}</p>
-  {ep_table}
-  {example_html}
-</section>
-"""
-    return html
-
-
-def build_cli_card(script: dict) -> str:
-    rows = ""
-    for flag, typ, default, desc in script.get("args", []):
-        default_str = f'<span class="arg-default">(default: {default})</span>' if default else ""
-        rows += (
-            f'<tr>'
-            f'<td><code class="arg-flag">{flag}</code></td>'
-            f'<td><span class="arg-type">{typ}</span></td>'
-            f'<td>{desc} {default_str}</td>'
-            f'</tr>\n'
-        )
-
-    table = (
-        '<table class="ep-table">'
-        '<thead><tr><th>Flag</th><th>Type</th><th>Description</th></tr></thead>'
-        f'<tbody>{rows}</tbody>'
-        '</table>'
-    ) if rows else ""
-
-    html = f"""
-<section class="svc-card cli-card">
-  <div class="svc-header">
-    <div class="svc-title-row">
-      <h2 class="svc-name">{script["name"]}</h2>
-    </div>
-    <div class="svc-file"><code>{script["path"]}</code></div>
-  </div>
-  <p class="svc-desc">{script["description"]}</p>
-  <div class="section-label">Arguments</div>
-  {table}
-</section>
-"""
-    return html
-
-
-def build_html(services: list, cli_scripts: list, output_path: str) -> str:
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    total = len(services)
-
-    sidebar = build_sidebar(services)
-
-    # Group service cards by category
-    by_cat: dict = {c: [] for c in CATEGORY_ORDER}
-    for s in services:
-        cat = s.get("category", "Core Services")
-        if cat not in by_cat:
-            by_cat[cat] = []
-        by_cat[cat].append(s)
-
-    cards_html = ""
-    for cat in CATEGORY_ORDER:
-        svcs = by_cat.get(cat, [])
-        if not svcs:
-            continue
-        color = CATEGORY_COLORS.get(cat, "#9ca3af")
-        cards_html += (
-            f'<div class="category-divider" style="border-left:4px solid {color}">'
-            f'<span style="color:{color}">{cat}</span>'
-            f'<span class="cat-count">{len(svcs)} service{"s" if len(svcs)!=1 else ""}</span>'
-            f'</div>\n'
-        )
-        for s in svcs:
-            cards_html += build_service_card(s)
-
-    cli_html = ""
-    for script in cli_scripts:
-        cli_html += build_cli_card(script)
+    js = """
+    function toggleEndpoint(id) {
+      var card = document.getElementById(id);
+      var body = card.querySelector('.ep-body');
+      var chevron = card.querySelector('.ep-chevron');
+      body.classList.toggle('open');
+      chevron.classList.toggle('open');
+    }
+    function scrollToService(port) {
+      var el = document.getElementById('svc-' + port);
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    }
+    function filterServices(query) {
+      var q = query.trim().toLowerCase();
+      var items = document.querySelectorAll('#sidebar-list .sidebar-item');
+      var cards = document.querySelectorAll('.service-card');
+      items.forEach(function(item) {
+        var port = item.dataset.port;
+        var name = item.dataset.name;
+        var match = !q || port.indexOf(q) !== -1 || name.indexOf(q) !== -1;
+        item.classList.toggle('hidden', !match);
+      });
+      cards.forEach(function(card) {
+        var id = card.id.replace('svc-', '');
+        var name = card.querySelector('.svc-name').textContent.toLowerCase();
+        var match = !q || id.indexOf(q) !== -1 || name.indexOf(q) !== -1;
+        card.classList.toggle('hidden', !match);
+      });
+    }
+    """
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OCI Robot Cloud — API Reference</title>
-<style>
-  :root {{
-    --bg:       #0f172a;
-    --surface:  #1e293b;
-    --surface2: #273449;
-    --border:   #334155;
-    --text:     #e2e8f0;
-    --muted:    #94a3b8;
-    --accent:   #3b82f6;
-    --code-bg:  #111827;
-    --sidebar-w: 280px;
-  }}
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  html {{ scroll-behavior: smooth; }}
-  body {{
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-    display: flex;
-    min-height: 100vh;
-  }}
-
-  /* ── Sidebar ──────────────────────────────────────────────── */
-  #sidebar {{
-    width: var(--sidebar-w);
-    min-width: var(--sidebar-w);
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }}
-  #sidebar-header {{
-    padding: 16px;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #f1f5f9;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface2);
-    letter-spacing: .02em;
-  }}
-  #logo {{ margin-right: 8px; font-size: 1.2rem; }}
-  #search-wrap {{
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-  }}
-  #search {{
-    width: 100%;
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-  }}
-  #search:focus {{ outline: 2px solid var(--accent); }}
-  #nav-list {{
-    list-style: none;
-    padding: 8px 0;
-    flex: 1;
-  }}
-  .nav-category {{
-    padding: 8px 14px 4px;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-  }}
-  .nav-link {{
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    padding: 4px 14px;
-    text-decoration: none;
-    color: var(--muted);
-    border-left: 3px solid transparent;
-    transition: all .15s;
-    font-size: 12px;
-  }}
-  .nav-link:hover {{
-    color: var(--text);
-    background: var(--surface2);
-    border-left-color: var(--accent);
-  }}
-  .nav-port {{
-    font-family: monospace;
-    font-size: 11px;
-    color: var(--accent);
-    min-width: 36px;
-  }}
-  .nav-name {{ flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-
-  /* ── Quick-reference card ─────────────────────────────────── */
-  #quick-ref {{
-    border-top: 1px solid var(--border);
-    padding: 10px 0 16px;
-    background: var(--code-bg);
-  }}
-  .qr-title {{
-    padding: 8px 14px 4px;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }}
-  .qr-row {{
-    display: flex;
-    gap: 8px;
-    padding: 2px 14px;
-    font-size: 11px;
-  }}
-  .qr-port {{
-    font-family: monospace;
-    color: var(--accent);
-    min-width: 38px;
-  }}
-  .qr-name {{ color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-
-  /* ── Main content ─────────────────────────────────────────── */
-  #main {{
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 0 80px;
-  }}
-  #page-header {{
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 32px 40px 28px;
-  }}
-  #page-header h1 {{
-    font-size: 1.7rem;
-    font-weight: 800;
-    color: #f8fafc;
-    margin-bottom: 6px;
-  }}
-  #page-header .subtitle {{
-    color: var(--muted);
-    font-size: .9rem;
-  }}
-  #page-header .stats {{
-    margin-top: 14px;
-    display: flex;
-    gap: 24px;
-    flex-wrap: wrap;
-  }}
-  .stat-chip {{
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 14px;
-    font-size: 12px;
-    color: var(--muted);
-  }}
-  .stat-chip strong {{ color: var(--text); }}
-
-  #content {{ padding: 0 40px; }}
-
-  /* ── Section divider ──────────────────────────────────────── */
-  .category-divider {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px 0 8px;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    padding-left: 12px;
-    margin-bottom: 4px;
-    border-radius: 4px;
-  }}
-  .cat-count {{ font-size: .75rem; color: var(--muted); font-weight: 400; }}
-
-  /* ── Service cards ────────────────────────────────────────── */
-  .svc-card {{
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 24px;
-    margin-bottom: 18px;
-    transition: border-color .2s;
-  }}
-  .svc-card:hover {{ border-color: #475569; }}
-  .svc-card.hidden {{ display: none; }}
-
-  .svc-header {{ margin-bottom: 12px; }}
-  .svc-title-row {{
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 4px;
-  }}
-  .svc-port {{
-    font-family: monospace;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--accent);
-    background: #1e3a5f;
-    padding: 2px 8px;
-    border-radius: 5px;
-  }}
-  .svc-name {{
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: #f1f5f9;
-  }}
-  .svc-file {{ font-size: 11px; color: var(--muted); margin-top: 2px; }}
-  .svc-file code {{ font-size: 11px; }}
-
-  .mock-badge {{
-    background: #14532d;
-    color: #86efac;
-    border: 1px solid #166534;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 4px;
-    letter-spacing: .05em;
-  }}
-  .cat-badge {{
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 2px 9px;
-    border-radius: 12px;
-    letter-spacing: .03em;
-  }}
-  .svc-desc {{
-    color: var(--muted);
-    margin-bottom: 16px;
-    line-height: 1.7;
-  }}
-
-  /* ── Tables ───────────────────────────────────────────────── */
-  .section-label {{
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-    margin-top: 16px;
-  }}
-  .ep-table {{
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
-    margin-bottom: 4px;
-  }}
-  .ep-table th {{
-    background: var(--surface2);
-    text-align: left;
-    padding: 6px 10px;
-    color: var(--muted);
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-  }}
-  .ep-table td {{
-    padding: 6px 10px;
-    border-bottom: 1px solid #1e293b;
-    vertical-align: top;
-  }}
-  .ep-table tr:last-child td {{ border-bottom: none; }}
-  .ep-table tr:hover td {{ background: var(--surface2); }}
-  .ep-desc {{ color: var(--muted); }}
-  .ep-table code {{
-    font-family: "JetBrains Mono", "Fira Mono", Consolas, monospace;
-    font-size: 11.5px;
-    color: #a5f3fc;
-  }}
-
-  /* ── Code blocks ──────────────────────────────────────────── */
-  .code-block {{
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 14px;
-    font-family: "JetBrains Mono", "Fira Mono", Consolas, monospace;
-    font-size: 12px;
-    color: #a5f3fc;
-    overflow-x: auto;
-    white-space: pre;
-    margin-top: 8px;
-  }}
-
-  /* ── CLI section ──────────────────────────────────────────── */
-  #cli-section {{ margin-top: 32px; }}
-  #cli-section h2 {{
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #f1f5f9;
-    margin-bottom: 16px;
-    padding-left: 12px;
-    border-left: 4px solid #8b5cf6;
-  }}
-  .cli-card {{ border-left: 3px solid #8b5cf6; }}
-  .arg-flag {{ color: #86efac; font-size: 12px; }}
-  .arg-type {{
-    background: #1e293b;
-    color: #f59e0b;
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 3px;
-    font-family: monospace;
-  }}
-  .arg-default {{ color: #475569; font-size: 11px; }}
-
-  /* ── Footer ───────────────────────────────────────────────── */
-  #footer {{
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-    padding: 32px;
-    border-top: 1px solid var(--border);
-    margin-top: 40px;
-  }}
-
-  /* ── Scrollbar ────────────────────────────────────────────── */
-  ::-webkit-scrollbar {{ width: 6px; height: 6px; }}
-  ::-webkit-scrollbar-track {{ background: var(--bg); }}
-  ::-webkit-scrollbar-thumb {{ background: #334155; border-radius: 3px; }}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCI Robot Cloud - API Reference</title>
+  <style>{css}</style>
 </head>
 <body>
-
-{sidebar}
-
-<div id="main">
-  <div id="page-header">
-    <h1>OCI Robot Cloud — API Reference</h1>
-    <p class="subtitle">Complete endpoint and CLI reference for the OCI Robot Cloud platform</p>
+  <div id="topbar">
+    <span class="logo">OCI Robot Cloud API Reference</span>
     <div class="stats">
-      <div class="stat-chip"><strong>{total}</strong> services documented</div>
-      <div class="stat-chip">Ports <strong>8000</strong> – <strong>8080</strong></div>
-      <div class="stat-chip"><strong>{len(cli_scripts)}</strong> CLI scripts</div>
-      <div class="stat-chip">Generated <strong>{now}</strong></div>
+      <span><strong>{len(services)}</strong> services</span>
+      <span><strong>{live_count}</strong> live</span>
+      <span><strong>{planned_count}</strong> planned</span>
+      <span><strong>{total_endpoints}</strong> endpoints</span>
     </div>
+    <input id="search" type="text"
+           placeholder="Search by port or service name..."
+           oninput="filterServices(this.value)">
   </div>
-
-  <div id="content">
-    {cards_html}
-
-    <div id="cli-section">
-      <h2>CLI Reference</h2>
-      {cli_html}
-    </div>
-
-    <div id="footer">
-      OCI Robot Cloud &middot; Internal reference &middot; Generated {now}
-    </div>
-  </div>
-</div>
-
-<script>
-// ── Client-side search ────────────────────────────────────────────────────────
-(function() {{
-  const input = document.getElementById('search');
-  const navLinks = document.querySelectorAll('.nav-link');
-  const qrRows = document.querySelectorAll('.qr-row');
-  const cards = document.querySelectorAll('.svc-card:not(.cli-card)');
-  const dividers = document.querySelectorAll('.category-divider');
-
-  input.addEventListener('input', () => {{
-    const q = input.value.toLowerCase().trim();
-    if (!q) {{
-      navLinks.forEach(l => l.closest('li').style.display = '');
-      qrRows.forEach(r => r.style.display = '');
-      cards.forEach(c => c.classList.remove('hidden'));
-      dividers.forEach(d => d.style.display = '');
-      return;
-    }}
-
-    // Filter nav links
-    navLinks.forEach(link => {{
-      const matches = (
-        link.dataset.name.includes(q) ||
-        link.dataset.port.includes(q) ||
-        link.dataset.desc.includes(q)
-      );
-      link.closest('li').style.display = matches ? '' : 'none';
-    }});
-
-    // Filter quick-ref
-    qrRows.forEach(row => {{
-      const name = row.querySelector('.qr-name').textContent.toLowerCase();
-      row.style.display = (name.includes(q) || row.dataset.port.includes(q)) ? '' : 'none';
-    }});
-
-    // Filter service cards
-    cards.forEach(card => {{
-      const text = card.textContent.toLowerCase();
-      card.classList.toggle('hidden', !text.includes(q));
-    }});
-
-    // Show/hide category dividers based on whether any card in their group is visible
-    dividers.forEach(div => {{
-      // Find following sibling cards until next divider
-      let el = div.nextElementSibling;
-      let anyVisible = false;
-      while (el && !el.classList.contains('category-divider')) {{
-        if (el.classList.contains('svc-card') && !el.classList.contains('hidden')) {{
-          anyVisible = true;
-        }}
-        el = el.nextElementSibling;
-      }}
-      div.style.display = anyVisible ? '' : 'none';
-    }});
-  }});
-
-  // Highlight active nav link on scroll
-  const allSections = document.querySelectorAll('section[id^="svc-"]');
-  const observer = new IntersectionObserver((entries) => {{
-    entries.forEach(entry => {{
-      if (entry.isIntersecting) {{
-        const id = entry.target.id;
-        navLinks.forEach(l => {{
-          const active = l.getAttribute('href') === '#' + id;
-          l.style.borderLeftColor = active ? 'var(--accent)' : 'transparent';
-          l.style.color = active ? 'var(--text)' : '';
-        }});
-      }}
-    }});
-  }}, {{ threshold: 0.3 }});
-  allSections.forEach(s => observer.observe(s));
-}})();
-</script>
-
+  <nav id="sidebar">
+    <ul id="sidebar-list" style="list-style:none">
+{sidebar_items}
+    </ul>
+  </nav>
+  <main id="main">
+{service_cards}
+  </main>
+  <script>{js}</script>
 </body>
-</html>
-"""
+</html>"""
 
 
 # ---------------------------------------------------------------------------
-# Entry point
+# CLI entry point
 # ---------------------------------------------------------------------------
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate OCI Robot Cloud API reference HTML.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__,
+        description="Generate unified HTML API reference for OCI Robot Cloud services"
     )
     parser.add_argument(
         "--output",
-        default="docs/API_REFERENCE.html",
-        help="Output HTML file path (default: docs/API_REFERENCE.html)",
+        default="/tmp/api_reference.html",
+        help="Output path for the HTML file (default: /tmp/api_reference.html)",
     )
     args = parser.parse_args()
 
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    html = render_html(SERVICES)
+    with open(args.output, "w", encoding="utf-8") as fh:
+        fh.write(html)
 
-    print(f"Generating API reference for {len(SERVICES)} services and {len(CLI_SCRIPTS)} CLI scripts…")
-    html = build_html(SERVICES, CLI_SCRIPTS, str(output_path))
-    output_path.write_text(html, encoding="utf-8")
-
-    size_kb = output_path.stat().st_size / 1024
-    print(f"Written: {output_path}  ({size_kb:.1f} KB)")
+    total_endpoints = sum(len(s.endpoints) for s in SERVICES)
+    live_count = sum(1 for s in SERVICES if s.status == "live")
+    print(f"Generated {args.output}")
+    print(f"  Services : {len(SERVICES)} (ports 8001-8058)")
+    print(f"  Live     : {live_count}")
+    print(f"  Planned  : {len(SERVICES) - live_count}")
+    print(f"  Endpoints: {total_endpoints}")
 
 
 if __name__ == "__main__":

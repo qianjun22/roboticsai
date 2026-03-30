@@ -36,14 +36,14 @@ CLI USAGE
   python src/training/dataset_deduplication.py \\
       --input-dir /tmp/dagger_run6/episodes \\
       --output-dir /tmp/dagger_run6_deduped \\
-      --threshold 0.15
+      --threshold 0.40
 
   # Deduplicate + write HTML report:
   python src/training/dataset_deduplication.py \\
       --input-dir /tmp/dagger_run6/episodes \\
       --output-dir /tmp/dagger_run6_deduped \\
       --output /tmp/dedup_report.html \\
-      --threshold 0.15
+      --threshold 0.40
 """
 
 import argparse
@@ -66,7 +66,7 @@ TOTAL_DOF = 9           # arm + 2 gripper
 IDEAL_LENGTH = 50       # frames; used in quality scoring
 CUBE_Z_INTERP_POINTS = 5  # time-normalised sample points for cube_z signature
 
-DEFAULT_THRESHOLD = 0.15
+DEFAULT_THRESHOLD = 0.40
 DEFAULT_N_EPISODES = 200
 DEFAULT_OUTPUT = "/tmp/dedup_report.html"
 
@@ -185,13 +185,20 @@ def generate_mock_episodes(n: int = 200, seed: int = 42) -> List[Episode]:
         templates.append(ep)
         episodes.append(ep)
 
-    # Generate near-duplicates from random templates
+    # Generate near-duplicates from random templates.
+    # Noise is scaled proportionally to each template's own standard deviation
+    # so that near-dups are visibly similar but measurably distinct — this mimics
+    # real-robot collection where the operator repeats nearly-identical grasps.
+    # Noise fraction of ~8% of each DOF's std places near-dup normalised L2
+    # distances around 0.10–0.30, well within DEFAULT_THRESHOLD=0.40.
     chosen_templates = rng.choice(len(templates), size=n_neardup, replace=True)
     for j, t_idx in enumerate(chosen_templates):
         tmpl = templates[t_idx]
-        noise_states  = rng.normal(0, 0.02, tmpl.states.shape).astype(np.float32)
-        noise_actions = rng.normal(0, 0.02, tmpl.actions.shape).astype(np.float32)
-        noise_cz      = rng.normal(0, 0.005, tmpl.cube_z.shape).astype(np.float32)
+        scale = tmpl.states.std(axis=0, keepdims=True).clip(0.02)  # (1, 9)
+        noise_states  = (rng.normal(0, 0.08, tmpl.states.shape) * scale).astype(np.float32)
+        noise_actions = (rng.normal(0, 0.08, tmpl.actions.shape) * scale).astype(np.float32)
+        cz_scale = float(tmpl.cube_z.std()) or 0.02
+        noise_cz  = rng.normal(0, 0.08 * cz_scale, tmpl.cube_z.shape).astype(np.float32)
         ep = Episode(
             ep_id=f"episode_{n_unique + j:06d}",
             states=tmpl.states + noise_states,
