@@ -12,99 +12,74 @@ except ImportError:
 
 PORT = 8384
 
+TASKS = ["reach_cube","grasp_cube","lift_cube","pick_place","stack","pour","insert","bimanual"]
+DIFFICULTY = [1, 2, 3, 3, 4, 5, 5, 5]
+MASTERY = [0.94, 0.89, 0.81, 0.74, 0.61, 0.0, 0.0, 0.0]
+STAGES = ["reach_only","grasp_focus","lift_and_hold","full_precision","expert_generalize"]
+STAGE_SR = [0.38, 0.55, 0.71, 0.81, 0.83]
+
 def build_html():
-    tasks = ["reach","grasp","lift","place","push","stack","pour","insert"]
-    levels = [1,2,3,4,5]
-    random.seed(42)
-    # per-task mastery (0-1)
-    mastery = {t: round(random.uniform(0.4, 0.95), 2) for t in tasks}
-    mastery["reach"] = 0.94
-    mastery["grasp"] = 0.82
-    mastery["lift"] = 0.78
-    mastery["place"] = 0.73
-    mastery["push"] = 0.71
-    mastery["stack"] = 0.61
-    mastery["pour"] = 0.44
-    mastery["insert"] = 0.23
+    # --- SVG 1: 8 tasks x 5 difficulty grid ---
+    cw, ch, pad = 72, 44, 8
+    svg1_w = pad + len(TASKS)*(cw+pad)
+    svg1_h = pad + 5*(ch+pad) + 30
+    cells = []
+    for ti, (task, mastery, diff) in enumerate(zip(TASKS, MASTERY, DIFFICULTY)):
+        for di in range(1, 6):
+            x = pad + ti*(cw+pad)
+            y = pad + (5-di)*(ch+pad)
+            if di > diff:
+                fill = "#1e293b"; label = ""
+            elif mastery == 0.0:
+                fill = "#374151"; label = "locked"
+            else:
+                g = int(mastery * 200)
+                r = int((1-mastery)*180 + 60)
+                fill = f"rgb({r},{g},60)"
+                label = f"{int(mastery*100)}%"
+            cells.append(f'<rect x="{x}" y="{y}" width="{cw}" height="{ch}" rx="4" fill="{fill}" stroke="#334155" stroke-width="1"/>')
+            cells.append(f'<text x="{x+cw//2}" y="{y+ch//2+4}" text-anchor="middle" font-size="10" fill="#e2e8f0">{label}</text>')
+    for ti, task in enumerate(TASKS):
+        x = pad + ti*(cw+pad) + cw//2
+        cells.append(f'<text x="{x}" y="{svg1_h-6}" text-anchor="middle" font-size="9" fill="#94a3b8" transform="rotate(-20,{x},{svg1_h-6})">{task}</text>')
+    for di in range(1, 6):
+        y = pad + (5-di)*(ch+pad) + ch//2 + 4
+        cells.append(f'<text x="4" y="{y}" font-size="9" fill="#94a3b8">d{di}</text>')
+    svg1 = f'<svg width="{svg1_w}" height="{svg1_h}" style="background:#1e293b;border-radius:8px">{"".join(cells)}</svg>'
 
-    # build SVG bar chart of mastery
-    bar_w = 60
-    spacing = 80
-    svg_w = len(tasks) * spacing + 60
-    svg_h = 200
-    bars = ""
-    for i, t in enumerate(tasks):
-        x = 40 + i * spacing
-        h = int(mastery[t] * 150)
-        y = 160 - h
-        color = "#22c55e" if mastery[t] >= 0.75 else ("#f59e0b" if mastery[t] >= 0.5 else "#ef4444")
-        bars += f'<rect x="{x}" y="{y}" width="{bar_w}" height="{h}" fill="{color}" rx="3"/>'
-        bars += f'<text x="{x+bar_w//2}" y="175" text-anchor="middle" fill="#94a3b8" font-size="10">{t[:5]}</text>'
-        bars += f'<text x="{x+bar_w//2}" y="{y-4}" text-anchor="middle" fill="#e2e8f0" font-size="10">{mastery[t]}</text>'
-    # threshold line
-    threshold_y = 160 - int(0.7 * 150)
-    bars += f'<line x1="30" y1="{threshold_y}" x2="{svg_w-10}" y2="{threshold_y}" stroke="#f59e0b" stroke-dasharray="4,3" stroke-width="1.5"/>'
-    bars += f'<text x="{svg_w-8}" y="{threshold_y+4}" fill="#f59e0b" font-size="10">0.70</text>'
-    mastery_svg = f'<svg width="{svg_w}" height="{svg_h}">{bars}</svg>'
+    # --- SVG 2: SR trajectory per stage (staircase) ---
+    W2, H2, mx, my = 540, 200, 50, 20
+    iw = (W2 - mx - 20) // len(STAGES)
+    pts = []
+    bars = []
+    for i, (stage, sr) in enumerate(zip(STAGES, STAGE_SR)):
+        x1 = mx + i*iw
+        x2 = mx + (i+1)*iw
+        y = my + int((1-sr)*(H2-my-30))
+        y_base = H2 - 30
+        bars.append(f'<rect x="{x1+2}" y="{y}" width="{iw-4}" height="{y_base-y}" fill="#1d4ed8" opacity="0.25"/>')
+        pts.append(f"{x1},{y}")
+        pts.append(f"{x2},{y}")
+        bars.append(f'<text x="{(x1+x2)//2}" y="{y-5}" text-anchor="middle" font-size="10" fill="#38bdf8">{sr:.2f}</text>')
+        bars.append(f'<text x="{(x1+x2)//2}" y="{H2-14}" text-anchor="middle" font-size="8" fill="#94a3b8">{stage[:8]}</text>')
+    polyline = f'<polyline points="{",".join(pts)}" fill="none" stroke="#C74634" stroke-width="2.5"/>'
+    axes = (f'<line x1="{mx}" y1="{my}" x2="{mx}" y2="{H2-30}" stroke="#475569" stroke-width="1"/>')
+    svg2 = f'<svg width="{W2}" height="{H2}" style="background:#1e293b;border-radius:8px">{axes}{"".join(bars)}{polyline}</svg>'
 
-    # SR trajectory stages
-    stages = ["easy_single","medium_seq","hard_seq","full_combined","adaptive_v3"]
-    stage_sr = [0.51, 0.63, 0.71, 0.76, 0.81]
-    pts = ""
-    sw2, sh2 = 500, 160
-    for i, (s, sr) in enumerate(zip(stages, stage_sr)):
-        cx = 60 + i * 90
-        cy = int((1 - sr) * 120) + 20
-        pts += f'{cx},{cy} '
-        color = "#22c55e" if sr >= 0.78 else "#38bdf8"
-        pts = pts.rstrip()
-    poly_pts = " ".join([f"{60+i*90},{int((1-sr)*120)+20}" for i, sr in enumerate(stage_sr)])
-    sr_svg = f'<svg width="{sw2}" height="{sh2}"><polyline points="{poly_pts}" fill="none" stroke="#38bdf8" stroke-width="2"/>'
-    for i, (s, sr) in enumerate(zip(stages, stage_sr)):
-        cx = 60 + i * 90
-        cy = int((1 - sr) * 120) + 20
-        sr_svg += f'<circle cx="{cx}" cy="{cy}" r="5" fill="#C74634"/>'
-        sr_svg += f'<text x="{cx}" y="{cy-8}" text-anchor="middle" fill="#e2e8f0" font-size="9">{sr}</text>'
-        sr_svg += f'<text x="{cx}" y="148" text-anchor="middle" fill="#94a3b8" font-size="8">{s[:8]}</text>'
-    sr_svg += '</svg>'
+    stats = [
+        ("Composite Mastery", "0.81", "v2: 0.71 (+14%)"),
+        ("Tasks Mastered", "3", "reach, grasp, lift"),
+        ("Active Tasks", "2", "pick_place, stack"),
+        ("Locked Tasks", "3", "pour, insert, bimanual"),
+    ]
+    stat_html = "".join(f'<div style="background:#1e293b;border-radius:8px;padding:14px 20px;min-width:160px"><div style="color:#94a3b8;font-size:11px">{s[0]}</div><div style="color:#38bdf8;font-size:26px;font-weight:700">{s[1]}</div><div style="color:#64748b;font-size:11px">{s[2]}</div></div>' for s in stats)
 
-    composite_sr = 0.81
-    unlocked = sum(1 for v in mastery.values() if v >= 0.70)
-
-    return f"""<!DOCTYPE html>
-<html><head><title>Curriculum v3 — Port {PORT}</title>
-<style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:20px}}
-h1{{color:#C74634}}h2{{color:#38bdf8;font-size:14px}}
-.card{{background:#1e293b;border-radius:8px;padding:16px;margin:12px 0}}
-.stat{{display:inline-block;margin:0 20px;text-align:center}}
-.big{{font-size:28px;font-weight:bold;color:#C74634}}
-.green{{color:#22c55e}}.amber{{color:#f59e0b}}.red{{color:#ef4444}}
-</style></head><body>
-<h1>Curriculum v3 — Port {PORT}</h1>
-<div class="card">
-  <div class="stat"><div class="big">{composite_sr}</div><div>Composite SR</div></div>
-  <div class="stat"><div class="big" style="color:#22c55e">{unlocked}/8</div><div>Tasks Unlocked</div></div>
-  <div class="stat"><div class="big" style="color:#38bdf8">0.70</div><div>Mastery Threshold</div></div>
-  <div class="stat"><div class="big" style="color:#f59e0b">v3</div><div>Curriculum Version</div></div>
-</div>
-<div class="card">
-  <h2>Task Mastery (mastery-based unlock)</h2>
-  {mastery_svg}
-</div>
-<div class="card">
-  <h2>SR Trajectory by Curriculum Stage</h2>
-  {sr_svg}
-</div>
-<div class="card">
-  <h2>v2 vs v3 Comparison</h2>
-  <table style="width:100%;border-collapse:collapse">
-    <tr style="color:#94a3b8"><th>Metric</th><th>v2</th><th>v3</th><th>Delta</th></tr>
-    <tr><td>Composite SR</td><td>0.71</td><td class="green">0.81</td><td class="green">+0.10</td></tr>
-    <tr><td>Tasks Mastered</td><td>4</td><td class="green">5</td><td class="green">+1</td></tr>
-    <tr><td>Curriculum Stages</td><td>4</td><td>5</td><td>+1</td></tr>
-    <tr><td>Adaptation Speed</td><td>static</td><td class="green">adaptive</td><td>—</td></tr>
-  </table>
-</div>
+    return f"""<!DOCTYPE html><html><head><title>Curriculum v3</title>
+<style>body{{margin:0;padding:24px;background:#0f172a;color:#e2e8f0;font-family:sans-serif}}h1{{color:#C74634;font-size:20px;margin-bottom:4px}}.sub{{color:#64748b;font-size:13px;margin-bottom:20px}}.stats{{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}}.chart{{margin-bottom:20px}}.label{{color:#94a3b8;font-size:12px;margin-bottom:6px}}</style></head>
+<body><h1>Curriculum v3</h1><div class="sub">Adaptive curriculum scheduler with mastery-based task unlocking — port {PORT}</div>
+<div class="stats">{stat_html}</div>
+<div class="chart"><div class="label">Task Mastery Grid (8 tasks × 5 difficulty levels)</div>{svg1}</div>
+<div class="chart"><div class="label">Success Rate Trajectory per Curriculum Stage</div>{svg2}</div>
 </body></html>"""
 
 if USE_FASTAPI:
@@ -112,7 +87,7 @@ if USE_FASTAPI:
     @app.get("/", response_class=HTMLResponse)
     def index(): return build_html()
     @app.get("/health")
-    def health(): return {"status": "ok", "port": PORT, "composite_sr": 0.81}
+    def health(): return {"status": "ok", "port": PORT}
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
