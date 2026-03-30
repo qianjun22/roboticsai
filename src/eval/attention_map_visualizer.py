@@ -1,4 +1,4 @@
-"""Partner Referral Tracker — FastAPI port 8995"""
+"""Attention Map Visualizer — FastAPI port 8994"""
 import math, random
 from http.server import HTTPServer, BaseHTTPRequestHandler
 try:
@@ -9,22 +9,22 @@ try:
 except ImportError:
     USE_FASTAPI = False
 
-PORT = 8995
+PORT = 8994
 
 def build_html():
     data = [round(random.uniform(0.5, 1.0) * math.sin(i/3) + 1.5, 3) for i in range(10)]
     bars = "".join(f'<rect x="{30+i*40}" y="{150-int(v*60)}" width="30" height="{int(v*60)}" fill="#C74634"/>' for i, v in enumerate(data))
-    return f"""<!DOCTYPE html><html><head><title>Partner Referral Tracker</title>
+    return f"""<!DOCTYPE html><html><head><title>Attention Map Visualizer</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui}}
 h1{{color:#C74634}}h2{{color:#38bdf8}}.card{{background:#1e293b;padding:20px;margin:10px;border-radius:8px}}</style></head>
-<body><h1>Partner Referral Tracker</h1>
-<div class="card"><h2>Referral Pipeline</h2>
+<body><h1>Attention Map Visualizer</h1>
+<div class="card"><h2>Attention Weights</h2>
 <svg width="450" height="180">{bars}</svg>
 <p>Current value: {data[-1]} | Peak: {max(data)} | Port: {PORT}</p>
 </div></body></html>"""
 
 if USE_FASTAPI:
-    app = FastAPI(title="Partner Referral Tracker")
+    app = FastAPI(title="Attention Map Visualizer")
     @app.get("/", response_class=HTMLResponse)
     def index(): return build_html()
     @app.get("/health")
