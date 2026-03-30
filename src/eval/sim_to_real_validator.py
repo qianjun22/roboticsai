@@ -1,352 +1,324 @@
-#!/usr/bin/env python3
-"""
-OCI Robot Cloud — Sim-to-Real Validator
-========================================
-Quantifies the sim-to-real gap across 5 dimensions for GR00T N1.6 on OCI,
-and validates that our Genesis SDG pipeline is systematically reducing it.
-
-Gap dimensions: Visual, Physics, Kinematic, Temporal, Perception
-Baselines: vanilla_sim, domain_rand, genesis_sdg, cosmos_enhanced
-
-Standalone: stdlib + numpy only.
-Output: /tmp/sim_to_real_validation.html
-"""
+"""Sim-to-Real Transfer Gap Validator — port 8139."""
 
 import math
-import html
-from typing import List, Dict, Tuple, Any
+from datetime import datetime
+
+try:
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse, JSONResponse
+    import uvicorn
+except ImportError:
+    FastAPI = None
+    HTMLResponse = None
+    JSONResponse = None
+    uvicorn = None
+
+app = FastAPI(title="Sim-to-Real Validator", version="1.0.0") if FastAPI else None
 
 # ---------------------------------------------------------------------------
-# Data
+# Static data
 # ---------------------------------------------------------------------------
 
-BASELINES: List[str] = ["vanilla_sim", "domain_rand", "genesis_sdg", "cosmos_enhanced"]
-BASELINE_LABELS: List[str] = ["Vanilla Sim", "Domain Rand", "Genesis SDG", "Cosmos Enhanced"]
-BASELINE_COLORS: List[str] = ["#e74c3c", "#e67e22", "#27ae60", "#2980b9"]
-
-DIMS: List[str] = ["Visual", "Physics", "Kinematic", "Temporal", "Perception"]
-DIM_UNITS: List[str] = [
-    "VGG distance",
-    "torque error %",
-    "RMSE rad",
-    "SR degradation %",
-    "depth RMSE mm",
+METRICS = [
+    {"name": "task_success_rate",          "sim": 0.78, "real": 0.52, "gap": -0.26, "severity": "HIGH",   "higher_is_better": True,  "unit": "",   "notes": "Lighting variation main cause"},
+    {"name": "grasp_stability",             "sim": 0.91, "real": 0.74, "gap": -0.17, "severity": "MEDIUM", "higher_is_better": True,  "unit": "",   "notes": "Gripper compliance model imperfect"},
+    {"name": "collision_rate",              "sim": 0.04, "real": 0.09, "gap": +0.05, "severity": "MEDIUM", "higher_is_better": False, "unit": "",   "notes": "Unmodeled friction in real world"},
+    {"name": "inference_latency_ms",        "sim": 226,  "real": 238,  "gap": +12,   "severity": "LOW",    "higher_is_better": False, "unit": "ms", "notes": "Sensor pipeline adds 12ms"},
+    {"name": "episode_length_steps",        "sim": 847,  "real": 923,  "gap": +76,   "severity": "LOW",    "higher_is_better": False, "unit": "",   "notes": "Real robot moves more conservatively"},
+    {"name": "recovery_rate",               "sim": 0.43, "real": 0.21, "gap": -0.22, "severity": "HIGH",   "higher_is_better": True,  "unit": "",   "notes": "Recovery policy undertrained in sim"},
+    {"name": "object_localization_err_mm",  "sim": 3.2,  "real": 8.7,  "gap": +5.5,  "severity": "HIGH",   "higher_is_better": False, "unit": "mm", "notes": "Depth sensor noise not simulated"},
+    {"name": "joint_tracking_error_deg",    "sim": 0.8,  "real": 1.4,  "gap": +0.6,  "severity": "LOW",    "higher_is_better": False, "unit": "°",  "notes": "Motor deadband not modeled"},
 ]
 
-RAW: Dict[str, List[float]] = {
-    "Visual":     [0.847, 0.623, 0.412, 0.287],
-    "Physics":    [18.3,  15.1,   9.2,   6.8],
-    "Kinematic":  [0.042, 0.038,  0.021, 0.018],
-    "Temporal":   [12.0,  11.0,   8.0,   7.0],
-    "Perception": [8.4,    6.2,   3.8,   2.9],
+MITIGATIONS = [
+    {
+        "id": "M1",
+        "title": "Domain Randomization: Lighting",
+        "target_metric": "task_success_rate",
+        "description": "Expand Isaac Sim lighting randomization range (0.1x-3.0x intensity, 2700K-6500K color temp). Expected +0.12 improvement.",
+        "effort": "Medium",
+        "impact": "High",
+    },
+    {
+        "id": "M2",
+        "title": "Real Gripper Data Collection",
+        "target_metric": "grasp_stability",
+        "description": "Collect 500 real-robot grasp demos with force/torque sensors to improve gripper compliance model in sim.",
+        "effort": "High",
+        "impact": "High",
+    },
+    {
+        "id": "M3",
+        "title": "Depth Sensor Noise Injection",
+        "target_metric": "object_localization_err_mm",
+        "description": "Profile RealSense D435i noise at 0.3–1.5m range; inject calibrated Gaussian + structured noise during sim training.",
+        "effort": "Low",
+        "impact": "High",
+    },
+    {
+        "id": "M4",
+        "title": "Recovery Scenario Expansion",
+        "target_metric": "recovery_rate",
+        "description": "Generate 10k adversarial recovery episodes in sim (dropped grasps, partial contacts). DAgger fine-tune on failures.",
+        "effort": "Medium",
+        "impact": "High",
+    },
+]
+
+OVERALL_SCORE = 67
+OVERALL_STATUS = "NEEDS_IMPROVEMENT"
+
+# ---------------------------------------------------------------------------
+# Normalise metrics to [0, 1] for chart (1 = best possible outcome)
+# ---------------------------------------------------------------------------
+
+# Normalisation bounds per metric
+_NORM = {
+    "task_success_rate":         (0.0, 1.0),
+    "grasp_stability":           (0.0, 1.0),
+    "collision_rate":            (0.0, 0.20),
+    "inference_latency_ms":      (200, 300),
+    "episode_length_steps":      (700, 1100),
+    "recovery_rate":             (0.0, 1.0),
+    "object_localization_err_mm":(0.0, 15.0),
+    "joint_tracking_error_deg":  (0.0, 3.0),
 }
 
-SIM_SR: Dict[str, float] = {
-    "vanilla_sim":     0.71,
-    "domain_rand":     0.74,
-    "genesis_sdg":     0.78,
-    "cosmos_enhanced": 0.82,
-}
-REAL_SR: Dict[str, float] = {
-    "vanilla_sim":     0.31,
-    "domain_rand":     0.48,
-    "genesis_sdg":     0.65,
-    "cosmos_enhanced": 0.74,
-}
 
-
-def transfer_ratio(baseline: str) -> float:
-    return REAL_SR[baseline] / SIM_SR[baseline]
-
-
-def normalise_gap(dim: str) -> Dict[str, float]:
-    vals = RAW[dim]
-    v_max = vals[0]
-    v_min = min(vals)
-    out: Dict[str, float] = {}
-    for baseline, v in zip(BASELINES, vals):
-        out[baseline] = (v - v_min) / (v_max - v_min) if v_max != v_min else 0.0
-    return out
-
-
-def overall_gap_score(baseline: str) -> float:
-    total = 0.0
-    for dim in DIMS:
-        norm = normalise_gap(dim)
-        total += norm[baseline]
-    return total / len(DIMS)
+def _normalise(m):
+    """Return (sim_norm, real_norm) where 1=best."""
+    lo, hi = _NORM.get(m["name"], (0, 1))
+    rng = hi - lo if hi != lo else 1
+    sv = (m["sim"] - lo) / rng
+    rv = (m["real"] - lo) / rng
+    sv = max(0.0, min(1.0, sv))
+    rv = max(0.0, min(1.0, rv))
+    if not m["higher_is_better"]:
+        sv, rv = 1 - sv, 1 - rv
+    return sv, rv
 
 
 # ---------------------------------------------------------------------------
-# SVG helpers
+# SVG chart generators
 # ---------------------------------------------------------------------------
 
-def lerp(v: float, v_min: float, v_max: float, p_min: float, p_max: float) -> float:
-    if v_max == v_min:
-        return p_min
-    return p_min + (v - v_min) / (v_max - v_min) * (p_max - p_min)
+def _grouped_bar_svg() -> str:
+    """Grouped bar chart sim vs real (normalised), 680x220."""
+    W, H = 680, 220
+    PAD_L, PAD_R, PAD_T, PAD_B = 52, 20, 24, 52
+    chart_w = W - PAD_L - PAD_R
+    chart_h = H - PAD_T - PAD_B
+    n = len(METRICS)
+    group_w = chart_w / n
+    bar_w = group_w * 0.30
+
+    bars = ""
+    x_labels = ""
+    for i, m in enumerate(METRICS):
+        sv, rv = _normalise(m)
+        gx = PAD_L + i * group_w
+        # sim bar
+        sbh = sv * chart_h
+        sbx = gx + group_w * 0.10
+        sby = PAD_T + chart_h - sbh
+        bars += f'<rect x="{sbx:.1f}" y="{sby:.1f}" width="{bar_w:.1f}" height="{sbh:.1f}" fill="#38bdf8" rx="2"/>'
+        # real bar
+        rbh = rv * chart_h
+        rbx = sbx + bar_w + 2
+        rby = PAD_T + chart_h - rbh
+        bars += f'<rect x="{rbx:.1f}" y="{rby:.1f}" width="{bar_w:.1f}" height="{rbh:.1f}" fill="#C74634" rx="2"/>'
+        # value labels
+        sim_disp = m["sim"]
+        real_disp = m["real"]
+        bars += f'<text x="{sbx+bar_w/2:.1f}" y="{sby-3:.1f}" fill="#38bdf8" font-size="8" text-anchor="middle">{sim_disp}</text>'
+        bars += f'<text x="{rbx+bar_w/2:.1f}" y="{rby-3:.1f}" fill="#C74634" font-size="8" text-anchor="middle">{real_disp}</text>'
+        # x label
+        short = m["name"].replace("_", " ")[:14]
+        cx = gx + group_w / 2
+        x_labels += f'<text x="{cx:.1f}" y="{H-34}" fill="#94a3b8" font-size="8" text-anchor="end" transform="rotate(-35,{cx:.1f},{H-34})">{short}</text>'
+
+    # gridlines
+    grid = ""
+    for v in [0.0, 0.25, 0.5, 0.75, 1.0]:
+        y = PAD_T + chart_h - v * chart_h
+        pct = int(v * 100)
+        grid += f'<line x1="{PAD_L}" y1="{y:.1f}" x2="{PAD_L+chart_w}" y2="{y:.1f}" stroke="#1e293b" stroke-width="1"/>'
+        grid += f'<text x="{PAD_L-6}" y="{y+4:.1f}" fill="#94a3b8" font-size="10" text-anchor="end">{pct}%</text>'
+
+    svg = f"""<svg width="{W}" height="{H}" xmlns="http://www.w3.org/2000/svg" style="background:#0f172a;border-radius:8px">
+  {grid}
+  {bars}
+  {x_labels}
+  <text x="{PAD_L+chart_w//2}" y="14" fill="#e2e8f0" font-size="11" text-anchor="middle" font-family="monospace">Sim vs Real Performance (normalised, higher=better)</text>
+  <rect x="460" y="4" width="10" height="10" fill="#38bdf8"/><text x="474" y="13" fill="#94a3b8" font-size="10">Sim</text>
+  <rect x="500" y="4" width="10" height="10" fill="#C74634"/><text x="514" y="13" fill="#94a3b8" font-size="10">Real</text>
+</svg>"""
+    return svg
 
 
-def _pentagon_point(cx: float, cy: float, r: float, i: int, n: int, v: float) -> Tuple[float, float]:
-    angle = math.radians(-90 + 360 * i / n)
-    return cx + r * v * math.cos(angle), cy + r * v * math.sin(angle)
+def _heatmap_svg() -> str:
+    """Gap severity heatmap, 680x120."""
+    W, H = 680, 120
+    n = len(METRICS)
+    cell_w = W / n
+    cell_h = 72
+    PAD_T = 24
 
+    sev_color = {"HIGH": "#C74634", "MEDIUM": "#f59e0b", "LOW": "#22c55e"}
 
-def svg_radar_chart(title: str, width: int = 520, height: int = 460) -> str:
-    cx, cy = width / 2, height / 2 - 10
-    r = min(width, height) * 0.35
-    n = len(DIMS)
+    cells = ""
+    for i, m in enumerate(METRICS):
+        cx = i * cell_w
+        col = sev_color.get(m["severity"], "#64748b")
+        gap_str = f"{m['gap']:+.2f}" if abs(m["gap"]) < 100 else f"{m['gap']:+.0f}"
+        short = m["name"].replace("_", " ")[:12]
+        cells += f'<rect x="{cx+2:.1f}" y="{PAD_T}" width="{cell_w-4:.1f}" height="{cell_h}" fill="{col}" rx="6" opacity="0.85"/>'
+        cells += f'<text x="{cx+cell_w/2:.1f}" y="{PAD_T+22}" fill="#fff" font-size="11" font-weight="bold" text-anchor="middle">{m["severity"]}</text>'
+        cells += f'<text x="{cx+cell_w/2:.1f}" y="{PAD_T+39}" fill="#fff" font-size="13" font-weight="bold" text-anchor="middle">{gap_str}</text>'
+        cells += f'<text x="{cx+cell_w/2:.1f}" y="{PAD_T+57}" fill="rgba(255,255,255,0.75)" font-size="8" text-anchor="middle">{short}</text>'
 
-    rings = []
-    for level in [0.25, 0.5, 0.75, 1.0]:
-        pts = " ".join(
-            f"{_pentagon_point(cx, cy, r, i, n, level)[0]:.1f},"
-            f"{_pentagon_point(cx, cy, r, i, n, level)[1]:.1f}"
-            for i in range(n)
-        )
-        color = "#ccc" if level < 1.0 else "#aaa"
-        rings.append(f'<polygon points="{pts}" fill="none" stroke="{color}" stroke-width="1"/>')
-        lx, ly = _pentagon_point(cx, cy, r, 0, n, level)
-        rings.append(f'<text x="{lx+4:.1f}" y="{ly:.1f}" font-size="9" fill="#999">{level:.2f}</text>')
-
-    axes_svg = []
-    for i, dim in enumerate(DIMS):
-        ex, ey = _pentagon_point(cx, cy, r, i, n, 1.0)
-        axes_svg.append(f'<line x1="{cx:.1f}" y1="{cy:.1f}" x2="{ex:.1f}" y2="{ey:.1f}" stroke="#bbb" stroke-width="1.2"/>')
-        lx, ly = _pentagon_point(cx, cy, r * 1.22, i, n, 1.0)
-        axes_svg.append(f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="middle" font-size="12" font-weight="bold" fill="#444">{html.escape(dim)}</text>')
-
-    polys = []
-    for baseline, color in zip(BASELINES, BASELINE_COLORS):
-        norm = {dim: normalise_gap(dim)[baseline] for dim in DIMS}
-        pts = " ".join(
-            f"{_pentagon_point(cx, cy, r, i, n, norm[dim])[0]:.1f},{_pentagon_point(cx, cy, r, i, n, norm[dim])[1]:.1f}"
-            for i, dim in enumerate(DIMS)
-        )
-        polys.append(f'<polygon points="{pts}" fill="{color}" fill-opacity="0.12" stroke="{color}" stroke-width="2"/>')
-
-    legend = []
-    for i, (label, color) in enumerate(zip(BASELINE_LABELS, BASELINE_COLORS)):
-        lx = 12
-        ly = 30 + i * 22
-        legend.append(f'<rect x="{lx}" y="{ly}" width="18" height="4" rx="2" fill="{color}"/>')
-        legend.append(f'<text x="{lx+22}" y="{ly+5}" font-size="11" fill="#333">{html.escape(label)}</text>')
-
-    title_svg = f'<text x="{width/2:.1f}" y="22" text-anchor="middle" font-size="15" font-weight="bold" fill="#222">{html.escape(title)}</text>'
-    inner = "\n".join(rings + axes_svg + polys + legend + [title_svg])
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" style="background:#fafafa;border:1px solid #ddd;border-radius:6px;">\n{inner}\n</svg>')
-
-
-def svg_grouped_bar(title: str, width: int = 680, height: int = 360) -> str:
-    ml, mr, mt, mb = 60, 20, 45, 60
-    pw = width - ml - mr
-    ph = height - mt - mb
-    n = len(BASELINES)
-    group_w = pw / n
-    bar_w = group_w * 0.3
-    gap = group_w * 0.05
-    y_max = 1.0
-
-    def px_group(i: int, j: int) -> float:
-        return ml + i * group_w + gap + j * (bar_w + gap * 0.5)
-
-    def py(y: float) -> float:
-        return mt + lerp(y, 0, y_max, ph, 0)
-
-    bars = []
-    for i, baseline in enumerate(BASELINES):
-        x = px_group(i, 0)
-        v = SIM_SR[baseline]
-        bh = py(0) - py(v)
-        by = py(v)
-        bars.append(f'<rect x="{x:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{BASELINE_COLORS[i]}" opacity="0.5" rx="3"/>')
-        bars.append(f'<text x="{x+bar_w/2:.1f}" y="{by-4:.1f}" text-anchor="middle" font-size="10" fill="{BASELINE_COLORS[i]}">{v:.2f}</text>')
-    for i, baseline in enumerate(BASELINES):
-        x = px_group(i, 1)
-        v = REAL_SR[baseline]
-        bh = py(0) - py(v)
-        by = py(v)
-        bars.append(f'<rect x="{x:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{BASELINE_COLORS[i]}" rx="3"/>')
-        bars.append(f'<text x="{x+bar_w/2:.1f}" y="{by-4:.1f}" text-anchor="middle" font-size="10" font-weight="bold" fill="{BASELINE_COLORS[i]}">{v:.2f}</text>')
-
-    group_labels = []
-    for i, label in enumerate(BASELINE_LABELS):
-        x = ml + i * group_w + group_w / 2
-        group_labels.append(f'<text x="{x:.1f}" y="{mt+ph+18}" text-anchor="end" font-size="11" fill="#555" transform="rotate(-20 {x:.1f} {mt+ph+18})">{html.escape(label)}</text>')
-
-    axes = [
-        f'<line x1="{ml}" y1="{mt}" x2="{ml}" y2="{mt+ph}" stroke="#555" stroke-width="1.5"/>',
-        f'<line x1="{ml}" y1="{mt+ph}" x2="{ml+pw}" y2="{mt+ph}" stroke="#555" stroke-width="1.5"/>',
-    ]
-    gridlines = []
-    for k in range(6):
-        yv = k / 5
-        yp = py(yv)
-        gridlines.append(f'<line x1="{ml}" y1="{yp:.1f}" x2="{ml+pw}" y2="{yp:.1f}" stroke="#ddd" stroke-width="1" stroke-dasharray="4,3"/>')
-        gridlines.append(f'<text x="{ml-8}" y="{yp+4:.1f}" text-anchor="end" font-size="11" fill="#555">{yv:.1f}</text>')
-
-    labels = [
-        f'<text x="{ml+pw/2:.1f}" y="{mt-16}" text-anchor="middle" font-size="15" font-weight="bold" fill="#222">{html.escape(title)}</text>',
-        f'<text x="{ml-42}" y="{mt+ph/2:.0f}" text-anchor="middle" font-size="13" fill="#333" transform="rotate(-90 {ml-42} {mt+ph/2:.0f})">Success Rate</text>',
-    ]
-
-    inner = "\n".join(gridlines + axes + bars + group_labels + labels)
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" style="background:#fafafa;border:1px solid #ddd;border-radius:6px;">\n{inner}\n</svg>')
+    svg = f"""<svg width="{W}" height="{H}" xmlns="http://www.w3.org/2000/svg" style="background:#0f172a;border-radius:8px">
+  <text x="{W//2}" y="16" fill="#e2e8f0" font-size="11" text-anchor="middle" font-family="monospace">Gap Severity Heatmap</text>
+  {cells}
+</svg>"""
+    return svg
 
 
 # ---------------------------------------------------------------------------
-# Tables
+# HTML dashboard
 # ---------------------------------------------------------------------------
 
-TABLE_CSS = """
-table { border-collapse: collapse; width: 100%; font-size: 13px; }
-th { background: #2c3e50; color: white; padding: 10px 14px; text-align: left; }
-td { padding: 9px 14px; border-bottom: 1px solid #e0e0e0; }
-tr:nth-child(even) td { background: #f7f9fc; }
-tr.highlight td { background: #e8f5e9; font-weight: bold; }
-.good  { color: #27ae60; font-weight: bold; }
-.great { color: #1565c0; font-weight: bold; }
-"""
+def _dashboard_html() -> str:
+    bar_svg = _grouped_bar_svg()
+    heat_svg = _heatmap_svg()
 
+    score_color = "#C74634" if OVERALL_SCORE < 70 else ("#f59e0b" if OVERALL_SCORE < 85 else "#22c55e")
 
-def build_gap_table() -> str:
-    rows = []
-    for dim in DIMS:
-        vals = RAW[dim]
-        vanilla = vals[0]
-        genesis = vals[2]
-        cosmos  = vals[3]
-        improvement_genesis = (vanilla - genesis) / vanilla * 100 if vanilla != 0 else 0.0
-        improvement_cosmos  = (vanilla - cosmos)  / vanilla * 100 if vanilla != 0 else 0.0
-        rows.append(
-            "<tr>"
-            f"<td><strong>{html.escape(dim)}</strong></td>"
-            f"<td>{vals[0]}</td>"
-            f"<td>{vals[1]}</td>"
-            f'<td class="good">{vals[2]}</td>'
-            f'<td class="great">{vals[3]}</td>'
-            f'<td class="good">&#8722;{improvement_genesis:.0f}%</td>'
-            f'<td class="great">&#8722;{improvement_cosmos:.0f}%</td>'
-            "</tr>"
-        )
-    return (
-        "<table>"
-        "<thead><tr>"
-        "<th>Dimension</th><th>Vanilla Sim</th><th>Domain Rand</th>"
-        "<th>Genesis SDG &#9733;</th><th>Cosmos Enhanced</th>"
-        "<th>Genesis Improvement</th><th>Cosmos Improvement</th>"
-        "</tr></thead>"
-        "<tbody>" + "\n".join(rows) + "</tbody>"
-        "</table>"
-    )
+    metric_rows = ""
+    sev_badge = {"HIGH": "background:#C74634", "MEDIUM": "background:#f59e0b;color:#0f172a", "LOW": "background:#22c55e;color:#0f172a"}
+    for m in METRICS:
+        gap_col = "#ef4444" if abs(m["gap"]) > 0.2 or (m["severity"] == "HIGH") else ("#f59e0b" if m["severity"] == "MEDIUM" else "#22c55e")
+        metric_rows += f"""
+        <tr>
+          <td style="color:#38bdf8">{m['name']}</td>
+          <td>{m['sim']}{m['unit']}</td>
+          <td>{m['real']}{m['unit']}</td>
+          <td style="color:{gap_col}">{m['gap']:+.2f}{m['unit'] if abs(m['gap'])<100 else ''}</td>
+          <td><span style="{sev_badge.get(m['severity'],'')};padding:2px 8px;border-radius:9999px;font-size:11px">{m['severity']}</span></td>
+          <td style="color:#94a3b8;font-size:12px">{m['notes']}</td>
+        </tr>"""
 
-
-def build_transfer_table() -> str:
-    rows = []
-    for baseline, label in zip(BASELINES, BASELINE_LABELS):
-        sim = SIM_SR[baseline]
-        real = REAL_SR[baseline]
-        tr = transfer_ratio(baseline)
-        gap = sim - real
-        is_genesis = baseline == "genesis_sdg"
-        row_class = ' class="highlight"' if is_genesis else ""
-        rows.append(
-            f"<tr{row_class}>"
-            f"<td>{html.escape(label)}</td>"
-            f"<td>{sim:.2f}</td>"
-            f"<td>{real:.2f}</td>"
-            f"<td>{tr:.3f}</td>"
-            f"<td>{gap:.2f}</td>"
-            "</tr>"
-        )
-    return (
-        "<table>"
-        "<thead><tr>"
-        "<th>Baseline</th><th>Sim SR</th><th>Real SR</th>"
-        "<th>Transfer Ratio</th><th>SR Gap</th>"
-        "</tr></thead>"
-        "<tbody>" + "\n".join(rows) + "</tbody>"
-        "</table>"
-    )
-
-
-def build_html() -> str:
-    chart_radar = svg_radar_chart(title="Sim-to-Real Gap by Dimension (normalised, lower = better)")
-    chart_bars = svg_grouped_bar(title="Policy Transfer: Sim SR vs Real SR")
-    gap_table = build_gap_table()
-    transfer_table = build_transfer_table()
-
-    vanilla_overall = overall_gap_score("vanilla_sim")
-    genesis_overall = overall_gap_score("genesis_sdg")
-    cosmos_overall  = overall_gap_score("cosmos_enhanced")
-    genesis_reduction = (vanilla_overall - genesis_overall) / vanilla_overall * 100
-    cosmos_further    = (genesis_overall - cosmos_overall)  / genesis_overall * 100
-
-    exec_box = f"""
-<div style="background:#e3f2fd;border-left:5px solid #1565c0;padding:18px 22px;border-radius:4px;margin:24px 0;font-size:14px;line-height:1.8;">
-  <strong style="font-size:16px;color:#0d47a1;">Executive Summary</strong><br><br>
-  Our <strong>Genesis SDG pipeline reduces the sim-to-real gap by
-  {genesis_reduction:.0f}%</strong> compared to vanilla Isaac Sim,
-  improving real-robot SR from {REAL_SR['vanilla_sim']:.2f} to
-  <strong>{REAL_SR['genesis_sdg']:.2f}</strong>.<br><br>
-  Integrating Cosmos world-model textures is projected to deliver a further
-  <strong>{cosmos_further:.0f}% gap reduction</strong>, reaching an estimated
-  real SR of <strong>{REAL_SR['cosmos_enhanced']:.2f}</strong>
-  (transfer ratio {transfer_ratio('cosmos_enhanced'):.2f}).
-</div>
-"""
+    mit_cards = ""
+    impact_col = {"High": "#C74634", "Medium": "#f59e0b", "Low": "#22c55e"}
+    for mit in MITIGATIONS:
+        mit_cards += f"""
+        <div style="background:#1e293b;border-radius:8px;padding:14px;border-left:3px solid #38bdf8">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="color:#38bdf8;font-weight:bold">{mit['id']}: {mit['title']}</span>
+            <span style="color:{impact_col.get(mit['impact'],'#fff')};font-size:12px">Impact: {mit['impact']}</span>
+          </div>
+          <div style="color:#94a3b8;font-size:12px;margin-bottom:4px">Target: {mit['target_metric']}</div>
+          <div style="color:#cbd5e1;font-size:12px">{mit['description']}</div>
+          <div style="color:#64748b;font-size:11px;margin-top:6px">Effort: {mit['effort']}</div>
+        </div>"""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>OCI Robot Cloud &#8212; Sim-to-Real Validator</title>
-<style>
-  body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-         margin: 0; padding: 30px 40px; background: #f0f2f5; color: #222; }}
-  h1 {{ color: #2c3e50; margin-bottom: 4px; }}
-  h2 {{ color: #34495e; margin-top: 36px; border-bottom: 2px solid #bdc3c7;
-        padding-bottom: 6px; }}
-  .subtitle {{ color: #7f8c8d; font-size: 14px; margin-bottom: 30px; }}
-  .card {{ background: white; border-radius: 8px; padding: 24px;
-           box-shadow: 0 1px 6px rgba(0,0,0,0.08); margin-bottom: 28px; }}
-  {TABLE_CSS}
-</style>
+  <meta charset="UTF-8">
+  <title>Sim-to-Real Validator — Port 8139</title>
+  <style>
+    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+    body {{ background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; padding: 24px; }}
+    h1 {{ color: #C74634; font-size: 22px; margin-bottom: 4px; }}
+    .sub {{ color: #94a3b8; font-size: 13px; margin-bottom: 24px; }}
+    .score-box {{ background: #1e293b; border-radius: 12px; padding: 20px 28px; margin-bottom: 24px;
+                  display: flex; align-items: center; gap: 24px; border: 2px solid {score_color}; }}
+    .score-num {{ font-size: 56px; font-weight: bold; color: {score_color}; line-height: 1; }}
+    .score-label {{ color: #94a3b8; font-size: 13px; }}
+    .score-status {{ color: {score_color}; font-size: 18px; font-weight: bold; margin-top: 4px; }}
+    .section {{ margin-bottom: 28px; }}
+    h2 {{ color: #cbd5e1; font-size: 15px; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 6px; }}
+    table {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
+    th {{ color: #94a3b8; text-align: left; padding: 8px; border-bottom: 1px solid #1e293b; font-weight: 500; }}
+    td {{ padding: 8px; border-bottom: 1px solid #0f172a; }}
+    tr:hover td {{ background: #1e293b; }}
+    .mit-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }}
+  </style>
 </head>
 <body>
-<h1>OCI Robot Cloud &#8212; Sim-to-Real Validator</h1>
-<p class="subtitle">
-  GR00T N1.6 on OCI &nbsp;|&nbsp;
-  5 gap dimensions &times; 4 baselines
-</p>
-{exec_box}
-<h2>1 &middot; Gap Dimensions &#8212; Radar Chart</h2>
-<div class="card" style="text-align:center">{chart_radar}</div>
-<h2>2 &middot; Policy Transfer: Sim SR vs Real SR</h2>
-<div class="card">{chart_bars}</div>
-<h2>3 &middot; Gap Reduction by Dimension</h2>
-<div class="card">{gap_table}</div>
-<h2>4 &middot; Policy Transfer Summary</h2>
-<div class="card">{transfer_table}</div>
-<p style="color:#999;font-size:12px;margin-top:40px;">
-  Generated by OCI Robot Cloud sim_to_real_validator.py
-</p>
+  <h1>Sim-to-Real Transfer Gap Validator</h1>
+  <div class="sub">OCI Robot Cloud — GR00T N1.6 | Port 8139 | {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}</div>
+
+  <div class="score-box">
+    <div class="score-num">{OVERALL_SCORE}</div>
+    <div>
+      <div class="score-label">Overall Sim-to-Real Transfer Score (out of 100)</div>
+      <div class="score-status">{OVERALL_STATUS}</div>
+      <div style="color:#64748b;font-size:12px;margin-top:6px">3 HIGH severity gaps require attention before production deployment</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Performance Comparison</h2>
+    {bar_svg}
+  </div>
+
+  <div class="section">
+    <h2>Gap Severity Heatmap</h2>
+    {heat_svg}
+  </div>
+
+  <div class="section">
+    <h2>Validation Metrics</h2>
+    <table>
+      <thead><tr><th>Metric</th><th>Sim</th><th>Real</th><th>Gap</th><th>Severity</th><th>Notes</th></tr></thead>
+      <tbody>{metric_rows}</tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Mitigation Recommendations</h2>
+    <div class="mit-grid">{mit_cards}</div>
+  </div>
 </body>
 </html>"""
 
 
-def main() -> None:
-    vanilla_overall = overall_gap_score("vanilla_sim")
-    genesis_overall = overall_gap_score("genesis_sdg")
-    genesis_reduction = (vanilla_overall - genesis_overall) / vanilla_overall * 100
-    print(f"Genesis SDG gap reduction: {genesis_reduction:.0f}%")
-    print(f"Real SR: vanilla={REAL_SR['vanilla_sim']:.2f} genesis={REAL_SR['genesis_sdg']:.2f} cosmos={REAL_SR['cosmos_enhanced']:.2f}")
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 
-    output_path = "/tmp/sim_to_real_validation.html"
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(build_html())
-    print(f"\nFull report saved to: {output_path}")
+if app:
+    @app.get("/", response_class=HTMLResponse)
+    async def dashboard():
+        return _dashboard_html()
+
+    @app.get("/metrics")
+    async def get_metrics():
+        return {"metrics": METRICS, "count": len(METRICS)}
+
+    @app.get("/summary")
+    async def get_summary():
+        high = sum(1 for m in METRICS if m["severity"] == "HIGH")
+        medium = sum(1 for m in METRICS if m["severity"] == "MEDIUM")
+        low = sum(1 for m in METRICS if m["severity"] == "LOW")
+        return {
+            "overall_score": OVERALL_SCORE,
+            "status": OVERALL_STATUS,
+            "severity_counts": {"HIGH": high, "MEDIUM": medium, "LOW": low},
+            "total_metrics": len(METRICS),
+            "service": "sim-to-real-validator",
+            "port": 8139,
+        }
+
+    @app.get("/recommendations")
+    async def get_recommendations():
+        return {"mitigations": MITIGATIONS, "count": len(MITIGATIONS)}
 
 
 if __name__ == "__main__":
-    main()
+    if uvicorn:
+        uvicorn.run(app, host="0.0.0.0", port=8139)
+    else:
+        print("uvicorn not installed — run: pip install fastapi uvicorn")
