@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23595
-SERVICE = "robotics_legal_privacy_shield"
-DESCRIPTION = "Co-marketing kit for robotics AI joint go-to-market campaigns"
+PORT = 23594
+SERVICE = "robot_remora_attachment_model"
+DESCRIPTION = "Simulates wine fermentation sampling robot with contamination prevention"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
