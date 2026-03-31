@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12397
+PORT = 12531
 SERVICE = "enterprise_robotics_regulatory_compliance_hub"
-DESCRIPTION = "Enterprise robotics regulatory compliance hub for ISO and OSHA automation safety certification management"
+DESCRIPTION = "Enterprise robotics regulatory compliance hub tracking FDA, OSHA, CE, and regional safety mandates across global robot deployments"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
