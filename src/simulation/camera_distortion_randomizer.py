@@ -1,4 +1,4 @@
-"""Demand generation platform orchestrating inbound content, SEO, and paid acquisition
+"""Camera lens distortion and chromatic aberration randomization for visual robustness
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11065
-SERVICE = "demand_generation_platform"
-DESCRIPTION = "Demand generation platform orchestrating inbound content, SEO, and paid acquisition"
+PORT = 11064
+SERVICE = "sim_camera_distortion_randomizer"
+DESCRIPTION = "Camera lens distortion and chromatic aberration randomization for visual robustness"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
