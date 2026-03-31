@@ -1,4 +1,4 @@
-"""ROI calculator v2 with real OCI benchmark data including 9.6x vs AWS, $0.43 per fine-tune run, and 3-year NPV
+"""Automated force-torque sensor calibration with gravity compensation, temperature drift, and bias correction
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10869
-SERVICE = "roi_calculator_v2"
-DESCRIPTION = "ROI calculator v2 with real OCI benchmark data including 9.6x vs AWS, $0.43 per fine-tune run, and 3-year NPV"
+PORT = 10868
+SERVICE = "robot_force_control_calibrator"
+DESCRIPTION = "Automated force-torque sensor calibration with gravity compensation, temperature drift, and bias correction"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
