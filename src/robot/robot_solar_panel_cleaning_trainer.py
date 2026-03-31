@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12337
-SERVICE = "partner_marketplace_listing_optimizer"
-DESCRIPTION = "Partner marketplace listing optimizer for OCI marketplace robotics app visibility and conversion"
+PORT = 12336
+SERVICE = "robot_solar_panel_cleaning_trainer"
+DESCRIPTION = "Training service for solar panel cleaning robot path planning and water-efficient operations"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
