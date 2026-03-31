@@ -2,10 +2,10 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 import uvicorn
 
-app = FastAPI(title="Bimanual Coordination Policy")
+app = FastAPI(title="Enterprise Contract Manager")
 
-PORT = 9988
-TITLE = "Bimanual Coordination Policy"
+PORT = 9989
+TITLE = "Enterprise Contract Manager"
 BG = "#0f172a"
 ORACLE_RED = "#C74634"
 SKY_BLUE = "#38bdf8"
@@ -16,7 +16,7 @@ HTML = """
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bimanual Coordination Policy</title>
+  <title>Enterprise Contract Manager</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
@@ -38,22 +38,22 @@ HTML = """
   </style>
 </head>
 <body>
-  <div class="port-badge">PORT 9988</div>
-  <h1>Bimanual Coordination Policy</h1>
-  <div class="subtitle">OCI Robot Cloud &mdash; Training Service</div>
+  <div class="port-badge">PORT 9989</div>
+  <h1>Enterprise Contract Manager</h1>
+  <div class="subtitle">OCI Robot Cloud &mdash; GTM Service</div>
   <div class="card">
     <div class="bar-chart" id="chart"></div>
     <div class="stats">
-      <div class="stat"><div class="stat-val">9988</div><div class="stat-label">Service Port</div></div>
-      <div class="stat"><div class="stat-val">A100</div><div class="stat-label">GPU</div></div>
-      <div class="stat"><div class="stat-val">2x</div><div class="stat-label">Arms</div></div>
+      <div class="stat"><div class="stat-val">9989</div><div class="stat-label">Service Port</div></div>
+      <div class="stat"><div class="stat-val">OCI</div><div class="stat-label">Platform</div></div>
+      <div class="stat"><div class="stat-val">GTM</div><div class="stat-label">Module</div></div>
       <div class="stat"><div class="stat-val">483A</div><div class="stat-label">Cycle</div></div>
     </div>
     <div class="health"><a href="/health">/health</a></div>
   </div>
   <script>
-    const bars = [72, 85, 61, 90, 78, 55, 93, 67, 88, 74];
-    const labels = ['E1','E2','E3','E4','E5','E6','E7','E8','E9','E10'];
+    const bars = [65, 80, 70, 95, 60, 88, 75, 50, 82, 91];
+    const labels = ['Q1','Q2','Q3','Q4','Q5','Q6','Q7','Q8','Q9','Q10'];
     const chart = document.getElementById('chart');
     bars.forEach((h, i) => {
       const wrap = document.createElement('div');
