@@ -1,4 +1,4 @@
-"""Product-Led Growth Engine — PLG automation with PQL scoring and viral loop tracking.
+"""DAgger Run 283 Planner — model-based RL + DAgger hybrid using DreamerV3 world model for efficient corrections.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10655
-SERVICE = "product_led_growth_engine"
-DESCRIPTION = "PLG automation with PQL scoring and viral loop tracking"
+PORT = 10654
+SERVICE = "dagger_run283_planner"
+DESCRIPTION = "Model-based RL DAgger: DreamerV3 world model generates 5x sample-efficient corrections"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
