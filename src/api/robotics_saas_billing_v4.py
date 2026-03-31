@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15206
-SERVICE = "robot_autonomous_coral_bleaching_responder"
-DESCRIPTION = "Autonomous robotic simulation for coral reef bleaching detection and response"
+PORT = 15207
+SERVICE = "robotics_saas_billing_v4"
+DESCRIPTION = "Robotics SaaS billing management with subscription and usage tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
