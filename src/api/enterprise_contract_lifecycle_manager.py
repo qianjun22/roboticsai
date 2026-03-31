@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11947
-SERVICE = "enterprise_contract_lifecycle_manager"
-DESCRIPTION = "Enterprise contract lifecycle manager for obligation tracking, renewal automation, amendment impact analysis, and contract compliance monitoring"
+PORT = 12005
+SERVICE = "enterprise-contract-lifecycle-manager"
+DESCRIPTION = "Enterprise contract lifecycle manager for robot deployment agreements and SLA management"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
