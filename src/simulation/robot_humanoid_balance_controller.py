@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17563
-SERVICE = "robotics_market_expansion_v2"
-DESCRIPTION = "Market expansion strategy tracker for robotics platform geo growth v2"
+PORT = 17562
+SERVICE = "robot_humanoid_balance_controller"
+DESCRIPTION = "Humanoid robot dynamic balance controller with ZMP-based stabilization"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
