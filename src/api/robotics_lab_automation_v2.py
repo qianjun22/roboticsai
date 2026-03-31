@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22052
-SERVICE = "dagger_run3123_planner"
-DESCRIPTION = "DAgger run 3123 planner for lab automation precision pipetting learning"
+PORT = 22053
+SERVICE = "robotics_lab_automation_v2"
+DESCRIPTION = "Lab automation v2 with computer vision plate inspection and sample tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
