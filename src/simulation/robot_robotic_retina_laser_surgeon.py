@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14930
+PORT = 15170
 SERVICE = "robot_robotic_retina_laser_surgeon"
-DESCRIPTION = "Robotic laser surgery system for precise retinal procedures and ophthalmological interventions"
+DESCRIPTION = "Robotic simulation for retina laser surgery with precision targeting"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
