@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 26127
-SERVICE = "robotics-customer-success"
-DESCRIPTION = "Customer success automation for robotics deployment and adoption tracking"
+PORT = 26126
+SERVICE = "robot-seismology-array-sim"
+DESCRIPTION = "Seismology array simulation for robotic sensor network deployment"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
