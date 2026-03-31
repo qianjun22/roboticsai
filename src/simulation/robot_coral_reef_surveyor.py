@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13517
-SERVICE = "robotics_partner_certification_v2"
-DESCRIPTION = "Partner certification management v2 — tracks robotics partner training, compliance assessments, and certification lifecycle"
+PORT = 13516
+SERVICE = "robot_coral_reef_surveyor"
+DESCRIPTION = "Autonomous underwater robot simulation for coral reef health surveying — maps bleaching, biodiversity, and structural integrity"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
