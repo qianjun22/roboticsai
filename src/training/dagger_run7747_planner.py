@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40549
-SERVICE = "robotics_developer_signup_flow"
-DESCRIPTION = "GTM service: developer signup flow"
+PORT = 40548
+SERVICE = "dagger_run7747_planner"
+DESCRIPTION = "DAgger run 7747 online learning planner"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,7 +16,7 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>robotics_developer_signup_flow</title><style>
+    return f"""<!DOCTYPE html><html><head><title>dagger_run7747_planner</title><style>
 body{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;}
 .header{background:#C74634;padding:20px 32px;}
 h1{margin:0;font-size:24px;color:#fff;}
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_developer_signup_flow</h1><div class="subtitle">GTM service: developer signup flow port 40549</div></div>
+<div class="header"><h1>dagger_run7747_planner</h1><div class="subtitle">DAgger run 7747 online learning planner port 40548</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 40549</div>
+<div class="metric"><strong>Port:</strong> 40548</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
