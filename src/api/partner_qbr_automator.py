@@ -1,4 +1,4 @@
-"""Online Policy Adaptation — adapt robot policy in real-time during deployment.
+"""Partner QBR Automator — automates quarterly business review preparation for partners.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10628
-SERVICE = "online_policy_adaptation"
-DESCRIPTION = "Adapt robot policy in real-time during deployment"
+PORT = 10629
+SERVICE = "partner_qbr_automator"
+DESCRIPTION = "Automates quarterly business review preparation for partners"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
