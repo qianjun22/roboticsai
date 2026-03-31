@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11751
-SERVICE = "sales-competitive-intelligence-hub"
-DESCRIPTION = "Sales competitive intelligence hub for real-time battlecard updates, win/loss analysis, and displacement tracking"
+PORT = 11875
+SERVICE = "sales_competitive_intelligence_hub"
+DESCRIPTION = "Sales competitive intelligence hub for win/loss analysis, competitive battlecard automation, and market positioning recommendations"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
