@@ -2,6 +2,41 @@
 
 Last updated: 2026-03-31
 
+## Current Production (2026-03-31)
+
+| Field | Value |
+|-------|-------|
+| Checkpoint | `finetune_1000_5k/checkpoint-5000` |
+| Server | `src/inference/groot_franka_server.py` |
+| Port | 8001 |
+| GPU | GPU3 (CUDA_VISIBLE_DEVICES=3) |
+| Host | 138.1.153.110 |
+| SR | **95.0% (19/20)** |
+| Avg Latency | 229ms |
+| Policy Failure Rate | 0.0% |
+| Eval Date | 2026-03-31 |
+| Eval Script | `scripts/eval_groot_cl.py` |
+
+## Start Command (OCI A100)
+
+```bash
+cd ~/roboticsai
+PYTHONPATH=/home/ubuntu/Isaac-GR00T nohup env CUDA_VISIBLE_DEVICES=3 \
+  /home/ubuntu/Isaac-GR00T/.venv/bin/python \
+  src/inference/groot_franka_server.py \
+  --checkpoint /tmp/finetune_1000_5k/checkpoint-5000 \
+  --port 8001 > /tmp/groot_franka_server.log 2>&1 &
+```
+
+## Eval Command
+
+```bash
+cd ~/roboticsai
+PYTHONPATH=/home/ubuntu/Isaac-GR00T \
+  /home/ubuntu/Isaac-GR00T/.venv/bin/python \
+  scripts/eval_groot_cl.py --server-url http://127.0.0.1:8001 --n-episodes 20
+```
+
 ## Active Production Model
 
 | Item | Value |
@@ -38,7 +73,8 @@ Both checkpoints perform equally. Production stays on finetune_1000_5k (more sta
 
 | Date | Model | SR | Notes |
 |------|-------|-----|-------|
-| 2026-03-31 | finetune_1000_5k/ckpt-5000 | **100%** | Corrected eval — current production |
+| 2026-03-31 | finetune_1000_5k/ckpt-5000 | **95%** (19/20) | Latest confirmed eval |
+| 2026-03-31 | finetune_1000_5k/ckpt-5000 | **100%** | Corrected eval — prior production |
 | 2026-03-30 | finetune_1000_5k/ckpt-5000 | 85%* | Incorrect eval setup (cube on floor) |
 | 2026-03-15 | dagger_run9_v2.2 | 71% | Superseded |
 
