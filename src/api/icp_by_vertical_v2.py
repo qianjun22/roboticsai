@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=11000
-SERVICE="agriculture_vertical"
-DESCRIPTION="Agriculture vertical — harvesting, planting, inspection"
+PORT=11010
+SERVICE="icp_by_vertical_v2"
+DESCRIPTION="ICP by vertical v2 — firmographics for each industry"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/vertical")
+@app.get("/icp")
 def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
