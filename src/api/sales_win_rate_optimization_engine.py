@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12511
-SERVICE = "sales_win_rate_optimization_engine"
-DESCRIPTION = "Sales win rate optimization engine analyzing deal characteristics, competitive dynamics, and rep behaviors that predict robotics deal wins"
+PORT = 12617
+SERVICE = "sales-win-rate-optimization"
+DESCRIPTION = "Analyzes competitive win/loss patterns and recommends tactical adjustments to improve robotics sales win rates"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

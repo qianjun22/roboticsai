@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12464
-SERVICE = "robot_nuclear_decommissioning_trainer"
-DESCRIPTION = "Robot nuclear decommissioning trainer with radiation-hardened manipulation, remote handling protocols, and contamination containment simulation"
+PORT = 12616
+SERVICE = "robot-nuclear-decommissioning-trainer"
+DESCRIPTION = "Training pipeline for robots performing nuclear facility decommissioning tasks in high-radiation environments"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
