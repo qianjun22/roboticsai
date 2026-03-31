@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15286
-SERVICE = "robot_autonomous_pollinator_swarm_coordinator"
-DESCRIPTION = "Autonomous robotic swarm simulation for agricultural pollination coordination"
+PORT = 15287
+SERVICE = "robotics_visual_odometry_v6"
+DESCRIPTION = "Robotics visual odometry service for camera-based pose tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
