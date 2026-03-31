@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15750
-SERVICE = "robot_nerve_regeneration_stimulator"
-DESCRIPTION = "Robotic nerve regeneration stimulation for peripheral neuropathy recovery"
+PORT = 15751
+SERVICE = "robotics_billing_automation_v4"
+DESCRIPTION = "Billing automation v4 for streamlined robotics subscription invoicing"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
