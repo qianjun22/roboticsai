@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12321
+PORT = 12521
 SERVICE = "enterprise_robotics_vendor_scorecard"
-DESCRIPTION = "Enterprise robotics vendor scorecard for supplier performance evaluation and procurement decisions"
+DESCRIPTION = "Enterprise robotics vendor scorecard tracking delivery performance, quality metrics, support responsiveness, and long-term partnership value"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
