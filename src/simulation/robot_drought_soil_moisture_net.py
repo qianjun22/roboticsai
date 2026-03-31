@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23467
-SERVICE = "robotics_partner_comarketing_kit"
-DESCRIPTION = "Cloud-native v2 robotics platform for containerized microservices"
+PORT = 23466
+SERVICE = "robot_drought_soil_moisture_net"
+DESCRIPTION = "Simulates bipedal robot balance control on dynamic terrain"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
