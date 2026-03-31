@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22048
-SERVICE = "dagger_run3122_planner"
-DESCRIPTION = "DAgger run 3122 planner for environmental monitoring field traversal learning"
+PORT = 22049
+SERVICE = "robotics_environmental_monitor_v2"
+DESCRIPTION = "Environmental monitor v2 with multi-sensor fusion and anomaly detection alerts"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
