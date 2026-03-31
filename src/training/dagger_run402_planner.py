@@ -1,4 +1,4 @@
-"""Competitive win rate optimizer analyzing lost deal patterns, objection responses, and competitive differentiation to improve close rates
+"""DAgger run402 planner using PPO clipped surrogate objective with entropy bonus for stable on-policy robot manipulation policy learning
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11163
-SERVICE = "competitive_win_rate_optimizer"
-DESCRIPTION = "Competitive win rate optimizer analyzing lost deal patterns, objection responses, and competitive differentiation to improve close rates"
+PORT = 11162
+SERVICE = "dagger_run402_planner"
+DESCRIPTION = "DAgger run402 planner using PPO clipped surrogate objective with entropy bonus for stable on-policy robot manipulation policy learning"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
