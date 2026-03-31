@@ -1,4 +1,4 @@
-"""Enterprise Onboarding Automator
+"""DAgger Run240 Planner — Failure Recovery DAgger
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10499
-SERVICE = "enterprise_onboarding_automator"
-DESCRIPTION = "Enterprise onboarding automator: day-1 to day-30 milestone tracking and blocker detection"
+PORT = 10498
+SERVICE = "dagger_run240_planner"
+DESCRIPTION = "DAgger run240: failure recovery DAgger — train on failure states for resilience"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        ttv = random.randint(6, 12); bar = int((1 - ttv/20) * 220)
+        sr = round(random.uniform(0.89, 0.94), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Days to First Value: {ttv}</p>
+<p>Port: {PORT} | Recovery DAgger SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Days to Value: {ttv}</text></svg>
+<text x='10' y='20' font-size='12'>Recovery DAgger SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
