@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12140
-SERVICE = "sim-nuclear-decommissioning-robot-env"
-DESCRIPTION = "Simulation environment for nuclear facility decommissioning robots — radiation-aware path planning, remote manipulation, and contamination containment"
+PORT = 12300
+SERVICE = "sim_nuclear_decommissioning_robot_env"
+DESCRIPTION = "Simulation environment for nuclear decommissioning robot remote manipulation and radiation monitoring"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
