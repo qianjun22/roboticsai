@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23339
-SERVICE = "robotics_platform_cloud_native_v2"
-DESCRIPTION = "Pest and disease detection suite for crop inspection robots"
+PORT = 23338
+SERVICE = "robot_package_sorting_belt_bot"
+DESCRIPTION = "Simulates jellyfish-inspired buoyancy and pulsed jet propulsion"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
