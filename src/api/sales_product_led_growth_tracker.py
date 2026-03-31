@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12323
+PORT = 12471
 SERVICE = "sales_product_led_growth_tracker"
-DESCRIPTION = "Product-led growth tracker for robotics SDK adoption and self-serve conversion funnel analytics"
+DESCRIPTION = "Sales product-led growth tracker monitoring free-to-paid conversion funnels, usage-based expansion signals, and PLG motion analytics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
