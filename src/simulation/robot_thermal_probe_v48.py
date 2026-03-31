@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66330
+PORT=66430
 SERVICE="robot_thermal_probe_v48"
 DESCRIPTION="Sim: thermal_probe"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
