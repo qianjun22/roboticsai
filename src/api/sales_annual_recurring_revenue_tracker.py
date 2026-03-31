@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12361
+PORT = 12543
 SERVICE = "sales_annual_recurring_revenue_tracker"
-DESCRIPTION = "Annual recurring revenue tracker for robotics platform subscription cohort analysis and growth metrics"
+DESCRIPTION = "Sales annual recurring revenue tracker monitoring ARR growth, churn contributions, expansion revenue, and logo retention for robotics subscriptions"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
