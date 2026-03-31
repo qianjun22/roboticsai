@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15282
-SERVICE = "robot_automated_aquaponics_monitor"
-DESCRIPTION = "Automated robotic simulation for aquaponics water quality and fish monitoring"
+PORT = 15283
+SERVICE = "robotics_state_estimation_v6"
+DESCRIPTION = "Robotics state estimation using Kalman filtering and particle filters"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
