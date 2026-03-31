@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=56941
+PORT=56943
 SERVICE="robotics_channel_led_v40"
 DESCRIPTION="GTM: channel_led"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
