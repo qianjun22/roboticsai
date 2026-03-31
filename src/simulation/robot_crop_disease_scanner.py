@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13273
-SERVICE = "robotics_customer_lifetime_value_v2"
-DESCRIPTION = "Customer lifetime value v2 for modeling long-term revenue potential per robotics account based on fleet size and expansion patterns"
+PORT = 13272
+SERVICE = "robot_crop_disease_scanner"
+DESCRIPTION = "Robot training for crop disease scanning with multispectral imaging and blight classification across field rows"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
