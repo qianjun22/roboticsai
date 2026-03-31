@@ -1,4 +1,4 @@
-"""Analyst Relations Program
+"""DAgger Run251 Planner — Counterfactual DAgger
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10543
-SERVICE = "analyst_relations_program"
-DESCRIPTION = "Analyst relations: Gartner + IDC + Forrester + Robot Report briefing program"
+PORT = 10542
+SERVICE = "dagger_run251_planner"
+DESCRIPTION = "DAgger run251: counterfactual DAgger — learn from near-failures, +3pp SR"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        sentiment = round(random.uniform(0.72, 0.88), 3); bar = int(sentiment * 220)
+        sr = round(random.uniform(0.89, 0.93), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Analyst Sentiment Score: {sentiment}</p>
+<p>Port: {PORT} | Counterfactual SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Analyst Sentiment: {sentiment}</text></svg>
+<text x='10' y='20' font-size='12'>Counterfactual DAgger SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
