@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11704
-SERVICE = "sim-retail-stock-robot-env"
-DESCRIPTION = "Retail stock management robot simulation environment for shelf restocking and inventory scanning scenarios"
+PORT = 11872
+SERVICE = "sim_retail_stock_robot_env"
+DESCRIPTION = "Retail stock management robot simulation environment for shelf scanning, inventory replenishment, and planogram compliance verification"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
