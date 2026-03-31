@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=53346
+PORT=53466
 SERVICE="robot_wire_bonder_v37"
 DESCRIPTION="Sim: wire_bonder"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
