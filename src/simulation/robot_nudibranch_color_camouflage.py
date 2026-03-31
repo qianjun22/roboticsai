@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23583
-SERVICE = "robotics_finance_cash_flow_ai"
-DESCRIPTION = "Reentry trajectory predictor for robotic return vehicles"
+PORT = 23582
+SERVICE = "robot_nudibranch_color_camouflage"
+DESCRIPTION = "Models meat deboning arm with force feedback for yield optimization"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
