@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=11883
-SERVICE="press_coverage_tracker"
-DESCRIPTION="Press coverage tracker — TechCrunch, The Robot Report, IEEE"
+PORT=11887
+SERVICE="github_stars_tracker"
+DESCRIPTION="GitHub stars tracker — qianjun22/roboticsai growth metrics"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/press")
+@app.get("/stars")
 def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
