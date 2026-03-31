@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11977
+PORT = 12519
 SERVICE = "partner_white_label_program_manager"
-DESCRIPTION = "Partner white-label program manager for OEM agreement tracking, brand compliance monitoring, and white-label revenue attribution"
+DESCRIPTION = "Partner white label program manager for OEM robotics platform licensing, brand customization workflows, and co-branding guidelines"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
