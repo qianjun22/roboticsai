@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12013
-SERVICE = "sales-pipeline-velocity-optimizer"
-DESCRIPTION = "Sales pipeline velocity optimizer for accelerating deal progression through each stage"
+PORT = 12495
+SERVICE = "sales_pipeline_velocity_optimizer"
+DESCRIPTION = "Sales pipeline velocity optimizer analyzing deal progression speed, stage bottlenecks, and conversion rate improvement levers"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
