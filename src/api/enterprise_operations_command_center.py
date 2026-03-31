@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12031
-SERVICE = "enterprise-operations-command-center"
-DESCRIPTION = "Enterprise operations command center for unified visibility across robot fleet deployments"
+PORT = 12283
+SERVICE = "enterprise_operations_command_center"
+DESCRIPTION = "Enterprise operations command center for unified robotics fleet monitoring and control"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
