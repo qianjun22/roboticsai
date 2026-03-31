@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 30041
-SERVICE = "robotics_sales_ops_v5"
-DESCRIPTION = "Sales Ops v5 — CRM hygiene, pipeline coverage, and win-rate analytics"
+PORT = 30040
+SERVICE = "dagger_run5120_planner"
+DESCRIPTION = "DAgger run 5120 planner for iterative policy refinement with live expert feedback"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
