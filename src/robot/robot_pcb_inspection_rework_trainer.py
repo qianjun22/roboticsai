@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12401
-SERVICE = "partner_ecosystem_expansion_planner"
-DESCRIPTION = "Partner ecosystem expansion planner for robotics platform new geography and vertical market entry"
+PORT = 12400
+SERVICE = "robot_pcb_inspection_rework_trainer"
+DESCRIPTION = "Training service for PCB inspection and rework robot solder joint analysis and micro-component placement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
