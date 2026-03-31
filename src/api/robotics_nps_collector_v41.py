@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41241
+PORT = 41243
 SERVICE = "robotics_nps_collector"
 DESCRIPTION = "GTM service: nps collector"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_nps_collector</h1><div class="subtitle">GTM service: nps collector port 41241</div></div>
+<div class="header"><h1>robotics_nps_collector</h1><div class="subtitle">GTM service: nps collector port 41243</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 41241</div>
+<div class="metric"><strong>Port:</strong> 41243</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
