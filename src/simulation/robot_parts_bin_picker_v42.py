@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41702
+PORT = 41822
 SERVICE = "robot_parts_bin_picker"
 DESCRIPTION = "Simulation service for parts bin picker"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot_parts_bin_picker</h1><div class="subtitle">Simulation service for parts bin picker port 41702</div></div>
+<div class="header"><h1>robot_parts_bin_picker</h1><div class="subtitle">Simulation service for parts bin picker port 41822</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 41702</div>
+<div class="metric"><strong>Port:</strong> 41822</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
