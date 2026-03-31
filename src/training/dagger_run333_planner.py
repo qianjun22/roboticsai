@@ -1,4 +1,4 @@
-"""Go-to-market playbook v3 incorporating AI World event motion, NVIDIA co-sell playbook, and segment-specific GTM tactics
+"""DAgger run 333 planner with multi-fidelity correction using cheap sim corrections and targeted human expert queries
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10887
-SERVICE = "gtm_playbook_v3"
-DESCRIPTION = "Go-to-market playbook v3 incorporating AI World event motion, NVIDIA co-sell playbook, and segment-specific GTM tactics"
+PORT = 10886
+SERVICE = "dagger_run333_planner"
+DESCRIPTION = "DAgger run 333 planner with multi-fidelity correction using cheap sim corrections and targeted human expert queries"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
