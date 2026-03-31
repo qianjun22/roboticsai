@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15066
-SERVICE = "robot_automated_hydroponic_nutrient_doser"
-DESCRIPTION = "Automated robotic nutrient dosing system for precision hydroponic crop nutrition management"
+PORT = 15067
+SERVICE = "robotics_supply_chain_resilience_v4_b"
+DESCRIPTION = "Supply chain digital twin platform for stress-testing robotics supply chain resilience scenarios"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
