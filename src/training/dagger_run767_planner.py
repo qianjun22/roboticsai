@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12623
-SERVICE = "sales-competitive-battlecard-generator"
-DESCRIPTION = "Auto-generates competitive battlecards for robotics sales team based on win/loss data and market intelligence"
+PORT = 12622
+SERVICE = "dagger-run767-planner"
+DESCRIPTION = "DAgger run 767 online learning planner — adaptive robot policy training with real-time correction signals"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
