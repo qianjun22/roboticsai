@@ -1,4 +1,4 @@
-"""Market intelligence dashboard — real-time robotics AI industry signal tracking covering NVIDIA ecosystem, funding rounds, regulatory changes, and TAM estimates
+"""DAgger run 343 planner — MAML meta-learning for 5-shot adaptation to new manipulation tasks from minimal expert demonstrations
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10927
-SERVICE = "market_intelligence_dashboard"
-DESCRIPTION = "Market intelligence dashboard — real-time robotics AI industry signal tracking covering NVIDIA ecosystem, funding rounds, regulatory changes, and TAM estimates"
+PORT = 10926
+SERVICE = "dagger_run343_planner"
+DESCRIPTION = "DAgger run 343 planner — MAML meta-learning for 5-shot adaptation to new manipulation tasks from minimal expert demonstrations"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
