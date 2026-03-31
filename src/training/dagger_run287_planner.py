@@ -1,4 +1,4 @@
-"""Investor Update Generator — auto-generates monthly investor updates with metrics and highlights.
+"""DAgger Run 287 Planner — language-conditioned DAgger with instruction-grounded expert corrections.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10671
-SERVICE = "investor_update_generator"
-DESCRIPTION = "Auto-generates monthly investor updates with metrics, highlights, and asks"
+PORT = 10670
+SERVICE = "dagger_run287_planner"
+DESCRIPTION = "Language-conditioned DAgger: instruction-grounded expert corrections via CLIP"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
