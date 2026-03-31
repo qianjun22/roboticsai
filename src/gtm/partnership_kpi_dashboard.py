@@ -1,4 +1,4 @@
-"""Track object state through manipulation — state machine for held, placed, occluded, moved states at 30Hz
+"""Partner program KPI dashboard — referrals, co-sell deals, integration health for NVIDIA and ARM partners
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10364
-SERVICE = "object_state_tracker"
-DESCRIPTION = "Track object state through manipulation — state machine for held, placed, occluded, moved states at 30Hz"
+PORT = 10365
+SERVICE = "partnership_kpi_dashboard"
+DESCRIPTION = "Partner program KPI dashboard — referrals, co-sell deals, integration health for NVIDIA and ARM partners"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
