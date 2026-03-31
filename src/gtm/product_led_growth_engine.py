@@ -1,5 +1,4 @@
-"""
-Product-led growth engine — SDK to freemium pilot to paid self-serve funnel
+"""Product-led growth engine — free tier, self-serve conversion, viral coefficient tracking, PLG funnel metrics
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10271
+PORT = 10405
 SERVICE = "product_led_growth_engine"
-DESCRIPTION = "Product-led growth engine — SDK to freemium pilot to paid self-serve funnel"
+DESCRIPTION = "Product-led growth engine — free tier, self-serve conversion, viral coefficient tracking, PLG funnel metrics"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -28,33 +27,13 @@ if FastAPI:
         bar = int(val * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:sans-serif;padding:2rem}}
-h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;border-radius:8px;margin:.5rem 0}}</style></head>
-<body><h1>{SERVICE}</h1><p style="color:#94a3b8">{DESCRIPTION}</p>
-<div class="metric"><h2>Primary Metric</h2>
-<svg width="260" height="32"><rect width="240" height="28" rx="4" fill="#1e293b"/>
-<rect width="{bar}" height="28" rx="4" fill="#C74634"/>
-<text x="8" y="20" fill="#fff" font-size="13">{val}</text></svg></div>
-<div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
+h1{{color:#C74634}}.metric{{background:#1e293b;padding:1rem;border-radius:8px;margin:0.5rem 0}}
+.bar{{background:#38bdf8;height:20px;border-radius:4px}}</style></head>
+<body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
+<div class="metric"><div>Score: {val}</div>
+<div class="bar" style="width:{bar}px"></div></div>
+<p>Port: {PORT} | <a href="/health" style="color:#38bdf8">/health</a></p>
 </body></html>"""
-
-    @app.get("/growth/plg/funnel")
-    def plg_funnel():
-        return {
-            "sdk_downloads": 847,
-            "api_calls": 312,
-            "demo_requests": 47,
-            "pilots": 12,
-            "paid": 3,
-            "sdk_to_paid_rate": 0.0035
-        }
-
-    @app.get("/growth/plg/pql")
-    def plg_pql():
-        return {
-            "pql_threshold": {"eval_runs": 3, "sr_min": 0.70},
-            "current_pqls": 8,
-            "conversion_rate": 0.375
-        }
 
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
@@ -67,5 +46,6 @@ else:
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(body)
+        def log_message(self, *a): pass
     with socketserver.TCPServer(("", PORT), H) as s:
         s.serve_forever()
