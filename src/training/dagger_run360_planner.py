@@ -1,4 +1,4 @@
-"""Enterprise Contract Manager — MSA/SOW lifecycle, renewal alerts, and compliance tracking.
+"""DAgger Run 360 Planner — contrastive self-supervised representation DAgger.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10995
-SERVICE = "enterprise_contract_manager"
-DESCRIPTION = "Enterprise contract lifecycle manager for MSA/SOW tracking, renewal forecasting, compliance monitoring, and automated legal workflow routing."
+PORT = 10994
+SERVICE = "dagger_run360_planner"
+DESCRIPTION = "DAgger run 360: contrastive self-supervised representation learning DAgger using SimCLR-style augmentation for robust visual manipulation policies."
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
@@ -30,11 +30,18 @@ h1{{color:#C74634}}span{{color:#38bdf8}}</style></head>
 <svg width='240' height='30'><rect width='220' height='20' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='20' fill='#C74634' rx='4'/></svg>
 <p><span>{val}</span> efficiency</p></body></html>"""
-    @app.get("/api/contracts/status")
-    def contract_status():
-        return {"active_contracts": 7, "pending_signature": 2, "renewals_90d": 3,
-                "total_contract_value": 2100000, "avg_contract_length_months": 12,
-                "legal_review_queue": 1, "compliance_score": 0.97}
+    @app.get("/api/dagger_run360/status")
+    def status():
+        return {"run": "dagger_run360", "strategy": "contrastive-ssl-dagger",
+                "encoder": "SimCLR-ResNet18", "projection_dim": 128,
+                "temperature": 0.07, "target_sr": 0.91,
+                "current_sr": round(random.uniform(0.79, 0.91), 3),
+                "contrastive_loss": round(random.uniform(0.8, 1.4), 4)}
+    @app.post("/training/dagger_run360/ssl_correct")
+    def ssl_correct():
+        return {"visual_embedding": [round(random.uniform(-1, 1), 3) for _ in range(8)],
+                "augmented_views": 2, "predicted_action": [round(random.uniform(-1, 1), 3) for _ in range(7)],
+                "representation_confidence": round(random.uniform(0.82, 0.96), 3)}
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
 else:
