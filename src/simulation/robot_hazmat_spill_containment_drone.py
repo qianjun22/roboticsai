@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13693
-SERVICE = "robotics_demand_generation_v3"
-DESCRIPTION = "Robotics demand generation API v3 — lead scoring, campaign attribution, pipeline creation, and MQL-to-SQL conversion optimization"
+PORT = 13692
+SERVICE = "robot_hazmat_spill_containment_drone"
+DESCRIPTION = "Hazmat spill containment drone simulation — autonomous aerial deployment of containment barriers for chemical and biological spills"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
