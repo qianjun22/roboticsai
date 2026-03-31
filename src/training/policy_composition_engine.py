@@ -1,4 +1,4 @@
-"""Market Expansion Planner — beachhead to adjacency; US manufacturing Y1 → EU Y2 → APAC Y3.
+"""Policy Composition Engine — sequential + parallel + conditional skill composition; modular robot programs.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10617
-SERVICE = "market_expansion_planner"
-DESCRIPTION = "Expansion: US manufacturing(85% ready)→US e-comm(60%)→EU(40%)→APAC(20%); sequential entry."
+PORT = 10616
+SERVICE = "policy_composition_engine"
+DESCRIPTION = "Skill composition: sequential pick→place→verify 84% SR; parallel move+monitor; conditional retry."
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -24,17 +24,17 @@ if _has_fastapi:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        us_mfg_ready = round(random.uniform(0.82, 0.90), 2)
-        us_ecomm_ready = round(random.uniform(0.55, 0.68), 2)
-        bar = int(us_mfg_ready * 220)
+        sr_composed = round(random.uniform(0.81, 0.87), 3)
+        skill_count = random.randint(2, 5)
+        bar = int(sr_composed * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}span.val{{color:#38bdf8}}</style></head><body>
 <h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>US Mfg Ready: <span class="val">{us_mfg_ready*100:.0f}%</span> | US E-comm: <span class="val">{us_ecomm_ready*100:.0f}%</span> | Port: <span class="val">{PORT}</span></p>
+<p>Composed SR: <span class="val">{sr_composed}</span> | Skills: <span class="val">{skill_count}</span> | Port: <span class="val">{PORT}</span></p>
 <svg width="260" height="40"><rect width="{bar}" height="30" y="5" fill="#38bdf8" rx="3"/>
-<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{us_mfg_ready*100:.0f}% US mfg</text></svg>
-<p style="color:#64748b;font-size:12px">GET /gtm/expansion/market_map | POST /gtm/expansion/scenario</p>
+<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{sr_composed} composed</text></svg>
+<p style="color:#64748b;font-size:12px">POST /training/policy/compose | GET /training/policy/library</p>
 </body></html>"""
 
     if __name__ == "__main__":
