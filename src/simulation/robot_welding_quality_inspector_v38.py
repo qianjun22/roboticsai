@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 38570
+PORT = 38690
 SERVICE = "robot_welding_quality_inspector"
 DESCRIPTION = "Simulation service for welding quality inspector"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot_welding_quality_inspector</h1><div class="subtitle">Simulation service for welding quality inspector port 38570</div></div>
+<div class="header"><h1>robot_welding_quality_inspector</h1><div class="subtitle">Simulation service for welding quality inspector port 38690</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 38570</div>
+<div class="metric"><strong>Port:</strong> 38690</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
