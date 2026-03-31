@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13225
-SERVICE = "robotics_market_share_tracker"
-DESCRIPTION = "Market share tracker for monitoring OCI Robot Cloud competitive position in foundation model infrastructure"
+PORT = 13224
+SERVICE = "robot_methane_leak_detector"
+DESCRIPTION = "Robot training for methane leak detection with sensor fusion and pipeline inspection navigation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
