@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=85554
+PORT=85654
 SERVICE="robot_interferometer_ctrl_v64"
 DESCRIPTION="Sim: interferometer_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
