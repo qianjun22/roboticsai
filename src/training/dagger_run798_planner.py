@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12747
-SERVICE = "enterprise_pilot_success_tracker"
-DESCRIPTION = "Tracks enterprise pilot deployments — milestones, success criteria, expansion signals, and conversion readiness"
+PORT = 12746
+SERVICE = "dagger_run798_planner"
+DESCRIPTION = "DAgger run 798 planning and orchestration service — manages online imitation learning rollouts and dataset aggregation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
