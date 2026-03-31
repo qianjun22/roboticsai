@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23599
-SERVICE = "robotics_legal_sanctions_checker"
-DESCRIPTION = "API sandbox for partner robotics AI application development"
+PORT = 23598
+SERVICE = "robot_barnacle_fouling_preventer"
+DESCRIPTION = "Models cheese aging inspection robot with mold detection vision"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
