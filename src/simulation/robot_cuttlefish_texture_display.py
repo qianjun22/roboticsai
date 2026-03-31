@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23611
-SERVICE = "robotics_security_siem_connector"
-DESCRIPTION = "Pitch deck builder for robotics AI startup fundraising"
+PORT = 23610
+SERVICE = "robot_cuttlefish_texture_display"
+DESCRIPTION = "Simulates pharmacy pill counting robot with verification vision"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
