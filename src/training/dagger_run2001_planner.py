@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17565
-SERVICE = "robotics_competitive_intel_v4"
-DESCRIPTION = "Competitive intelligence tracker for robotics market landscape v4"
+PORT = 17564
+SERVICE = "dagger_run2001_planner"
+DESCRIPTION = "DAgger run 2001 training planner with multi-task data aggregation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
