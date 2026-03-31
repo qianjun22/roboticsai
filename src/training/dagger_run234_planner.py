@@ -1,4 +1,4 @@
-"""Sales Enablement Toolkit
+"""DAgger Run234 Planner — Sparse-Reward DAgger
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10475
-SERVICE = "sales_enablement_toolkit"
-DESCRIPTION = "Sales enablement toolkit: AE tools, content, training, and effectiveness tracking"
+PORT = 10474
+SERVICE = "dagger_run234_planner"
+DESCRIPTION = "DAgger run234: sparse-reward DAgger — no reward engineering, scales to any task"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        wr = round(random.uniform(0.64, 0.76), 3); bar = int(wr * 220)
+        sr = round(random.uniform(0.86, 0.92), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Enabled AE Win Rate: {wr}</p>
+<p>Port: {PORT} | Sparse DAgger SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Enabled Win Rate: {wr}</text></svg>
+<text x='10' y='20' font-size='12'>Sparse DAgger SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
