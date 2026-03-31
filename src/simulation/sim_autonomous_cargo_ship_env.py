@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11988
+PORT = 12196
 SERVICE = "sim-autonomous-cargo-ship-env"
-DESCRIPTION = "Autonomous cargo ship simulation environment for maritime robot navigation and logistics training"
+DESCRIPTION = "Simulation environment for autonomous cargo ship operations — route optimization, obstacle avoidance, port docking, and cargo management coordination"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
