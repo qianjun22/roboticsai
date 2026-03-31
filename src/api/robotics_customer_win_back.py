@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13584
-SERVICE = "robot_vertical_farm_harvester"
-DESCRIPTION = "Autonomous robot simulation for vertical farm harvesting — crop detection, precision picking, and yield optimization in multi-level grow environments"
+PORT = 13585
+SERVICE = "robotics_customer_win_back"
+DESCRIPTION = "Customer win-back service for robotics platform — identifies churned or at-risk accounts and triggers re-engagement campaigns with tailored offers"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
