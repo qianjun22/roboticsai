@@ -1,4 +1,4 @@
-"""International market expansion planning — Europe, APAC, Canada entry timeline and resource requirements
+"""DAgger run205 — reward-constrained safety DAgger, maximize SR subject to joint velocity and contact force safety bounds
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10359
-SERVICE = "market_expansion_planner"
-DESCRIPTION = "International market expansion planning — Europe, APAC, Canada entry timeline and resource requirements"
+PORT = 10358
+SERVICE = "dagger_run205_planner"
+DESCRIPTION = "DAgger run205 — reward-constrained safety DAgger, maximize SR subject to joint velocity and contact force safety bounds"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
