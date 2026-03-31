@@ -1,4 +1,4 @@
-"""Revenue Recognition Engine
+"""Multi-Step Task Planner
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10541
-SERVICE = "revenue_recognition_engine"
-DESCRIPTION = "Revenue recognition engine: ASC 606 compliant SaaS + usage-based rev rec"
+PORT = 10540
+SERVICE = "multi_step_task_planner"
+DESCRIPTION = "Multi-step task planner: LLM decomposes tasks into GR00T primitive sequences"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        recognized = random.randint(205, 230); bar = int((recognized/300) * 220)
+        sr_5step = round(random.uniform(0.76, 0.83), 3); bar = int(sr_5step * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | GAAP Revenue: ${recognized}k</p>
+<p>Port: {PORT} | 5-Step Task SR: {sr_5step}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Recognized Revenue: ${recognized}k</text></svg>
+<text x='10' y='20' font-size='12'>5-Step SR: {sr_5step}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
