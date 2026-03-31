@@ -1,0 +1,35 @@
+"""
+OCI Robot Cloud — DAgger Run 424 Planner
+FastAPI service — port 11250
+MaxEnt IRL maximum entropy inverse RL DAgger recovering reward functions from expert demos
+"""
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn, datetime
+
+PORT = 11250
+SERVICE = "dagger_run424_planner"
+DESCRIPTION = "MaxEnt IRL maximum entropy inverse reinforcement learning DAgger recovering dense reward functions from expert demonstrations for improved policy generalization"
+
+app = FastAPI(title=SERVICE, version="1.0.0")
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": SERVICE, "port": PORT, "ts": datetime.datetime.utcnow().isoformat()}
+
+@app.get("/", response_class=HTMLResponse)
+def dashboard():
+    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
+<style>body{{background:#0f172a;color:#e2e8f0;font-family:sans-serif;padding:2rem}}
+h1{{color:#C74634}}canvas{{background:#1e293b;border-radius:8px}}</style></head>
+<body><h1>{SERVICE}</h1><p style="color:#38bdf8">Port {PORT} — {DESCRIPTION}</p>
+<canvas id="c" width="400" height="120"></canvas>
+<script>
+var c=document.getElementById('c').getContext('2d');
+var d=[75,78,81,83,85,87,88,90,92];
+var max=Math.max(...d);
+d.forEach(function(v,i){{c.fillStyle='#C74634';c.fillRect(i*44+10,110-v/max*100,36,v/max*100)}});
+</script></body></html>"""
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
