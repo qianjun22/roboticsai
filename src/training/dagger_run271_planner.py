@@ -1,4 +1,4 @@
-"""Customer Advocacy Program — manage customer advocates, testimonials, and case studies.
+"""DAgger Run 271 Planner — self-play DAgger with robot competing against itself for skill refinement.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10623
-SERVICE = "customer_advocacy_program"
-DESCRIPTION = "Manage customer advocates, testimonials, and case studies"
+PORT = 10622
+SERVICE = "dagger_run271_planner"
+DESCRIPTION = "Self-play DAgger: robot competes against itself for skill refinement"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
