@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12181
-SERVICE = "sales-territory-planning-optimizer"
-DESCRIPTION = "Territory planning optimizer allocating sales resources across robotics verticals and geographies based on market potential, competitive intensity, and rep capacity"
+PORT = 12479
+SERVICE = "sales_territory_planning_optimizer"
+DESCRIPTION = "Sales territory planning optimizer balancing market potential, rep capacity, and account coverage for robotics sales regions"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
