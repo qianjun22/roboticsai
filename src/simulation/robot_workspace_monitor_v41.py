@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40931
-SERVICE = "robotics_uptime_reporter"
-DESCRIPTION = "GTM service: uptime reporter"
+PORT = 40930
+SERVICE = "robot_workspace_monitor"
+DESCRIPTION = "Simulation service for workspace monitor"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,7 +16,7 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>robotics_uptime_reporter</title><style>
+    return f"""<!DOCTYPE html><html><head><title>robot_workspace_monitor</title><style>
 body{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;}
 .header{background:#C74634;padding:20px 32px;}
 h1{margin:0;font-size:24px;color:#fff;}
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_uptime_reporter</h1><div class="subtitle">GTM service: uptime reporter port 40931</div></div>
+<div class="header"><h1>robot_workspace_monitor</h1><div class="subtitle">Simulation service for workspace monitor port 40930</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 40931</div>
+<div class="metric"><strong>Port:</strong> 40930</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
