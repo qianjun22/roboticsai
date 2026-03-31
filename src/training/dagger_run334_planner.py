@@ -1,4 +1,4 @@
-"""Market expansion opportunity analyzer scoring verticals, geographies, and use cases by TAM and NVIDIA alignment
+"""DAgger run 334 planner with 48 reusable skill primitives enabling new task mastery from just 12 demonstrations
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10891
-SERVICE = "market_expansion_analyzer"
-DESCRIPTION = "Market expansion opportunity analyzer scoring verticals, geographies, and use cases by TAM and NVIDIA alignment"
+PORT = 10890
+SERVICE = "dagger_run334_planner"
+DESCRIPTION = "DAgger run 334 planner with 48 reusable skill primitives enabling new task mastery from just 12 demonstrations"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
