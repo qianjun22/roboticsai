@@ -1,4 +1,4 @@
-"""Monthly board update automator — auto-pull metrics, narrative generation, risk register, board asks
+"""Photorealistic sim rendering pipeline v2 — RTX path tracing 120fps with PBR materials, halved sim-to-real gap
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10425
-SERVICE = "board_update_automator"
-DESCRIPTION = "Monthly board update automator — auto-pull metrics, narrative generation, risk register, board asks"
+PORT = 10424
+SERVICE = "sim_rendering_pipeline_v2"
+DESCRIPTION = "Photorealistic sim rendering pipeline v2 — RTX path tracing 120fps with PBR materials, halved sim-to-real gap"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
