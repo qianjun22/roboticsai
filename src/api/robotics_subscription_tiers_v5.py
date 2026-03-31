@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15746
-SERVICE = "robot_pancreatic_islet_injector"
-DESCRIPTION = "Robotic pancreatic islet injection for diabetes cell therapy treatment"
+PORT = 15747
+SERVICE = "robotics_subscription_tiers_v5"
+DESCRIPTION = "Subscription tiers v5 for tiered robotics platform access management"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
