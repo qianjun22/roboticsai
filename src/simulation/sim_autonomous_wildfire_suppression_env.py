@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12236
-SERVICE = "sim-autonomous-wildfire-suppression-env"
-DESCRIPTION = "Simulation environment for autonomous wildfire suppression robots — fire perimeter tracking, retardant drop coordination, terrain navigation, and evacuation support"
+PORT = 12460
+SERVICE = "sim_autonomous_wildfire_suppression_env"
+DESCRIPTION = "Autonomous wildfire suppression robot simulation with fire spread modeling, water resource management, and terrain navigation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
