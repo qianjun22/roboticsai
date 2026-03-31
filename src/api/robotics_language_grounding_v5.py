@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15266
-SERVICE = "robot_automated_fuel_cell_assembler"
-DESCRIPTION = "Automated robotic simulation for hydrogen fuel cell membrane electrode assembly"
+PORT = 15267
+SERVICE = "robotics_language_grounding_v5"
+DESCRIPTION = "Robotics language grounding service for natural language instruction following"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
