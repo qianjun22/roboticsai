@@ -1,4 +1,4 @@
-"""AI World Sep 2026 demo rehearsal tracker — run count, SR, timing, issues log, 60-rehearsal plan
+"""MC dropout uncertainty estimation for perception — aleatoric and epistemic uncertainty with safety gating at 15ms
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10401
-SERVICE = "ai_world_demo_rehearsal"
-DESCRIPTION = "AI World Sep 2026 demo rehearsal tracker — run count, SR, timing, issues log, 60-rehearsal plan"
+PORT = 10400
+SERVICE = "perception_uncertainty_estimator"
+DESCRIPTION = "MC dropout uncertainty estimation for perception — aleatoric and epistemic uncertainty with safety gating at 15ms"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
