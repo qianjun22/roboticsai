@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=12231
-SERVICE="unit_economics_v3"
-DESCRIPTION="Unit economics v3 — CAC, LTV, payback period per customer tier"
+PORT=12237
+SERVICE="payback_period_model"
+DESCRIPTION="Payback period model — 12-month target at $10k/mo pricing"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/uniteconomics")
+@app.get("/payback")
 def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
