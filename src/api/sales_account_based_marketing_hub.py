@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11963
+PORT = 12299
 SERVICE = "sales_account_based_marketing_hub"
-DESCRIPTION = "Sales account-based marketing hub for target account selection, personalized campaign orchestration, and ABM attribution analytics"
+DESCRIPTION = "Account-based marketing hub for targeted robotics enterprise customer acquisition and engagement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
