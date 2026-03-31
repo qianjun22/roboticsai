@@ -1,46 +1,65 @@
-"""Bimanual Coordination Trainer — FastAPI port 9454"""
-import math, random
-from http.server import HTTPServer, BaseHTTPRequestHandler
+"""
+Train two-arm coordination policies — synchronized Franka bimanual manipulation
+OCI Robot Cloud — roboticsai
+"""
+from __future__ import annotations
+import json, time, random, math
 try:
     from fastapi import FastAPI
-    from fastapi.responses import HTMLResponse
+    from fastapi.responses import HTMLResponse, JSONResponse
     import uvicorn
-    USE_FASTAPI = True
 except ImportError:
-    USE_FASTAPI = False
+    FastAPI = None
 
-PORT = 9454
+PORT = 10276
+SERVICE = "bimanual_coordination_trainer"
+DESCRIPTION = "Train two-arm coordination policies — synchronized Franka bimanual manipulation"
 
-def build_html():
-    data = [round(random.uniform(0.5, 1.0) * math.sin(i/3) + 1.5, 3) for i in range(10)]
-    bars = "".join(
-        f'<rect x="{30+i*40}" y="{150-int(v*60)}" width="30" height="{int(v*60)}" fill="#C74634"/>'
-        for i, v in enumerate(data)
-    )
-    return f"""<!DOCTYPE html><html><head><title>Bimanual Coordination Trainer — Port {PORT}</title>
-<style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace}}
-h1{{color:#C74634;padding:20px}}svg{{display:block;margin:20px}}</style></head>
-<body><h1>Bimanual Coordination Trainer — Port {PORT}</h1>
-<svg width="430" height="180" style="background:#1e293b;border-radius:8px">{bars}</svg>
-<p style="padding:20px;color:#38bdf8">status: operational | port: {PORT}</p></body></html>"""
+if FastAPI:
+    app = FastAPI(title=SERVICE, description=DESCRIPTION)
 
-if USE_FASTAPI:
-    app = FastAPI(title="Bimanual Coordination Trainer")
-    @app.get("/", response_class=HTMLResponse)
-    def index(): return build_html()
     @app.get("/health")
-    def health(): return {"status": "ok", "port": PORT}
+    def health():
+        return {"status": "ok", "service": SERVICE, "port": PORT, "ts": time.time()}
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        self.wfile.write(build_html().encode())
-    def log_message(self, *a): pass
+    @app.get("/", response_class=HTMLResponse)
+    def dashboard():
+        val = round(random.uniform(0.75, 0.98), 3)
+        bar = int(val * 220)
+        return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
+<style>body{{background:#0f172a;color:#e2e8f0;font-family:sans-serif;padding:2rem}}
+h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;border-radius:8px;margin:.5rem 0}}</style></head>
+<body><h1>{SERVICE}</h1><p style="color:#94a3b8">{DESCRIPTION}</p>
+<div class="metric"><h2>Primary Metric</h2>
+<svg width="260" height="32"><rect width="240" height="28" rx="4" fill="#1e293b"/>
+<rect width="{bar}" height="28" rx="4" fill="#C74634"/>
+<text x="8" y="20" fill="#fff" font-size="13">{val}</text></svg></div>
+<div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
+</body></html>"""
 
-if __name__ == "__main__":
-    if USE_FASTAPI:
+    @app.post("/training/bimanual/train")
+    def train_bimanual():
+        return {
+            "policy_id": f"bimanual_{int(time.time())}",
+            "sr_estimate": 0.79,
+            "training_demos": 500,
+            "sync_latency_ms": 8.2,
+        }
+
+    @app.post("/inference/bimanual/infer")
+    def infer_bimanual():
+        return {
+            "left_action": [round(random.uniform(-1, 1), 3) for _ in range(7)],
+            "right_action": [round(random.uniform(-1, 1), 3) for _ in range(7)],
+            "sync_signal": True,
+        }
+
+    if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
-    else:
-        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+else:
+    import http.server, socketserver
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = json.dumps({"status": "ok", "service": SERVICE, "port": PORT}).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
+    with socketserver.TCPServer(("", PORT), H) as s: s.serve_forever()
