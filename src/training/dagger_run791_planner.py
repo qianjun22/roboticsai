@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12719
-SERVICE = "sales-partner-sourced-pipeline-tracker"
-DESCRIPTION = "Tracks partner-sourced pipeline contribution to enterprise robotics revenue — deal attribution and partner influence scoring"
+PORT = 12718
+SERVICE = "dagger-run791-planner"
+DESCRIPTION = "DAgger run 791 online learning planner — robot grasping policy refinement via tactile and visual correction feedback"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
