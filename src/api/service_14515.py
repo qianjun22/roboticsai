@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=14506
-SERVICE="jan_2027_mrr_150k"
-DESCRIPTION="Jan 2027 MRR: $150k — Series A capital deployed, 2 new customers from GTC pipeline"
+PORT=14515
+SERVICE="bi_churn_prediction"
+DESCRIPTION="BI churn prediction: logistic regression on SR trend, usage decline, support ticket volume"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
