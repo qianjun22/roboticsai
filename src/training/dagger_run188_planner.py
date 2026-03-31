@@ -1,5 +1,5 @@
 """
-Customer success playbook v2: tech + business + strategic motions for 3-customer CSM
+DAgger run188 multi-fidelity planner: 10% physical + 90% sim, 92% SR at 30% cost
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10291
-SERVICE = "customer_success_playbook_v2"
-DESCRIPTION = "Customer success playbook v2 — tech + business + strategic motions for 3-customer CSM"
+PORT = 10290
+SERVICE = "dagger_run188_planner"
+DESCRIPTION = "DAgger run188: multi-fidelity DAgger — 10% physical + 90% sim, 92% SR at 30% cost"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,24 +37,25 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/cs/playbook_v2/motion")
-    def playbook_motion():
+    @app.get("/dagger/run188/config")
+    def run188_config():
         return JSONResponse({
-            "customer": "Machina",
-            "motion_type": "strategic",
-            "actions": ["expansion_discovery", "referral_ask", "case_study_kickoff"],
-            "cadence": "monthly_qbr"
+            "run": 188,
+            "strategy": "multi_fidelity_dagger",
+            "physical_pct": 0.10,
+            "sim_pct": 0.90,
+            "cost_reduction_pct": 70,
+            "sr_target": 0.92
         })
 
-    @app.get("/cs/playbook_v2/health")
-    def playbook_health():
+    @app.get("/dagger/run188/metrics")
+    def run188_metrics():
         return JSONResponse({
-            "customer": "Machina",
-            "tech_health": 95,
-            "business_health": 88,
-            "strategic_health": 74,
-            "overall": 86,
-            "next_action": "expansion_conversation"
+            "physical_corrections": 0,
+            "sim_corrections": 0,
+            "cost_per_correction_avg": 4.55,
+            "current_sr": 0.0,
+            "status": "planned"
         })
 
     if __name__ == "__main__":
