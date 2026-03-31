@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40919
-SERVICE = "robotics_incrementality_test_runner"
-DESCRIPTION = "Incrementality test runner for robotics GTM analytics"
+PORT = 40918
+SERVICE = "robot_tribological_wear_predictor"
+DESCRIPTION = "Tribological wear prediction for robotics joint maintenance planning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
