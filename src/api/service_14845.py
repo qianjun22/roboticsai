@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=14833
-SERVICE="may_jul_capstone_fundraising"
-DESCRIPTION="May-Jul capstone fundraising: NVIDIA Ventures + Lux introductions, Series A term sheet Q4"
+PORT=14845
+SERVICE="iter6_expected_quality"
+DESCRIPTION="Iter6 collection quality: beta=0.131 means robot very autonomous — only assists at grasp precision"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
