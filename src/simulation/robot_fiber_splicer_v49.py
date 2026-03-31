@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66970
+PORT=67070
 SERVICE="robot_fiber_splicer_v49"
 DESCRIPTION="Sim: fiber_splicer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
