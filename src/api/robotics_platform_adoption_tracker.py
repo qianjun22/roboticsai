@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13448
-SERVICE = "robot_nuclear_decommissioning_arm"
-DESCRIPTION = "Remote nuclear decommissioning manipulator with radiation-hardened actuators and precision cutting"
+PORT = 13449
+SERVICE = "robotics_platform_adoption_tracker"
+DESCRIPTION = "Platform adoption tracker for monitoring robotics API and SDK usage across customer accounts"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
