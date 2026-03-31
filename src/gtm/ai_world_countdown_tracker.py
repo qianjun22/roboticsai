@@ -1,130 +1,196 @@
-"""AI World Countdown Tracker — OCI Robot Cloud Service (port 9993)"""
+"""AI World September 14 2026 countdown — 168 days from 2026-03-30, critical path tracking
+FastAPI service — OCI Robot Cloud
+Port: 10155"""
+from __future__ import annotations
+import json, math, random, time
+from datetime import datetime, date
+try:
+    from fastapi import FastAPI
+    from fastapi.responses import HTMLResponse, JSONResponse
+    import uvicorn
+    USE_FASTAPI = True
+except ImportError:
+    USE_FASTAPI = False
+    from http.server import HTTPServer, BaseHTTPRequestHandler
 
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-import uvicorn
+PORT = 10155
+EVENT_DATE = date(2026, 9, 14)
+BASELINE_DATE = date(2026, 3, 30)
+BASELINE_DAYS = (EVENT_DATE - BASELINE_DATE).days  # 168
 
-PORT = 9993
-TITLE = "AI World Countdown Tracker"
+# Critical path milestones
+CRITICAL_PATH = [
+    {
+        "id": "nvidia_intro",
+        "name": "NVIDIA Intro / Partnership Confirmed",
+        "deadline": "2026-04-30",
+        "status": "in_progress",
+        "owner": "BD",
+        "risk": "high",
+        "days_to_deadline": (date(2026, 4, 30) - BASELINE_DATE).days,
+    },
+    {
+        "id": "data_room",
+        "name": "Data Room Ready for NVIDIA Review",
+        "deadline": "2026-05-15",
+        "status": "not_started",
+        "owner": "Engineering + PM",
+        "risk": "medium",
+        "days_to_deadline": (date(2026, 5, 15) - BASELINE_DATE).days,
+    },
+    {
+        "id": "demo_video",
+        "name": "Demo Video (2-min highlight reel)",
+        "deadline": "2026-07-01",
+        "status": "not_started",
+        "owner": "Marketing + Engineering",
+        "risk": "medium",
+        "days_to_deadline": (date(2026, 7, 1) - BASELINE_DATE).days,
+    },
+    {
+        "id": "press_kit",
+        "name": "Press Kit + Analyst Brief",
+        "deadline": "2026-08-01",
+        "status": "not_started",
+        "owner": "Marketing",
+        "risk": "low",
+        "days_to_deadline": (date(2026, 8, 1) - BASELINE_DATE).days,
+    },
+    {
+        "id": "booth",
+        "name": "Booth Design + Hardware Shipped",
+        "deadline": "2026-08-15",
+        "status": "not_started",
+        "owner": "Events",
+        "risk": "medium",
+        "days_to_deadline": (date(2026, 8, 15) - BASELINE_DATE).days,
+    },
+]
 
-app = FastAPI(title=TITLE)
+def _days_remaining() -> int:
+    today = date.today()
+    delta = (EVENT_DATE - today).days
+    return max(delta, 0)
 
-HTML = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title}</title>
-  <style>
-    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-    body {{ background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; padding: 2rem; }}
-    h1 {{ color: #C74634; font-size: 2rem; margin-bottom: 0.5rem; }}
-    .subtitle {{ color: #38bdf8; font-size: 1rem; margin-bottom: 2rem; }}
-    .card {{ background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }}
-    .card h2 {{ color: #38bdf8; margin-bottom: 1rem; font-size: 1.1rem; }}
-    .metric {{ display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #334155; }}
-    .metric:last-child {{ border-bottom: none; }}
-    .metric-label {{ color: #94a3b8; }}
-    .metric-value {{ color: #f1f5f9; font-weight: 600; }}
-    .countdown {{ font-size: 3rem; color: #C74634; font-weight: 800; text-align: center; padding: 1.5rem 0; }}
-    .countdown span {{ color: #38bdf8; font-size: 1rem; display: block; margin-top: 0.5rem; font-weight: 400; }}
-    svg {{ width: 100%; height: 200px; }}
-    .bar {{ fill: #38bdf8; opacity: 0.85; transition: opacity 0.2s; }}
-    .bar:hover {{ opacity: 1; }}
-    .axis-label {{ fill: #94a3b8; font-size: 11px; }}
-    .health-ok {{ color: #4ade80; font-weight: 700; }}
-  </style>
-</head>
-<body>
-  <h1>{title}</h1>
-  <p class="subtitle">OCI Robot Cloud · Port {port} · GTM Event Readiness Dashboard</p>
+def _at_risk_milestones(today: date) -> list:
+    at_risk = []
+    for m in CRITICAL_PATH:
+        deadline = date.fromisoformat(m["deadline"])
+        days_left = (deadline - today).days
+        if m["status"] != "done" and (days_left < 21 or m["risk"] == "high"):
+            at_risk.append({
+                "id": m["id"],
+                "name": m["name"],
+                "days_to_deadline": days_left,
+                "risk": m["risk"],
+                "status": m["status"],
+            })
+    return at_risk
 
-  <div class="card">
-    <h2>AI World 2026 Countdown</h2>
-    <div class="countdown" id="countdown">--d --h --m
-      <span>Loading countdown...</span>
-    </div>
-  </div>
+def _readiness_score(today: date) -> float:
+    done = sum(1 for m in CRITICAL_PATH if m["status"] == "done")
+    in_progress = sum(1 for m in CRITICAL_PATH if m["status"] == "in_progress")
+    total = len(CRITICAL_PATH)
+    base = (done + 0.4 * in_progress) / total
+    # Time pressure penalty: if <60 days remain, penalize
+    days_left = (EVENT_DATE - today).days
+    time_factor = min(days_left / 60.0, 1.0)
+    return round(min(base * time_factor + base * 0.3, 1.0), 3)
 
-  <div class="card">
-    <h2>Milestone Completion (last 10 weeks)</h2>
-    <svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
-      <!-- bars representing weekly milestone % -->
-      <rect class="bar" x="10"  y="170" width="38" height="20" />
-      <rect class="bar" x="60"  y="155" width="38" height="35" />
-      <rect class="bar" x="110" y="135" width="38" height="55" />
-      <rect class="bar" x="160" y="110" width="38" height="80" />
-      <rect class="bar" x="210" y="90"  width="38" height="100"/>
-      <rect class="bar" x="260" y="68"  width="38" height="122"/>
-      <rect class="bar" x="310" y="50"  width="38" height="140"/>
-      <rect class="bar" x="360" y="35"  width="38" height="155"/>
-      <rect class="bar" x="410" y="18"  width="38" height="172"/>
-      <rect class="bar" x="460" y="5"   width="38" height="185"/>
-      <!-- axis labels -->
-      <text class="axis-label" x="29"  y="195" text-anchor="middle">W1</text>
-      <text class="axis-label" x="79"  y="195" text-anchor="middle">W2</text>
-      <text class="axis-label" x="129" y="195" text-anchor="middle">W3</text>
-      <text class="axis-label" x="179" y="195" text-anchor="middle">W4</text>
-      <text class="axis-label" x="229" y="195" text-anchor="middle">W5</text>
-      <text class="axis-label" x="279" y="195" text-anchor="middle">W6</text>
-      <text class="axis-label" x="329" y="195" text-anchor="middle">W7</text>
-      <text class="axis-label" x="379" y="195" text-anchor="middle">W8</text>
-      <text class="axis-label" x="429" y="195" text-anchor="middle">W9</text>
-      <text class="axis-label" x="479" y="195" text-anchor="middle">W10</text>
-    </svg>
-  </div>
+def _blockers(today: date) -> list:
+    blockers = []
+    for m in CRITICAL_PATH:
+        deadline = date.fromisoformat(m["deadline"])
+        days_left = (deadline - today).days
+        if m["status"] == "not_started" and days_left < 45:
+            blockers.append(f"{m['name']} not started with {days_left}d to deadline")
+        elif m["risk"] == "high" and m["status"] != "done":
+            blockers.append(f"{m['name']} is HIGH RISK and not yet complete")
+    return blockers
 
-  <div class="card">
-    <h2>GTM Readiness</h2>
-    <div class="metric"><span class="metric-label">Demo Environment</span><span class="metric-value">Ready</span></div>
-    <div class="metric"><span class="metric-label">Booth Hardware</span><span class="metric-value">Shipped</span></div>
-    <div class="metric"><span class="metric-label">Slide Deck</span><span class="metric-value">Final v3</span></div>
-    <div class="metric"><span class="metric-label">Press Kit</span><span class="metric-value">Approved</span></div>
-    <div class="metric"><span class="metric-label">Leads Pipeline</span><span class="metric-value">$2.1M ARR</span></div>
-    <div class="metric"><span class="metric-label">Speaking Slot</span><span class="metric-value">Confirmed</span></div>
-  </div>
+def _next_actions(today: date) -> list:
+    actions = []
+    for m in sorted(CRITICAL_PATH, key=lambda x: x["deadline"]):
+        if m["status"] != "done":
+            actions.append({
+                "milestone": m["name"],
+                "action": f"Advance '{m['id']}' from '{m['status']}' → next stage",
+                "owner": m["owner"],
+                "deadline": m["deadline"],
+            })
+        if len(actions) >= 3:
+            break
+    return actions
 
-  <div class="card">
-    <h2>Service Status</h2>
-    <div class="metric"><span class="metric-label">Health</span><span class="metric-value health-ok">OK</span></div>
-    <div class="metric"><span class="metric-label">Port</span><span class="metric-value">{port}</span></div>
-    <div class="metric"><span class="metric-label">Endpoint</span><span class="metric-value">/health</span></div>
-  </div>
+if USE_FASTAPI:
+    app = FastAPI(title="AI World Countdown Tracker", version="1.0.0")
 
-  <script>
-    function updateCountdown() {{
-      // AI World 2026 target: June 9, 2026
-      const target = new Date('2026-06-09T09:00:00Z');
-      const now = new Date();
-      const diff = target - now;
-      if (diff <= 0) {{
-        document.getElementById('countdown').innerHTML = 'LIVE NOW! <span>AI World 2026 is happening!</span>';
-        return;
-      }}
-      const days = Math.floor(diff / 86400000);
-      const hours = Math.floor((diff % 86400000) / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
-      document.getElementById('countdown').innerHTML =
-        days + 'd ' + hours + 'h ' + mins + 'm<span>until AI World 2026 · June 9, 2026</span>';
-    }}
-    updateCountdown();
-    setInterval(updateCountdown, 60000);
-  </script>
-</body>
-</html>
-""".format(title=TITLE, port=PORT)
+    @app.get("/health")
+    def health():
+        return {"status": "ok", "port": PORT, "ts": datetime.utcnow().isoformat()}
 
+    @app.get("/", response_class=HTMLResponse)
+    def index():
+        days_left = _days_remaining()
+        return HTMLResponse(
+            f"<html><head><title>AI World Countdown Tracker</title>"
+            f"<style>body{{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}"
+            f"h1{{color:#C74634}}a{{color:#38bdf8}}.days{{font-size:3rem;font-weight:bold;color:#38bdf8}}</style></head>"
+            f"<body><h1>AI World Countdown Tracker</h1>"
+            f"<p>OCI Robot Cloud · Port {PORT}</p>"
+            f"<div class='days'>{days_left} days</div>"
+            f"<p>until AI World — September 14, 2026</p>"
+            f"<p><a href='/docs'>API Docs</a> · "
+            f"<a href='/events/ai_world/countdown'>Countdown</a> · "
+            f"<a href='/events/ai_world/readiness'>Readiness</a></p></body></html>"
+        )
 
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return HTML
+    @app.get("/events/ai_world/countdown")
+    def countdown():
+        """Days remaining, critical path status, at-risk milestones, next actions."""
+        today = date.today()
+        days_left = _days_remaining()
+        return {
+            "event": "AI World",
+            "event_date": str(EVENT_DATE),
+            "days_remaining": days_left,
+            "baseline_days": BASELINE_DAYS,
+            "pct_elapsed": round(1 - days_left / BASELINE_DAYS, 3) if BASELINE_DAYS > 0 else 1.0,
+            "critical_path_status": CRITICAL_PATH,
+            "at_risk_milestones": _at_risk_milestones(today),
+            "next_actions": _next_actions(today),
+        }
 
+    @app.get("/events/ai_world/readiness")
+    def readiness():
+        """Readiness score, blockers, and confidence of launch."""
+        today = date.today()
+        score = _readiness_score(today)
+        blockers = _blockers(today)
+        confidence = "high" if score >= 0.75 else ("medium" if score >= 0.45 else "low")
+        return {
+            "event": "AI World",
+            "event_date": str(EVENT_DATE),
+            "days_remaining": _days_remaining(),
+            "readiness_score": score,
+            "readiness_pct": f"{round(score * 100, 1)}%",
+            "blockers": blockers,
+            "confidence_of_launch": confidence,
+            "milestones_done": sum(1 for m in CRITICAL_PATH if m["status"] == "done"),
+            "milestones_total": len(CRITICAL_PATH),
+        }
 
-@app.get("/health")
-async def health():
-    return {"status": "ok", "service": TITLE, "port": PORT}
+    if __name__ == "__main__":
+        uvicorn.run(app, host="0.0.0.0", port=PORT)
 
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+else:
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok", "port": PORT}).encode())
+        def log_message(self, *a):
+            pass
+    if __name__ == "__main__":
+        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
