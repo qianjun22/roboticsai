@@ -1,4 +1,4 @@
-"""Enterprise Contract Manager — MSA + SOW + order form management; auto-renewal; compliance audit trail.
+"""Robot Calibration v3 — multi-robot fleet calibration; auto-calibration; thermal drift correction.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10605
-SERVICE = "enterprise_contract_manager"
-DESCRIPTION = "Contracts: 1 active MSA $250k/yr; 2 in negotiation; standard 1yr auto-renew; 3-day approval."
+PORT = 10604
+SERVICE = "robot_calibration_v3"
+DESCRIPTION = "Fleet calibration: 0.3mm post-calib vs 2.1mm pre; 7x improvement; auto-recal every 8h."
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -24,17 +24,18 @@ if _has_fastapi:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        active_value = round(random.uniform(230000, 270000))
-        in_negotiation = random.randint(1, 3)
-        bar = int(min(active_value / 300000, 1.0) * 220)
+        post_err = round(random.uniform(0.25, 0.40), 2)
+        pre_err = round(random.uniform(1.8, 2.4), 1)
+        improvement = round(pre_err / post_err, 1)
+        bar = int((1 - post_err / 3.0) * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}span.val{{color:#38bdf8}}</style></head><body>
 <h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Active ARR: <span class="val">${active_value:,}</span> | In Negotiation: <span class="val">{in_negotiation}</span> | Port: <span class="val">{PORT}</span></p>
+<p>Post-calib: <span class="val">{post_err}mm</span> | Pre-calib: <span class="val">{pre_err}mm</span> | Improvement: <span class="val">{improvement}×</span></p>
 <svg width="260" height="40"><rect width="{bar}" height="30" y="5" fill="#38bdf8" rx="3"/>
-<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">${active_value:,}</text></svg>
-<p style="color:#64748b;font-size:12px">GET /api/contracts/active | POST /api/contracts/generate</p>
+<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{post_err}mm error</text></svg>
+<p style="color:#64748b;font-size:12px">POST /training/calibration/run | GET /training/calibration/drift/status | Port: {PORT}</p>
 </body></html>"""
 
     if __name__ == "__main__":
