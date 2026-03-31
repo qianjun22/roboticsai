@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13505
-SERVICE = "robotics_customer_onboarding_v3"
-DESCRIPTION = "Robotics customer onboarding v3 — automated provisioning, guided setup workflows, and time-to-value acceleration for new OCI Robot Cloud customers"
+PORT = 13504
+SERVICE = "robot_seismic_monitoring_system"
+DESCRIPTION = "Robotic seismic monitoring system simulation — ground sensor arrays, vibration analysis, and earthquake early-warning telemetry for autonomous inspection"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
