@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12685
-SERVICE = "enterprise-robotics-asset-lifecycle-manager"
-DESCRIPTION = "Manages full asset lifecycle for enterprise robot fleets — procurement, maintenance, depreciation, and end-of-life planning"
+PORT = 12684
+SERVICE = "sim-autonomous-coral-bleaching-monitor"
+DESCRIPTION = "Simulation environment for autonomous coral bleaching monitoring using underwater photogrammetry robots"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
