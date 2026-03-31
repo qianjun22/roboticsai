@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12323
-SERVICE = "sales_product_led_growth_tracker"
-DESCRIPTION = "Product-led growth tracker for robotics SDK adoption and self-serve conversion funnel analytics"
+PORT = 12322
+SERVICE = "dagger_run692_planner"
+DESCRIPTION = "DAgger run 692 planning and orchestration service for iterative robot learning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
