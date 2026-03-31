@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 16917
-SERVICE = "robotics-analyst-relations-v3"
-DESCRIPTION = "GTM analyst relations v3 for robotics Gartner/Forrester positioning and briefings"
+PORT = 13771
+SERVICE = "robotics_analyst_relations_v3"
+DESCRIPTION = "Analyst relations management v3 for robotics industry research and market intelligence coordination"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -20,9 +20,11 @@ def dashboard():
         for i in range(8)
     )
     return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title><style>
-body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}
-h1{{color:#38bdf8}}.bars{{display:flex;gap:4px;align-items:flex-end;height:120px;margin-top:1rem}}
-.bar{{width:24px;border-radius:4px 4px 0 0}}
+body{{margin:0;background:#0f172a;color:#f1f5f9;font-family:system-ui;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}}
+h1{{color:#C74634;font-size:2rem;margin-bottom:0.5rem}}
+p{{color:#94a3b8;margin-bottom:2rem}}
+.bars{{display:flex;gap:4px;align-items:flex-end;height:80px}}
+.bar{{width:20px;border-radius:4px 4px 0 0}}
 </style></head><body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p><div class="bars">{bars}</div></body></html>"""
 
 if __name__ == "__main__":
