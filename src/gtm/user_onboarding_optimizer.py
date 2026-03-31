@@ -1,19 +1,12 @@
-"""
-A/B test onboarding flows — 4 variants (docs-first 52% / quickstart 78% /
-guided tour 71% / video-first 67%), time-to-activation tracking
-(quickstart wins at 3.2 days), activation defined as first eval SR>50%.
+"""A/B test onboarding flows — 4 variants (docs-first 52% / quickstart-first 78% / guided-tour 71% / video-first 67%). Activation = first eval SR>50%. Tracks time-to-activate (quickstart: 3.2 days best).
 FastAPI service — OCI Robot Cloud
-Port: 10115
-"""
+Port: 10115"""
 from __future__ import annotations
-import json, random, time
+import json, math, random, time
 from datetime import datetime
-from typing import Optional
-
 try:
-    from fastapi import FastAPI, Query
+    from fastapi import FastAPI, Body
     from fastapi.responses import HTMLResponse, JSONResponse
-    from pydantic import BaseModel
     import uvicorn
     USE_FASTAPI = True
 except ImportError:
@@ -22,149 +15,59 @@ except ImportError:
 
 PORT = 10115
 
-# Onboarding variant definitions
 _VARIANTS = {
     "docs-first": {
         "activation_rate": 0.52,
-        "time_to_activate_days": 5.8,
-        "dropoff_points": ["api_reference_page", "auth_setup", "first_run"],
+        "time_to_activate_days": 5.1,
+        "dropoff_points": ["api-reference", "sdk-install", "first-eval"],
         "recommended_improvements": [
-            "Add interactive code playground to docs",
-            "Shorten auth setup to OAuth one-click",
-            "Add progress indicator to first-run flow",
+            "Add interactive code snippets to docs",
+            "Surface quickstart link earlier",
+            "Add progress indicator",
         ],
     },
-    "quickstart": {
+    "quickstart-first": {
         "activation_rate": 0.78,
         "time_to_activate_days": 3.2,
-        "dropoff_points": ["dependency_install", "model_download"],
+        "dropoff_points": ["env-setup", "first-eval"],
         "recommended_improvements": [
-            "Pre-bundle common dependencies in Docker image",
-            "Stream model download with progress bar",
+            "Pre-warm demo environment to cut env-setup drop",
+            "Add one-click Colab link",
         ],
     },
     "guided-tour": {
         "activation_rate": 0.71,
-        "time_to_activate_days": 4.1,
-        "dropoff_points": ["step3_environment_config", "step7_first_eval"],
+        "time_to_activate_days": 4.0,
+        "dropoff_points": ["step-3-config", "first-eval"],
         "recommended_improvements": [
-            "Reduce guided tour from 12 steps to 7",
-            "Auto-fill environment config from detected hardware",
+            "Shorten tour to 5 steps max",
+            "Allow skipping config step",
         ],
     },
     "video-first": {
         "activation_rate": 0.67,
-        "time_to_activate_days": 4.7,
-        "dropoff_points": ["post_video_handoff", "cli_setup"],
+        "time_to_activate_days": 4.5,
+        "dropoff_points": ["post-video-cta", "sdk-install", "first-eval"],
         "recommended_improvements": [
-            "Embed interactive terminal after video",
-            "Auto-detect OS and show platform-specific CLI commands",
+            "Add in-video code copy buttons",
+            "Send follow-up email 24h after video watch",
         ],
     },
 }
 
-# Funnel positions per variant
-_FUNNEL = [
-    "signup",
-    "email_verified",
-    "onboarding_started",
-    "first_api_call",
-    "first_model_loaded",
-    "first_eval_run",
-    "activated",  # SR > 50%
-]
+_FUNNEL_STAGES = ["signup", "docs-or-video", "sdk-install", "env-setup", "first-eval", "activated"]
 
-# In-memory user tracking (ephemeral)
-_user_sessions: dict[str, dict] = {}
+_USER_EVENTS: dict[str, list[dict]] = {}
+
+def _next_step(current_stage: str) -> str:
+    try:
+        idx = _FUNNEL_STAGES.index(current_stage)
+        return _FUNNEL_STAGES[min(idx + 1, len(_FUNNEL_STAGES) - 1)]
+    except ValueError:
+        return _FUNNEL_STAGES[0]
 
 if USE_FASTAPI:
     app = FastAPI(title="User Onboarding Optimizer", version="1.0.0")
-
-    class TrackRequest(BaseModel):
-        user_id: str
-        event: str
-        variant: Optional[str] = None
-        metadata: Optional[dict] = None
-
-    @app.get("/onboarding/optimizer")
-    def optimizer(variant: str = Query(..., description="One of: docs-first, quickstart, guided-tour, video-first")):
-        if variant not in _VARIANTS:
-            return JSONResponse(
-                {"error": f"Unknown variant '{variant}'. Valid: {list(_VARIANTS.keys())}"},
-                status_code=400
-            )
-        v = _VARIANTS[variant]
-        return JSONResponse({
-            "variant": variant,
-            "activation_rate": v["activation_rate"],
-            "time_to_activate_days": v["time_to_activate_days"],
-            "dropoff_points": v["dropoff_points"],
-            "recommended_improvements": v["recommended_improvements"],
-            "winner": variant == "quickstart",
-            "winner_note": "quickstart wins: 78% activation at 3.2 days avg" if variant == "quickstart" else None,
-            "activation_definition": "first eval SR > 50%",
-            "ts": datetime.utcnow().isoformat(),
-        })
-
-    @app.post("/onboarding/track")
-    def track(req: TrackRequest):
-        uid = req.user_id
-        if uid not in _user_sessions:
-            assigned_variant = req.variant or random.choice(list(_VARIANTS.keys()))
-            _user_sessions[uid] = {
-                "variant": assigned_variant,
-                "funnel_position": 0,
-                "events": [],
-                "started_at": datetime.utcnow().isoformat(),
-            }
-        session = _user_sessions[uid]
-        session["events"].append({
-            "event": req.event,
-            "ts": datetime.utcnow().isoformat(),
-            "metadata": req.metadata or {},
-        })
-
-        # Advance funnel position if event matches next step
-        current_pos = session["funnel_position"]
-        if current_pos < len(_FUNNEL) - 1:
-            next_step = _FUNNEL[current_pos + 1]
-            if req.event == next_step or req.event.lower().replace(" ", "_") == next_step:
-                session["funnel_position"] = current_pos + 1
-                current_pos = session["funnel_position"]
-
-        variant_data = _VARIANTS[session["variant"]]
-        funnel_label = _FUNNEL[current_pos]
-        next_step_label = _FUNNEL[current_pos + 1] if current_pos < len(_FUNNEL) - 1 else None
-
-        return JSONResponse({
-            "user_id": uid,
-            "variant": session["variant"],
-            "funnel_position": funnel_label,
-            "funnel_step_index": current_pos,
-            "funnel_total_steps": len(_FUNNEL),
-            "next_recommended_step": next_step_label,
-            "activated": funnel_label == "activated",
-            "estimated_days_to_activation": variant_data["time_to_activate_days"],
-            "ts": datetime.utcnow().isoformat(),
-        })
-
-    @app.get("/onboarding/summary")
-    def summary():
-        return JSONResponse({
-            "variants": {
-                name: {
-                    "activation_rate": v["activation_rate"],
-                    "time_to_activate_days": v["time_to_activate_days"],
-                }
-                for name, v in _VARIANTS.items()
-            },
-            "winner": "quickstart",
-            "winner_activation_rate": 0.78,
-            "winner_time_to_activate_days": 3.2,
-            "activation_definition": "first eval SR > 50%",
-            "active_tracked_users": len(_user_sessions),
-            "ts": datetime.utcnow().isoformat(),
-        })
 
     @app.get("/health")
     def health():
@@ -172,27 +75,52 @@ if USE_FASTAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        return HTMLResponse("""<!DOCTYPE html><html><head><title>User Onboarding Optimizer</title>
-<style>body{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}
-h1{color:#C74634}a{color:#38bdf8}
-table{border-collapse:collapse;margin-top:1rem}td,th{border:1px solid #334155;padding:.5rem 1rem}
-th{background:#1e293b}.winner{color:#4ade80;font-weight:bold}</style></head><body>
-<h1>User Onboarding Optimizer</h1>
-<p>OCI Robot Cloud &middot; Port 10115</p>
-<table>
-  <tr><th>Variant</th><th>Activation Rate</th><th>Days to Activate</th></tr>
-  <tr><td>docs-first</td><td>52%</td><td>5.8</td></tr>
-  <tr class="winner"><td>quickstart &#9733;</td><td>78%</td><td>3.2</td></tr>
-  <tr><td>guided-tour</td><td>71%</td><td>4.1</td></tr>
-  <tr><td>video-first</td><td>67%</td><td>4.7</td></tr>
-</table>
-<p><small>Activation = first eval SR &gt; 50%</small></p>
-<p><a href="/docs">API Docs</a> | <a href="/onboarding/summary">Summary</a> | <a href="/health">Health</a></p>
-</body></html>""")
+        return HTMLResponse(f"""<!DOCTYPE html><html><head><title>User Onboarding Optimizer</title>
+<style>body{{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}h1{{color:#C74634}}a{{color:#38bdf8}}</style></head><body>
+<h1>User Onboarding Optimizer</h1><p>OCI Robot Cloud · Port {PORT}</p><p><a href="/docs">API Docs</a> | <a href="/health">Health</a></p></body></html>""")
+
+    @app.get("/onboarding/optimizer")
+    def optimizer(variant: str = "quickstart-first"):
+        """
+        Return activation metrics and recommendations for a given onboarding variant.
+        variant: docs-first | quickstart-first | guided-tour | video-first
+        """
+        data = _VARIANTS.get(variant)
+        if data is None:
+            return JSONResponse(status_code=404, content={"error": f"Unknown variant '{variant}'. Choose from: {list(_VARIANTS.keys())}"})
+        return JSONResponse(content={
+            "variant": variant,
+            "activation_rate": data["activation_rate"],
+            "time_to_activate_days": data["time_to_activate_days"],
+            "dropoff_points": data["dropoff_points"],
+            "recommended_improvements": data["recommended_improvements"],
+            "best_variant": "quickstart-first",
+            "ts": datetime.utcnow().isoformat(),
+        })
+
+    @app.post("/onboarding/track")
+    def track(payload: dict = Body(...)):
+        """
+        Track a user onboarding event.
+        Input: {user_id: str, event: str}
+        Output: funnel_position, next_recommended_step
+        """
+        user_id = payload.get("user_id", "unknown")
+        event = payload.get("event", "signup")
+        record = {"event": event, "ts": datetime.utcnow().isoformat()}
+        _USER_EVENTS.setdefault(user_id, []).append(record)
+        funnel_position = event if event in _FUNNEL_STAGES else _FUNNEL_STAGES[0]
+        next_step = _next_step(funnel_position)
+        return JSONResponse(content={
+            "user_id": user_id,
+            "event_recorded": event,
+            "funnel_position": funnel_position,
+            "next_recommended_step": next_step,
+            "total_events_for_user": len(_USER_EVENTS[user_id]),
+        })
 
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
-
 else:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
