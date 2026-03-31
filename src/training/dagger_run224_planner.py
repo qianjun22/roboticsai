@@ -1,4 +1,4 @@
-"""Quarterly GTM calendar — Q2-Q1 2027 events, campaigns, milestones from CEO pitch to GTC 2027 talk
+"""DAgger run224 — noise-injected DAgger training robust policies with 25pp SR gain in disturbed factory environments
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10435
-SERVICE = "go_to_market_calendar"
-DESCRIPTION = "Quarterly GTM calendar — Q2-Q1 2027 events, campaigns, milestones from CEO pitch to GTC 2027 talk"
+PORT = 10434
+SERVICE = "dagger_run224_planner"
+DESCRIPTION = "DAgger run224 — noise-injected DAgger training robust policies with 25pp SR gain in disturbed factory environments"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
