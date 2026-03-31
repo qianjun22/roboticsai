@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=56722
+PORT=56842
 SERVICE="robot_aoi_inspector_v40"
 DESCRIPTION="Sim: aoi_inspector"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
