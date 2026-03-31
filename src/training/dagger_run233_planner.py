@@ -1,4 +1,4 @@
-"""Product Analytics Dashboard
+"""DAgger Run233 Planner — Uncertainty-Driven DAgger
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10471
-SERVICE = "product_analytics_dashboard"
-DESCRIPTION = "Product analytics dashboard: usage, adoption, health, and revenue metrics"
+PORT = 10470
+SERVICE = "dagger_run233_planner"
+DESCRIPTION = "DAgger run233: uncertainty-driven DAgger with information-theoretic query strategy"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        dau = random.randint(42, 55); bar = int((dau/60) * 220)
+        sr = round(random.uniform(0.88, 0.93), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Daily Active Robots: {dau}</p>
+<p>Port: {PORT} | Uncertainty DAgger SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Daily Active Robots: {dau}</text></svg>
+<text x='10' y='20' font-size='12'>Uncertainty DAgger SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
