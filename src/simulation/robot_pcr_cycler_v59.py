@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=79902
+PORT=80002
 SERVICE="robot_pcr_cycler_v59"
 DESCRIPTION="Sim: pcr_cycler"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
