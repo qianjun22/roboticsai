@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12624
-SERVICE = "robot-bridge-cable-tension-monitor"
-DESCRIPTION = "Robotic inspection system for real-time monitoring of bridge cable tension and structural integrity"
+PORT = 13464
+SERVICE = "robot_bridge_cable_tension_monitor"
+DESCRIPTION = "Cable-stayed bridge inspection robot with tension measurement sensors and crack detection"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
