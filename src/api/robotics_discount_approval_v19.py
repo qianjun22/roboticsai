@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=31505
+PORT=31507
 SERVICE="robotics_discount_approval_v19"
 DESCRIPTION="GTM: discount_approval"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
