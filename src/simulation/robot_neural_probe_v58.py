@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=77630
+PORT=77730
 SERVICE="robot_neural_probe_v58"
 DESCRIPTION="Sim: neural_probe"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
