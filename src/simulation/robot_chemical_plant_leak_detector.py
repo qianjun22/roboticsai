@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15363
-SERVICE = "robotics-continual-learning-v5"
-DESCRIPTION = "Continual learning v5 for robot adaptation to new tasks without forgetting previously learned skills"
+PORT = 15362
+SERVICE = "robot-chemical-plant-leak-detector"
+DESCRIPTION = "Autonomous robot for chemical plant gas leak detection, containment, and emergency evacuation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
