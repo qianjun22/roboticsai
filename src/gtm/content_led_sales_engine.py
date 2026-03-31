@@ -1,4 +1,4 @@
-"""Policy Robustness Tester v2
+"""Content-Led Sales Engine
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10536
-SERVICE = "policy_robustness_tester_v2"
-DESCRIPTION = "Policy robustness tester v2: 12 perturbation types, CI gate at >80% perturbed SR"
+PORT = 10537
+SERVICE = "content_led_sales_engine"
+DESCRIPTION = "Content-led sales: blog → notebook → SDK → API key → sales handoff funnel"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        perturbed_sr = round(random.uniform(0.83, 0.89), 3); bar = int(perturbed_sr * 220)
+        influenced = round(random.uniform(0.30, 0.40), 3); bar = int(influenced * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Avg Perturbed SR: {perturbed_sr}</p>
+<p>Port: {PORT} | Content-Influenced Pipeline: {influenced:.0%}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Perturbed SR: {perturbed_sr} (gate: >0.80)</text></svg>
+<text x='10' y='20' font-size='12'>Content-Influenced: {influenced:.0%}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
