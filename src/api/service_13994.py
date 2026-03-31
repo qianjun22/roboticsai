@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=13978
-SERVICE="health_status_page"
-DESCRIPTION="Health status page: status.roboticsai.dev — uptime, incidents, maintenance windows, RSS feed"
+PORT=13994
+SERVICE="oci_robot_cloud_brand"
+DESCRIPTION="OCI Robot Cloud brand: crisp value prop — 'Fine-tune robot AI in minutes, not months, at 9x lower cost'"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}

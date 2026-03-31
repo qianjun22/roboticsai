@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=13973
-SERVICE="documentation_v3"
-DESCRIPTION="Documentation v3: docs.roboticsai.dev — getting started, API reference, tutorials, architecture guide"
+PORT=13981
+SERVICE="session32_progress"
+DESCRIPTION="Session 32 progress: ~2600 services pushed (ports 11331-14000), run9 iter5 fine-tuning, iter6 pending"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}

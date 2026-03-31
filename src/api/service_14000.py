@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=13980
-SERVICE="product_analytics"
-DESCRIPTION="Product analytics: Mixpanel for portal, Amplitude for SDK usage, funnels: trial→paid→expand"
+PORT=14000
+SERVICE="port_14000_milestone"
+DESCRIPTION="Port 14000 milestone: 14000 microservices documenting the OCI Robot Cloud journey — milestone commit"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}

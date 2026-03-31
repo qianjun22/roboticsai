@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=13974
-SERVICE="changelog_service"
-DESCRIPTION="Changelog service: automated changelog from conventional commits, email digest to customers on release"
+PORT=13997
+SERVICE="great_robotics_decade"
+DESCRIPTION="The great robotics decade 2025-2035: foundation models unlock general manipulation — OCI positioned"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
