@@ -1,4 +1,4 @@
-"""Sales enablement hub for robotics AI with playbooks, battle cards, ROI calculators, and demo scripts for the sales team
+"""DAgger run399 planner using offline RL BC warmup with online DAgger corrections for sample-efficient robot policy bootstrapping
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11151
-SERVICE = "sales_enablement_hub"
-DESCRIPTION = "Sales enablement hub for robotics AI with playbooks, battle cards, ROI calculators, and demo scripts for the sales team"
+PORT = 11150
+SERVICE = "dagger_run399_planner"
+DESCRIPTION = "DAgger run399 planner using offline RL BC warmup with online DAgger corrections for sample-efficient robot policy bootstrapping"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
