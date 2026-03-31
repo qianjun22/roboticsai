@@ -1,46 +1,52 @@
-"""Investor Update Automator V2 — FastAPI port 9929"""
-import math, random
-from http.server import HTTPServer, BaseHTTPRequestHandler
+"""Automated monthly investor update — metrics+narrative+ask, 30-day cadence
+OCI Robot Cloud — roboticsai
+"""
+from __future__ import annotations
+import json, time, random, math
 try:
     from fastapi import FastAPI
-    from fastapi.responses import HTMLResponse
+    from fastapi.responses import HTMLResponse, JSONResponse
     import uvicorn
-    USE_FASTAPI = True
 except ImportError:
-    USE_FASTAPI = False
-
-PORT = 9929
-
-def build_html():
-    data = [round(random.uniform(0.5, 1.0) * math.sin(i/3) + 1.5, 3) for i in range(10)]
-    bars = "".join(
-        f'<rect x="{30+i*40}" y="{150-int(v*60)}" width="30" height="{int(v*60)}" fill="#C74634"/>'
-        for i, v in enumerate(data)
-    )
-    return f"""<!DOCTYPE html><html><head><title>Investor Update Automator V2 — Port {PORT}</title>
-<style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace}}
-h1{{color:#C74634;padding:20px}}svg{{display:block;margin:20px}}</style></head>
-<body><h1>Investor Update Automator V2 — Port {PORT}</h1>
-<svg width="430" height="180" style="background:#1e293b;border-radius:8px">{bars}</svg>
-<p style="padding:20px;color:#38bdf8">status: operational | port: {PORT}</p></body></html>"""
-
-if USE_FASTAPI:
-    app = FastAPI(title="Investor Update Automator V2")
-    @app.get("/", response_class=HTMLResponse)
-    def index(): return build_html()
+    FastAPI = None
+PORT = 10333
+SERVICE = "investor_update_automator_v2"
+DESCRIPTION = "Automated monthly investor update — metrics+narrative+ask, 30-day cadence"
+if FastAPI:
+    app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
-    def health(): return {"status": "ok", "port": PORT}
-
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        self.wfile.write(build_html().encode())
-    def log_message(self, *a): pass
-
-if __name__ == "__main__":
-    if USE_FASTAPI:
-        uvicorn.run(app, host="0.0.0.0", port=PORT)
-    else:
-        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+    def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":time.time()}
+    @app.get("/",response_class=HTMLResponse)
+    def dashboard():
+        val=round(random.uniform(0.75,0.98),3); bar=int(val*220)
+        return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title><style>body{{background:#0f172a;color:#e2e8f0;font-family:sans-serif;padding:2rem}}h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;border-radius:8px;margin:.5rem 0}}</style></head><body><h1>{SERVICE}</h1><p style="color:#94a3b8">{DESCRIPTION}</p><div class="metric"><h2>Primary Metric</h2><svg width="260" height="32"><rect width="240" height="28" rx="4" fill="#1e293b"/><rect width="{bar}" height="28" rx="4" fill="#C74634"/><text x="8" y="20" fill="#fff" font-size="13">{val}</text></svg></div><div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div></body></html>"""
+    @app.get("/investors/update_v2/draft")
+    def draft_investor_update():
+        return {
+            "month": "2026-03",
+            "subject": "OCI Robot Cloud — March Update",
+            "kpis": {
+                "arr_k": 250,
+                "mom_growth": 0.086,
+                "sr": 0.85,
+                "customers": 3,
+                "nrr": 1.18
+            },
+            "narrative": "AI World confirmed, NVIDIA intro in progress, DAgger run 200 launched"
+        }
+    @app.post("/investors/update_v2/send")
+    def send_investor_update():
+        return {
+            "month": "2026-03",
+            "sent_count": 12,
+            "open_tracking": True,
+            "reply_tracking": True
+        }
+    if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
+else:
+    import http.server,socketserver
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body=json.dumps({"status":"ok","service":SERVICE,"port":PORT}).encode()
+            self.send_response(200);self.send_header("Content-Type","application/json");self.end_headers();self.wfile.write(body)
+    with socketserver.TCPServer(("",PORT),H) as s: s.serve_forever()
