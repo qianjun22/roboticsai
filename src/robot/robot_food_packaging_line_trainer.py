@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12329
-SERVICE = "sales_industry_analyst_relations_hub"
-DESCRIPTION = "Industry analyst relations hub for robotics platform Gartner and Forrester positioning strategy"
+PORT = 12328
+SERVICE = "robot_food_packaging_line_trainer"
+DESCRIPTION = "Training service for food packaging line robot hygienic handling and weight-precise filling"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
