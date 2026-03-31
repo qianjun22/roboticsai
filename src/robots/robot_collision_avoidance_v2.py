@@ -1,4 +1,4 @@
-"""Systematic customer advocacy engine converting high-NPS champions into active references and case study subjects
+"""Collision avoidance v2 with predictive human motion modeling, dynamic replanning in 18ms, and ISO/TS 15066 compliance
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10885
-SERVICE = "customer_advocacy_engine"
-DESCRIPTION = "Systematic customer advocacy engine converting high-NPS champions into active references and case study subjects"
+PORT = 10884
+SERVICE = "robot_collision_avoidance_v2"
+DESCRIPTION = "Collision avoidance v2 with predictive human motion modeling, dynamic replanning in 18ms, and ISO/TS 15066 compliance"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
