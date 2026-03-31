@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13351
-SERVICE = "robotics_strategic_account_planner"
-DESCRIPTION = "Strategic account planner for mapping multi-year expansion paths and executive alignment in top-tier robotics cloud accounts"
+PORT = 13350
+SERVICE = "dagger_run949_planner"
+DESCRIPTION = "DAgger run 949 closed-loop policy improvement planner for online imitation learning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
