@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11905
+PORT = 12363
 SERVICE = "partner_joint_business_plan_tracker"
-DESCRIPTION = "Partner joint business plan tracker for mutual commitment monitoring, milestone achievement scoring, and joint pipeline visibility"
+DESCRIPTION = "Partner joint business plan tracker for robotics platform co-selling commitments and milestone management"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
