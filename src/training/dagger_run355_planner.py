@@ -1,4 +1,4 @@
-"""Customer segmentation engine — ML behavioral segmentation with 8 dynamic segments mapped to personalized GTM plays for 34% higher response rates
+"""DAgger run 355 planner — VAE stochastic latent action encoder capturing bimodal task distributions, 89% SR on bimanual grasping
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10975
-SERVICE = "customer_segmentation_engine"
-DESCRIPTION = "Customer segmentation engine — ML behavioral segmentation with 8 dynamic segments mapped to personalized GTM plays for 34% higher response rates"
+PORT = 10974
+SERVICE = "dagger_run355_planner"
+DESCRIPTION = "DAgger run 355 planner — VAE stochastic latent action encoder capturing bimodal task distributions, 89% SR on bimanual grasping"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
