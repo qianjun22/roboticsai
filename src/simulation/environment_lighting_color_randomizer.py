@@ -1,4 +1,4 @@
-"""Revenue leakage detection platform identifying missed renewals, under-billing, and discount overages
+"""Environment lighting color temperature and spectral distribution randomization for visual diversity
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11097
-SERVICE = "revenue_leakage_detector"
-DESCRIPTION = "Revenue leakage detection platform identifying missed renewals, under-billing, and discount overages"
+PORT = 11096
+SERVICE = "sim_environment_lighting_color_randomizer"
+DESCRIPTION = "Environment lighting color temperature and spectral distribution randomization for visual diversity"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
