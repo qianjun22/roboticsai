@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22777
+PORT = 22333
 SERVICE = "robotics_nuclear_decom_v2"
-DESCRIPTION = "Nuclear decommissioning robotics API v2 — waste classification and containment verification"
+DESCRIPTION = "Nuclear decommissioning robotics API v2 — waste characterization and packaging"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
