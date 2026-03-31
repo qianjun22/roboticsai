@@ -1,4 +1,4 @@
-"""Customer Advocacy Platform — champion identification and reference program management.
+"""Robot Force Torque Controller — 6-axis F/T feedback for compliant manipulation.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10989
-SERVICE = "customer_advocacy_platform"
-DESCRIPTION = "Customer advocacy platform identifying champions, managing reference requests, and tracking advocacy ROI for OCI Robot Cloud."
+PORT = 10988
+SERVICE = "robot_force_torque_controller"
+DESCRIPTION = "6-axis force/torque feedback controller for compliant robot manipulation with adaptive impedance and safety cutoffs."
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
@@ -30,11 +30,12 @@ h1{{color:#C74634}}span{{color:#38bdf8}}</style></head>
 <svg width='240' height='30'><rect width='220' height='20' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='20' fill='#C74634' rx='4'/></svg>
 <p><span>{val}</span> efficiency</p></body></html>"""
-    @app.get("/api/advocacy/champions")
-    def get_champions():
-        return {"champions": [{"account": "RoboStartup A", "score": 92, "nps": 9, "willing_to_reference": True},
-                               {"account": "AutomationCo B", "score": 87, "nps": 10, "willing_to_reference": True}],
-                "total_advocates": 5, "reference_requests_fulfilled": 3}
+    @app.get("/api/ft_controller/wrench")
+    def get_wrench():
+        return {"fx": round(random.uniform(-10, 10), 3), "fy": round(random.uniform(-10, 10), 3),
+                "fz": round(random.uniform(-20, 20), 3), "tx": round(random.uniform(-2, 2), 3),
+                "ty": round(random.uniform(-2, 2), 3), "tz": round(random.uniform(-2, 2), 3),
+                "safety_ok": True, "impedance_active": True}
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
 else:
