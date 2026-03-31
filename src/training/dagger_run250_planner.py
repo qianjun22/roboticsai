@@ -1,4 +1,4 @@
-"""Strategic Account Planner
+"""DAgger Run250 Planner — Bayesian DAgger
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10539
-SERVICE = "strategic_account_planner"
-DESCRIPTION = "Strategic account planner: 12-month revenue plans for top 10 accounts"
+PORT = 10538
+SERVICE = "dagger_run250_planner"
+DESCRIPTION = "DAgger run250: Bayesian DAgger — principled uncertainty drives expert queries, 20% fewer"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        strategic_arr = random.randint(420, 520); bar = int((strategic_arr/600) * 220)
+        sr = round(random.uniform(0.89, 0.94), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Strategic Account ARR Target: ${strategic_arr}k</p>
+<p>Port: {PORT} | Bayesian DAgger SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Strategic ARR Target: ${strategic_arr}k</text></svg>
+<text x='10' y='20' font-size='12'>Bayesian DAgger SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
