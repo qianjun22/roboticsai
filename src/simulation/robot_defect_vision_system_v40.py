@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40282
+PORT = 40402
 SERVICE = "robot_defect_vision_system"
 DESCRIPTION = "Simulation service for defect vision system"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot_defect_vision_system</h1><div class="subtitle">Simulation service for defect vision system port 40282</div></div>
+<div class="header"><h1>robot_defect_vision_system</h1><div class="subtitle">Simulation service for defect vision system port 40402</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 40282</div>
+<div class="metric"><strong>Port:</strong> 40402</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
