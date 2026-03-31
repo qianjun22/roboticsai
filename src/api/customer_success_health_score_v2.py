@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11645
-SERVICE = "customer-success-health-score-v2"
-DESCRIPTION = "V2 customer success health scoring with enhanced ML models, product telemetry signals, and predictive churn indicators"
+PORT = 12469
+SERVICE = "customer_success_health_score_v2"
+DESCRIPTION = "Customer success health score v2 with multi-signal risk detection, renewal likelihood modeling, and proactive intervention triggers"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
