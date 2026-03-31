@@ -1,4 +1,4 @@
-"""Market penetration analytics tracking share by vertical, region, and customer segment
+"""Real-time contact force regulation with adaptive PID control for safe manipulation
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11053
-SERVICE = "market_penetration_tracker"
-DESCRIPTION = "Market penetration analytics tracking share by vertical, region, and customer segment"
+PORT = 11052
+SERVICE = "robot_contact_force_regulator"
+DESCRIPTION = "Real-time contact force regulation with adaptive PID control for safe manipulation"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
