@@ -1,4 +1,4 @@
-"""Revenue recognition tracker for robotics-as-a-service subscription and usage-based billing
+"""DAgger run 320 planner with transformer-based attention policy for long-horizon manipulation tasks
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10835
-SERVICE = "revenue_recognition_tracker"
-DESCRIPTION = "Revenue recognition tracker for robotics-as-a-service subscription and usage-based billing"
+PORT = 10834
+SERVICE = "dagger_run320_planner"
+DESCRIPTION = "DAgger run 320 planner with transformer-based attention policy for long-horizon manipulation tasks"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
