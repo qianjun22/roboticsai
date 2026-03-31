@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15254
-SERVICE = "robot_automated_battery_cell_stacker"
-DESCRIPTION = "Automated robotic simulation for lithium battery cell stacking assembly"
+PORT = 15255
+SERVICE = "robotics_grasp_synthesis_v5"
+DESCRIPTION = "Robotics grasp synthesis service for novel object pick-and-place tasks"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
