@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23471
-SERVICE = "robotics_partner_api_sandbox"
-DESCRIPTION = "Multicloud bridge service for seamless workload portability"
+PORT = 23470
+SERVICE = "robot_flood_barrier_deployment_bot"
+DESCRIPTION = "Models quadruped gait optimization for energy efficiency"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
