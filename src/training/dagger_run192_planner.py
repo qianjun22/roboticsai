@@ -1,5 +1,5 @@
 """
-Partner enablement portal: centralized NVIDIA + SI + OEM portals with co-sell + MDF.
+DAgger run192 planner: contrastive learning DAgger with success-failure pairs.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10307
-SERVICE = "partner_enablement_portal"
-DESCRIPTION = "Centralized partner enablement — NVIDIA + SI + OEM portals with co-sell + MDF"
+PORT = 10306
+SERVICE = "dagger_run192_planner"
+DESCRIPTION = "DAgger run192: contrastive learning DAgger — success-failure pairs, +3% SR from boundary training"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,23 +37,24 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/partners/portal/content")
-    def portal_content():
+    @app.get("/dagger/run192/config")
+    def dagger_run192_config():
         return {
-            "partner_id": "nvidia",
-            "available_assets": ["tech_docs", "integration_guide", "co_sell_playbook", "battle_card"],
-            "views_this_month": 12,
-            "mdf_available_k": 25
+            "run": 192,
+            "strategy": "contrastive_dagger",
+            "contrastive_loss": "NT-Xent",
+            "pair_mining": "near_miss_failures",
+            "sr_target": 0.96
         }
 
-    @app.post("/partners/portal/deal_register")
-    def deal_register():
+    @app.get("/dagger/run192/metrics")
+    def dagger_run192_metrics():
         return {
-            "deal_id": f"deal_{int(time.time())}",
-            "partner": "nvidia",
-            "co_sell_team": "Jun",
-            "mdf_eligible": True,
-            "pipeline_k": 83
+            "success_episodes": 0,
+            "failure_episodes": 0,
+            "contrastive_pairs": 0,
+            "current_sr": 0.0,
+            "status": "planned"
         }
 
     if __name__ == "__main__":
