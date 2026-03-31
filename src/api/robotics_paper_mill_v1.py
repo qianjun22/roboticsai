@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22687
+PORT = 22291
 SERVICE = "robotics_paper_mill_v1"
-DESCRIPTION = "Paper mill robotics API v1 — pulp quality control and reel winding automation"
+DESCRIPTION = "Paper mill robotics API v1 — reel slitting and roll handling automation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
