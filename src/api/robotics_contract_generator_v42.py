@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 42241
+PORT = 42243
 SERVICE = "robotics_contract_generator"
 DESCRIPTION = "GTM service: contract generator"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_contract_generator</h1><div class="subtitle">GTM service: contract generator port 42241</div></div>
+<div class="header"><h1>robotics_contract_generator</h1><div class="subtitle">GTM service: contract generator port 42243</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 42241</div>
+<div class="metric"><strong>Port:</strong> 42243</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
