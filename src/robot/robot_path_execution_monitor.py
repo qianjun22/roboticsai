@@ -1,4 +1,4 @@
-"""Pricing intelligence engine — dynamic pricing optimization based on compute cost, competitor benchmarks, and customer willingness to pay
+"""Robot path execution monitor — tracks joint trajectory deviation, velocity profiles, and path completion metrics during robot motion
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10917
-SERVICE = "pricing_intelligence_engine"
-DESCRIPTION = "Pricing intelligence engine — dynamic pricing optimization based on compute cost, competitor benchmarks, and customer willingness to pay"
+PORT = 10916
+SERVICE = "robot_path_execution_monitor"
+DESCRIPTION = "Robot path execution monitor — tracks joint trajectory deviation, velocity profiles, and path completion metrics during robot motion"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
