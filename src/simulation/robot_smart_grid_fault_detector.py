@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13365
-SERVICE = "robotics_sales_velocity_tracker"
-DESCRIPTION = "Sales velocity tracker for measuring deal count, average size, win rate, and cycle length across robotics cloud pipeline"
+PORT = 13364
+SERVICE = "robot_smart_grid_fault_detector"
+DESCRIPTION = "Robot training for smart grid fault detection with line sensor traversal, arc flash detection, and protective relay testing"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
