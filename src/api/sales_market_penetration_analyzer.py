@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12053
-SERVICE = "sales-market-penetration-analyzer"
-DESCRIPTION = "Sales market penetration analyzer for tracking robotics adoption rates by industry and region"
+PORT = 12539
+SERVICE = "sales_market_penetration_analyzer"
+DESCRIPTION = "Sales market penetration analyzer measuring addressable account coverage, whitespace identification, and vertical expansion opportunities"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
