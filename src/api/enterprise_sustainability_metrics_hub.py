@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11897
-SERVICE = "enterprise_sustainability_metrics_hub"
-DESCRIPTION = "Enterprise sustainability metrics hub for carbon footprint tracking, ESG reporting automation, and net-zero pathway modeling"
+PORT = 12057
+SERVICE = "enterprise-sustainability-metrics-hub"
+DESCRIPTION = "Enterprise sustainability metrics hub for tracking carbon reduction and energy efficiency from robot deployments"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
