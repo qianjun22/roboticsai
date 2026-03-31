@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17614
-SERVICE = "robot_construction_rebar_placer"
-DESCRIPTION = "Construction rebar placement robot with BIM integration and precision positioning"
+PORT = 17615
+SERVICE = "robotics_forum_moderation_bot"
+DESCRIPTION = "Forum moderation bot for robotics developer community quality management"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
