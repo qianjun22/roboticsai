@@ -1,4 +1,4 @@
-"""Pricing page optimization — outcome-based copy +42% conversion, 2.1%→5% target
+"""DAgger run198: sim-to-real DAgger planner — 90% sim corrections, 95% cost reduction, $900 onboard
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10331
-SERVICE = "pricing_page_optimizer"
-DESCRIPTION = "Pricing page optimization — outcome-based copy +42% conversion, 2.1%→5% target"
+PORT = 10330
+SERVICE = "dagger_run198_planner"
+DESCRIPTION = "DAgger run198: sim-to-real DAgger — 90% sim corrections, 95% cost reduction, $900 onboard"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -21,25 +21,26 @@ if FastAPI:
     def health():
         return {"status": "ok", "service": SERVICE, "port": PORT, "ts": time.time()}
 
-    @app.get("/marketing/pricing_page/optimizer")
-    def pricing_optimizer():
+    @app.get("/dagger/run198/config")
+    def run198_config():
         return {
-            "current_conversion": 0.021,
-            "target_conversion": 0.05,
-            "winning_variant": "outcome_based",
-            "ab_test_lift": 0.42,
-            "arr_impact_k": 140
+            "run": 198,
+            "strategy": "sim_to_real_dagger",
+            "sim_pct": 0.90,
+            "real_pct": 0.10,
+            "cost_per_run": 900,
+            "vs_real_only": 9000,
+            "sr_target": 0.91
         }
 
-    @app.post("/marketing/pricing_page/ab_test")
-    def launch_ab_test():
+    @app.get("/dagger/run198/metrics")
+    def run198_metrics():
         return {
-            "test_id": f"ab_{int(time.time())}",
-            "variant_a": "feature_list",
-            "variant_b": "outcome_based",
-            "hypothesis": "outcome_wins_plus_42pct",
-            "duration_days": 30,
-            "status": "launched"
+            "sim_corrections": 0,
+            "real_corrections": 0,
+            "total_cost": 0,
+            "current_sr": 0.0,
+            "status": "planned"
         }
 
     @app.get("/", response_class=HTMLResponse)
