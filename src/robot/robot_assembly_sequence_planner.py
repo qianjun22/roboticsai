@@ -1,4 +1,4 @@
-"""Sales forecast optimizer for robotics AI using pipeline-weighted, historical, and bottom-up forecasting with accuracy tracking
+"""Assembly sequence planner for robot manipulation using task graph decomposition and constraint satisfaction for multi-part assembly
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11189
-SERVICE = "sales_forecast_optimizer"
-DESCRIPTION = "Sales forecast optimizer for robotics AI using pipeline-weighted, historical, and bottom-up forecasting with accuracy tracking"
+PORT = 11188
+SERVICE = "robot_assembly_sequence_planner"
+DESCRIPTION = "Assembly sequence planner for robot manipulation using task graph decomposition and constraint satisfaction for multi-part assembly"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
