@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12415
+PORT = 12587
 SERVICE = "sales_customer_lifetime_value_optimizer"
-DESCRIPTION = "Customer lifetime value optimizer for robotics platform subscription expansion and retention modeling"
+DESCRIPTION = "Sales customer lifetime value optimizer modeling long-term revenue potential with fleet expansion, add-on services, and renewal probability inputs"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
