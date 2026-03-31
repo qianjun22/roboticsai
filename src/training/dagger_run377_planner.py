@@ -1,4 +1,4 @@
-"""Partner margin and discount optimization platform for channel profitability management
+"""DAgger run377 with WaveNet causal dilated convolutions for long-range temporal dependency
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11063
-SERVICE = "partner_margin_optimizer"
-DESCRIPTION = "Partner margin and discount optimization platform for channel profitability management"
+PORT = 11062
+SERVICE = "dagger_run377_planner"
+DESCRIPTION = "DAgger run377 with WaveNet causal dilated convolutions for long-range temporal dependency"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
