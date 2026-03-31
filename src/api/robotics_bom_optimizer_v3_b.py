@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15070
-SERVICE = "robot_autonomous_beehive_inspector"
-DESCRIPTION = "Autonomous robotic beehive inspection system for colony health monitoring and varroa mite detection"
+PORT = 15071
+SERVICE = "robotics_bom_optimizer_v3_b"
+DESCRIPTION = "AI-driven BOM cost optimization with alternative component recommendations for robotics design"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
