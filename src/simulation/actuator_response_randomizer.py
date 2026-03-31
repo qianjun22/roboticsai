@@ -1,4 +1,4 @@
-"""Product roadmap communication platform managing public roadmap, beta program, and feature requests
+"""Actuator bandwidth and response latency randomization for realistic motor dynamics simulation
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11129
-SERVICE = "product_roadmap_communicator"
-DESCRIPTION = "Product roadmap communication platform managing public roadmap, beta program, and feature requests"
+PORT = 11128
+SERVICE = "sim_actuator_response_randomizer"
+DESCRIPTION = "Actuator bandwidth and response latency randomization for realistic motor dynamics simulation"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
