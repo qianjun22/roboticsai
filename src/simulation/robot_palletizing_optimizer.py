@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17655
-SERVICE = "robotics_demand_forecasting_v3"
-DESCRIPTION = "Demand forecasting engine for robotics cloud capacity planning and procurement v3"
+PORT = 17654
+SERVICE = "robot_palletizing_optimizer"
+DESCRIPTION = "Palletizing optimizer with mixed-SKU stacking and stability constraint planning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
