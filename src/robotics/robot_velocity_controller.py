@@ -1,4 +1,4 @@
-"""Pipeline conversion optimizer — OCI Robot Cloud
+"""Robot velocity controller — OCI Robot Cloud
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10789
-SERVICE = "pipeline_conversion_optimizer"
-DESCRIPTION = "Pipeline conversion optimizer — OCI Robot Cloud"
+PORT = 10788
+SERVICE = "robot_velocity_controller"
+DESCRIPTION = "Robot velocity controller — OCI Robot Cloud"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
