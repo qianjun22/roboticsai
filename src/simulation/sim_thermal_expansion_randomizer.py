@@ -1,4 +1,4 @@
-"""Pricing page optimizer with A/B testing, conversion funnel analysis, and self-serve upgrade flow optimization for robotics AI
+"""Simulation thermal expansion and temperature-dependent material property randomizer for robot manipulation in varying thermal environments
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11169
-SERVICE = "pricing_page_optimizer"
-DESCRIPTION = "Pricing page optimizer with A/B testing, conversion funnel analysis, and self-serve upgrade flow optimization for robotics AI"
+PORT = 11168
+SERVICE = "sim_thermal_expansion_randomizer"
+DESCRIPTION = "Simulation thermal expansion and temperature-dependent material property randomizer for robot manipulation in varying thermal environments"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
