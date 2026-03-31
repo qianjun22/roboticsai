@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15278
-SERVICE = "robot_robotic_vertical_farm_light_adjuster"
-DESCRIPTION = "Robotic simulation for dynamic light spectrum adjustment in vertical farms"
+PORT = 15279
+SERVICE = "robotics_kinematic_solver_v6"
+DESCRIPTION = "Robotics kinematic solver for inverse kinematics and Jacobian computation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
