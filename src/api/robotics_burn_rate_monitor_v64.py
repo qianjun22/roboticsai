@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=85313
+PORT=85315
 SERVICE="robotics_burn_rate_monitor_v64"
 DESCRIPTION="GTM: burn_rate_monitor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
