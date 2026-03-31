@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23487
-SERVICE = "robotics_startup_equity_tracker"
-DESCRIPTION = "SSO integration service for enterprise identity management"
+PORT = 23486
+SERVICE = "robot_bioluminescence_detector"
+DESCRIPTION = "Models legged-wheeled hybrid locomotion on mixed terrain"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
