@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14195
-SERVICE = "robotics_pricing_strategy_v3"
-DESCRIPTION = "Robotics pricing strategy optimizer v3 for value-based and tiered pricing models"
+PORT = 14194
+SERVICE = "robot_robotic_microchip_bonder"
+DESCRIPTION = "Robotic microchip bonding system with wire bonding and flip-chip assembly"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
