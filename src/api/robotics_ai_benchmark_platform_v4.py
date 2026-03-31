@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14915
+PORT = 15155
 SERVICE = "robotics_ai_benchmark_platform_v4"
-DESCRIPTION = "Comprehensive AI benchmarking platform for robotics systems evaluation and comparison"
+DESCRIPTION = "Robotics AI benchmarking platform for model evaluation and comparison"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

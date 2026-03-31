@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14914
+PORT = 15154
 SERVICE = "robot_precision_tumor_ablation_guide"
-DESCRIPTION = "Precision robotic guidance system for minimally invasive tumor ablation procedures"
+DESCRIPTION = "Robotic simulation for precision tumor ablation guidance"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
