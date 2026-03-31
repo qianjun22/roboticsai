@@ -1,4 +1,4 @@
-"""Channel Partner Manager — VARs/SIs/distributors; silver/gold/platinum tiers; MDF program.
+"""DAgger Run261 Planner — curriculum DAgger; progressive difficulty scaling with policy maturity.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10583
-SERVICE = "channel_partner_manager"
-DESCRIPTION = "Channel program: 3 silver / 1 gold (NVIDIA ISV) / 0 platinum; MDF ROI 3.2x; 15% margin."
+PORT = 10582
+SERVICE = "dagger_run261_planner"
+DESCRIPTION = "Curriculum DAgger: simple→cluttered→dynamic; 90% SR vs 85% flat DAgger; progressive learner."
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -24,17 +24,17 @@ if _has_fastapi:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        channel_arr = round(random.uniform(45000, 65000))
-        partners = random.randint(3, 5)
-        bar = int(min(channel_arr / 100000, 1.0) * 220)
+        sr = round(random.uniform(0.87, 0.93), 3)
+        epoch = random.randint(6, 15)
+        bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}span.val{{color:#38bdf8}}</style></head><body>
 <h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Channel ARR: <span class="val">${channel_arr:,}</span> | Partners: <span class="val">{partners}</span> | Port: <span class="val">{PORT}</span></p>
+<p>SR: <span class="val">{sr}</span> | Current Epoch: <span class="val">{epoch}</span> | Port: <span class="val">{PORT}</span></p>
 <svg width="260" height="40"><rect width="{bar}" height="30" y="5" fill="#38bdf8" rx="3"/>
-<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">${channel_arr:,}</text></svg>
-<p style="color:#64748b;font-size:12px">POST /api/channel/partner/register | GET /api/channel/partner/performance</p>
+<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{sr}</text></svg>
+<p style="color:#64748b;font-size:12px">Curriculum DAgger run261 — progressive learner strategy</p>
 </body></html>"""
 
     if __name__ == "__main__":
