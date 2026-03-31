@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=76697
+PORT=76699
 SERVICE="robotics_vesting_calculator_v57"
 DESCRIPTION="GTM: vesting_calculator"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
