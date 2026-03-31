@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23491
-SERVICE = "robotics_developer_community_hub"
-DESCRIPTION = "HIPAA-compliant robotics AI bundle for healthcare deployments"
+PORT = 23490
+SERVICE = "robot_deep_trench_pressure_bot"
+DESCRIPTION = "Simulates distributed tactile sensing with fingertip sensor arrays"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
