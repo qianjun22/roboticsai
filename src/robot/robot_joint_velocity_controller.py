@@ -1,4 +1,4 @@
-"""Sales territory optimizer — ICP-scored account assignment balancing opportunity, rep capacity, and relationship fit with quarterly rebalancing
+"""Robot joint velocity controller — trapezoidal and S-curve velocity profiles with dynamic ISO-10218-compliant scaling near humans and obstacles
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10973
-SERVICE = "sales_territory_optimizer"
-DESCRIPTION = "Sales territory optimizer — ICP-scored account assignment balancing opportunity, rep capacity, and relationship fit with quarterly rebalancing"
+PORT = 10972
+SERVICE = "robot_joint_velocity_controller"
+DESCRIPTION = "Robot joint velocity controller — trapezoidal and S-curve velocity profiles with dynamic ISO-10218-compliant scaling near humans and obstacles"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
