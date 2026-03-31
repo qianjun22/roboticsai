@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22066
-SERVICE = "robot_food_packaging_line"
-DESCRIPTION = "Food packaging line robot simulation for hygienic high-speed product handling"
+PORT = 22067
+SERVICE = "robotics_food_processing_v1"
+DESCRIPTION = "Food processing robotics API for automated sorting grading and packaging workflows"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
