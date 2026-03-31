@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23331
-SERVICE = "robotics_platform_ecosystem_v1"
-DESCRIPTION = "Crop intelligence platform powered by agricultural robots"
+PORT = 23330
+SERVICE = "robot_autonomous_fork_lift"
+DESCRIPTION = "Simulates tidal energy harvesting to power seabed crawlers"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
