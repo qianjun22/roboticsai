@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12749
-SERVICE = "customer_expansion_revenue_tracker"
-DESCRIPTION = "Tracks customer expansion revenue signals — upsell opportunities, seat growth, and net revenue retention metrics"
+PORT = 12748
+SERVICE = "robot_semiconductor_wafer_handler"
+DESCRIPTION = "Precision robotic wafer handling simulation for semiconductor fabs — ultra-clean environment constraints and sub-micron positioning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
