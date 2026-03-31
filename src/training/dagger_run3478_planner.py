@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23473
-SERVICE = "robotics_partner_white_label"
-DESCRIPTION = "Kubernetes-native robotics AI operator for cluster management"
+PORT = 23472
+SERVICE = "dagger_run3478_planner"
+DESCRIPTION = "DAgger run 3478 planning and trajectory optimization service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
