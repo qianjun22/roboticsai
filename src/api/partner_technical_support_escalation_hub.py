@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12375
+PORT = 12545
 SERVICE = "partner_technical_support_escalation_hub"
-DESCRIPTION = "Partner technical support escalation hub for robotics integration issue triage and resolution tracking"
+DESCRIPTION = "Partner technical support escalation hub routing complex robotics issues to specialized engineering teams with SLA tracking and resolution analytics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
