@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=56166
+PORT=56286
 SERVICE="robot_cell_sorter_v40"
 DESCRIPTION="Sim: cell_sorter"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
