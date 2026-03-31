@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15109
+PORT = 15307
 SERVICE = "robotics-reward-calc"
-DESCRIPTION = "GTM platform for reward calc automation"
+DESCRIPTION = "GTM platform for reward calc optimization"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -26,9 +26,9 @@ h1{{margin:0;font-size:24px;color:#fff;}}
 .bars{{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:12px;}}
 .bar{{width:20px;border-radius:4px 4px 0 0;}}
 </style></head><body>
-<div class="header"><h1>robotics-reward-calc</h1><div class="sub">GTM platform for reward calc automation</div></div>
+<div class="header"><h1>robotics-reward-calc</h1><div class="sub">GTM platform for reward calc optimization</div></div>
 <div class="content">
-<div class="metric"><b>Port:</b> 15109 | <b>Status:</b> <span style="color:#4ade80">Live</span>
+<div class="metric"><b>Port:</b> 15307 | <b>Status:</b> <span style="color:#4ade80">Live</span>
 <div class="bars">{bars}</div></div>
 </div></body></html>"""
 
