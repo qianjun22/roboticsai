@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=85969
+PORT=85971
 SERVICE="robotics_lp_update_generator_v64"
 DESCRIPTION="GTM: lp_update_generator"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
