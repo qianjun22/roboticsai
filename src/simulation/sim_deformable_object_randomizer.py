@@ -1,4 +1,4 @@
-"""Automated enterprise QBR platform generating GPT-4o narratives with renewal readiness scoring and exec engagement tracking
+"""Deformable object physics randomizer for cloth, soft bodies, cables, and flexible packaging manipulation training
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10897
-SERVICE = "enterprise_qbr_platform"
-DESCRIPTION = "Automated enterprise QBR platform generating GPT-4o narratives with renewal readiness scoring and exec engagement tracking"
+PORT = 10896
+SERVICE = "sim_deformable_object_randomizer"
+DESCRIPTION = "Deformable object physics randomizer for cloth, soft bodies, cables, and flexible packaging manipulation training"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
