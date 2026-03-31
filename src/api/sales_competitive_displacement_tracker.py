@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12293
+PORT = 12455
 SERVICE = "sales_competitive_displacement_tracker"
-DESCRIPTION = "Sales competitive displacement tracker for robotics platform win-loss analysis and competitive intelligence"
+DESCRIPTION = "Sales competitive displacement tracker monitoring win/loss trends, competitive substitution motions, and installed base conversion"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
