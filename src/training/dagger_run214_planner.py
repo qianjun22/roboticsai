@@ -1,4 +1,4 @@
-"""Predictive customer health scoring v2 — 8-signal logistic regression model, AUC 0.91, churn risk interventions
+"""DAgger run214 — ensemble DAgger with 5 policies voting per action, uncertainty routing to human for edge cases
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10395
-SERVICE = "customer_health_score_v2"
-DESCRIPTION = "Predictive customer health scoring v2 — 8-signal logistic regression model, AUC 0.91, churn risk interventions"
+PORT = 10394
+SERVICE = "dagger_run214_planner"
+DESCRIPTION = "DAgger run214 — ensemble DAgger with 5 policies voting per action, uncertainty routing to human for edge cases"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
