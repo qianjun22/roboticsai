@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66706
+PORT=66806
 SERVICE="robot_contamination_checker_v48"
 DESCRIPTION="Sim: contamination_checker"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
