@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=86758
+PORT=86858
 SERVICE="robot_holographic_proj_v65"
 DESCRIPTION="Sim: holographic_proj"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
