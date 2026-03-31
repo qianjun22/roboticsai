@@ -1,4 +1,4 @@
-"""Customer Success Automation — automated CS workflows for health monitoring and intervention.
+"""DAgger Run 284 Planner — GNN interaction DAgger modeling object graph for targeted edge corrections.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10659
-SERVICE = "customer_success_automation"
-DESCRIPTION = "Automated CS workflows for health monitoring and proactive intervention"
+PORT = 10658
+SERVICE = "dagger_run284_planner"
+DESCRIPTION = "GNN interaction DAgger: object interaction graph for targeted edge corrections"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
