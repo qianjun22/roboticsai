@@ -1,16 +1,11 @@
-"""
-Structured channel partner program — VAR (25% margin) / SI (20%) / ISV (15% rev share) /
-distributor (30%), partner enablement kit, performance tracking,
-channel economics (22% blended margin, $8K CAC).
+"""Channel partner program — VAR (25% margin) / SI (20%) / ISV (15% rev share) / distributor (30%), enablement kit (2-day training + 40hr cert + demo env), 20% ARR target via channel, 33% cheaper CAC than direct.
 FastAPI service — OCI Robot Cloud
-Port: 10113
-"""
+Port: 10113"""
 from __future__ import annotations
-import json, random, time
-from datetime import datetime, timedelta
-
+import json, math, random, time
+from datetime import datetime
 try:
-    from fastapi import FastAPI, Body
+    from fastapi import FastAPI
     from fastapi.responses import HTMLResponse, JSONResponse
     import uvicorn
     USE_FASTAPI = True
@@ -24,163 +19,121 @@ PARTNER_TYPES = {
     "VAR": {
         "full_name": "Value-Added Reseller",
         "margin_pct": 25,
-        "revenue_share_pct": None,
-        "annual_quota_usd": 500_000,
+        "rev_share_pct": None,
         "requirements": [
-            "2+ certified robotics engineers",
-            "Active customer base (min 5 accounts)",
-            "$1M+ annual revenue",
-            "OCI certification (Level 2)"
+            "Minimum $500K annual OCI Robot Cloud commitment",
+            "2 certified sales engineers",
+            "Active robotics customer base (min 5 accounts)",
+            "Quarterly business review participation"
         ],
-        "enablement_materials": [
-            "OCI Robot Cloud Sales Deck",
-            "ROI Calculator Tool",
-            "Demo Environment Access (90 days)",
-            "Technical Integration Guide",
-            "Customer Case Studies (3)",
-            "Co-branded Marketing Assets"
-        ],
-        "deal_registration": True,
-        "mdf_eligible": True,
-        "mdf_pct": 3,
-        "support_tier": "Silver"
+        "enablement_materials": {
+            "training_days": 2,
+            "certification_hours": 40,
+            "demo_environment": True,
+            "co_marketing_mdf_usd": 10000,
+            "deal_registration": True,
+            "nfr_licenses": 2
+        }
     },
     "SI": {
         "full_name": "Systems Integrator",
         "margin_pct": 20,
-        "revenue_share_pct": None,
-        "annual_quota_usd": 1_000_000,
+        "rev_share_pct": None,
         "requirements": [
-            "5+ certified robotics engineers",
-            "OCI Architecture certification",
-            "Reference architecture delivery capability",
-            "$5M+ annual services revenue",
-            "3 completed robotics deployments"
+            "Robotics or industrial automation practice",
+            "3 certified solution architects",
+            "Reference customer in manufacturing or logistics",
+            "Joint go-to-market plan submitted annually"
         ],
-        "enablement_materials": [
-            "OCI Robot Cloud Architecture Blueprints",
-            "Integration Playbooks (Manufacturing, Logistics, Healthcare)",
-            "Professional Services Rate Card",
-            "SOW Templates",
-            "Training Lab Access (180 days)",
-            "Pre-sales Engineering Support"
-        ],
-        "deal_registration": True,
-        "mdf_eligible": True,
-        "mdf_pct": 5,
-        "support_tier": "Gold"
+        "enablement_materials": {
+            "training_days": 2,
+            "certification_hours": 40,
+            "demo_environment": True,
+            "co_marketing_mdf_usd": 15000,
+            "deal_registration": True,
+            "nfr_licenses": 3
+        }
     },
     "ISV": {
         "full_name": "Independent Software Vendor",
         "margin_pct": None,
-        "revenue_share_pct": 15,
-        "annual_quota_usd": None,
+        "rev_share_pct": 15,
         "requirements": [
-            "Software product certified on OCI Robot Cloud",
-            "API integration completed",
-            "Listed in OCI Marketplace",
-            "Joint go-to-market plan signed"
+            "Robotics or AI software product",
+            "OCI Marketplace listing",
+            "1 certified integration engineer",
+            "Jointly validated integration test suite"
         ],
-        "enablement_materials": [
-            "OCI Robot Cloud API SDK",
-            "Marketplace Listing Guide",
-            "Co-sell Playbook",
-            "Developer Sandbox (unlimited)",
-            "ISV Technical Workshop (quarterly)"
-        ],
-        "deal_registration": False,
-        "mdf_eligible": False,
-        "mdf_pct": 0,
-        "support_tier": "Developer"
+        "enablement_materials": {
+            "training_days": 2,
+            "certification_hours": 40,
+            "demo_environment": True,
+            "co_marketing_mdf_usd": 5000,
+            "deal_registration": False,
+            "nfr_licenses": 1
+        }
     },
-    "Distributor": {
-        "full_name": "Authorized Distributor",
+    "distributor": {
+        "full_name": "Distributor",
         "margin_pct": 30,
-        "revenue_share_pct": None,
-        "annual_quota_usd": 5_000_000,
+        "rev_share_pct": None,
         "requirements": [
-            "Regional or national coverage",
-            "Established robotics channel network (50+ resellers)",
-            "$20M+ annual revenue",
-            "Dedicated OCI Robot Cloud business unit",
-            "Credit line approval"
+            "Regional or national distribution capability",
+            "Minimum $2M annual commitment",
+            "Dedicated OCI Robot Cloud sales team (min 5 reps)",
+            "Sub-reseller recruitment and enablement responsibility"
         ],
-        "enablement_materials": [
-            "Full Partner Portal Access",
-            "White-label Option (select SKUs)",
-            "Channel Manager Assignment",
-            "Quarterly Business Reviews",
-            "Channel Marketing Fund (shared)",
-            "Priority Deal Registration",
-            "Tier-2 Support Authority"
-        ],
-        "deal_registration": True,
-        "mdf_eligible": True,
-        "mdf_pct": 8,
-        "support_tier": "Platinum"
+        "enablement_materials": {
+            "training_days": 2,
+            "certification_hours": 40,
+            "demo_environment": True,
+            "co_marketing_mdf_usd": 50000,
+            "deal_registration": True,
+            "nfr_licenses": 5
+        }
     }
 }
 
-CHANNEL_ECONOMICS = {
-    "blended_margin_pct": 22,
-    "customer_acquisition_cost_usd": 8_000,
-    "avg_deal_size_usd": 120_000,
-    "avg_sales_cycle_days": 90,
-    "partner_sourced_revenue_pct": 45,
-    "partner_influenced_revenue_pct": 68,
-    "channel_ltv_multiplier": 3.2,
-    "churn_rate_pct": 8,
-    "nps_channel": 62
+PROGRAM_METRICS = {
+    "arr_target_via_channel_pct": 20,
+    "cac_savings_vs_direct_pct": 33,
+    "active_partners_target": 50,
+    "regions": ["NA", "EMEA", "APAC", "LATAM"],
+    "portal": "https://partners.oci-robot-cloud.oracle.com"
 }
 
-TERRITORIES = [
-    "NA-West", "NA-East", "NA-Central",
-    "EMEA-West", "EMEA-East",
-    "APAC-North", "APAC-South",
-    "LATAM"
-]
-
-
-def _generate_onboarding_plan(partner_info: dict, partner_type: str) -> dict:
-    """Generate a structured onboarding plan for a new channel partner."""
-    ptype = PARTNER_TYPES.get(partner_type, PARTNER_TYPES["VAR"])
-    today = datetime.utcnow()
-
-    milestones = [
-        {"week": 1, "milestone": "Partner agreement signed + portal access provisioned"},
-        {"week": 2, "milestone": "OCI certification kickoff + sales enablement workshop"},
-        {"week": 4, "milestone": "Demo environment live + first opportunity registered"},
-        {"week": 8, "milestone": "First co-sell engagement with Oracle field team"},
-        {"week": 12, "milestone": "Quarterly business review + pipeline target set"}
-    ]
-
+def _generate_onboarding_plan(partner_info: dict) -> dict:
+    partner_type = partner_info.get("partner_type", "VAR")
+    company = partner_info.get("company_name", "Partner Co.")
+    region = partner_info.get("region", "NA")
+    pdata = PARTNER_TYPES.get(partner_type, PARTNER_TYPES["VAR"])
     return {
-        "partner_name": partner_info.get("name", "Unknown Partner"),
+        "company": company,
         "partner_type": partner_type,
-        "assigned_territory": partner_info.get("territory", random.choice(TERRITORIES)),
-        "assigned_channel_manager": f"CM-{random.randint(100, 199)}",
+        "region": region,
+        "onboarding_steps": [
+            {"step": 1, "action": "Sign partner agreement", "timeline_days": 3},
+            {"step": 2, "action": "Portal access provisioned", "timeline_days": 1},
+            {"step": 3, "action": f"2-day enablement training ({pdata['enablement_materials']['certification_hours']}hr cert track)", "timeline_days": 5},
+            {"step": 4, "action": "Demo environment activated (OCI tenancy)", "timeline_days": 2},
+            {"step": 5, "action": "First co-sell opportunity registered", "timeline_days": 30},
+            {"step": 6, "action": "QBR scheduled", "timeline_days": 90}
+        ],
         "portal_access": {
-            "url": "https://partner.oracle.com/oci-robot-cloud",
-            "credentials_sent_to": partner_info.get("email", "partner@example.com"),
-            "access_level": ptype["support_tier"]
+            "url": PROGRAM_METRICS["portal"],
+            "credentials_sent_to": partner_info.get("contact_email", "partner@example.com"),
+            "access_level": partner_type
         },
-        "onboarding_milestones": milestones,
-        "expected_first_deal_date": (today + timedelta(days=90)).strftime("%Y-%m-%d"),
-        "annual_quota_usd": ptype["annual_quota_usd"],
-        "margin_pct": ptype["margin_pct"],
-        "revenue_share_pct": ptype["revenue_share_pct"],
-        "mdf_budget_usd": int((ptype["annual_quota_usd"] or 0) * ptype["mdf_pct"] / 100),
-        "enablement_materials": ptype["enablement_materials"],
-        "onboarding_started": today.isoformat()
+        "assigned_territory": {
+            "region": region,
+            "named_accounts": random.randint(10, 40),
+            "channel_manager": f"channel-mgr-{region.lower()}@oracle.com"
+        },
+        "estimated_first_deal_days": random.randint(45, 120)
     }
-
 
 if USE_FASTAPI:
-    app = FastAPI(
-        title="Channel Partner Program",
-        version="1.0.0",
-        description="OCI Robot Cloud structured channel partner program — VAR/SI/ISV/Distributor"
-    )
+    app = FastAPI(title="Channel Partner Program", version="1.0.0")
 
     @app.get("/health")
     def health():
@@ -188,83 +141,52 @@ if USE_FASTAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        rows = "".join(
-            f"<tr><td>{k}</td><td>{v['full_name']}</td>"
-            f"<td>{v['margin_pct']}%</td>"
-            f"<td>${v['annual_quota_usd']:,}</td>"
-            f"<td>{v['support_tier']}</td></tr>"
-            for k, v in PARTNER_TYPES.items()
-            if v['annual_quota_usd']
-        )
         return HTMLResponse(f"""<!DOCTYPE html><html><head><title>Channel Partner Program</title>
-<style>body{{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}
-h1{{color:#C74634}}a{{color:#38bdf8}}
-table{{border-collapse:collapse;margin-top:1rem;width:100%}}td,th{{border:1px solid #334155;padding:0.5rem 1rem;text-align:left}}
-th{{background:#1e293b}}.metric{{display:inline-block;margin:0.5rem 1rem;padding:1rem;background:#1e293b;border-radius:8px}}
-.metric .val{{font-size:2rem;color:#C74634;font-weight:bold}}</style></head><body>
-<h1>Channel Partner Program</h1>
-<p>OCI Robot Cloud · Port {PORT}</p>
-<p><a href="/docs">API Docs</a> | <a href="/health">Health</a> | <a href="/channel/program?partner_type=VAR">Program (VAR)</a></p>
-<h2>Channel Economics</h2>
-<div class="metric"><div class="val">{CHANNEL_ECONOMICS['blended_margin_pct']}%</div><div>Blended Margin</div></div>
-<div class="metric"><div class="val">${CHANNEL_ECONOMICS['customer_acquisition_cost_usd']:,}</div><div>CAC</div></div>
-<div class="metric"><div class="val">${CHANNEL_ECONOMICS['avg_deal_size_usd']:,}</div><div>Avg Deal Size</div></div>
-<div class="metric"><div class="val">{CHANNEL_ECONOMICS['partner_sourced_revenue_pct']}%</div><div>Partner-Sourced Revenue</div></div>
-<h2>Partner Tiers</h2>
-<table><tr><th>Type</th><th>Name</th><th>Margin</th><th>Annual Quota</th><th>Support Tier</th></tr>
-{rows}
-<tr><td>ISV</td><td>Independent Software Vendor</td><td>15% rev share</td><td>N/A</td><td>Developer</td></tr>
-</table></body></html>""")
+<style>body{{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}h1{{color:#C74634}}a{{color:#38bdf8}}</style></head><body>
+<h1>Channel Partner Program</h1><p>OCI Robot Cloud · Port {PORT}</p>
+<p>VAR 25% · SI 20% · ISV 15% rev share · Distributor 30% · 20% ARR via channel · 33% CAC savings</p>
+<p><a href="/docs">API Docs</a> | <a href="/health">Health</a> | <a href="/channel/program">Program Details</a></p></body></html>""")
 
     @app.get("/channel/program")
-    def channel_program(partner_type: str = "VAR"):
-        """partner_type → margins + requirements + enablement_materials."""
-        if partner_type not in PARTNER_TYPES:
-            return JSONResponse(
-                {"error": f"Unknown partner_type '{partner_type}'. Valid: {list(PARTNER_TYPES.keys())}"},
-                status_code=400
-            )
-        ptype = PARTNER_TYPES[partner_type]
+    def channel_program(partner_type: str = None):
+        """Return partner type margins, requirements, and enablement materials."""
+        if partner_type:
+            pt = partner_type.upper() if partner_type.upper() in PARTNER_TYPES else partner_type.lower()
+            if pt not in PARTNER_TYPES:
+                return JSONResponse({"error": f"Unknown partner_type '{partner_type}'. Valid: {list(PARTNER_TYPES.keys())}"}, status_code=400)
+            return JSONResponse({
+                "status": "ok",
+                "port": PORT,
+                "partner_type": pt,
+                **PARTNER_TYPES[pt],
+                "program_metrics": PROGRAM_METRICS,
+                "ts": datetime.utcnow().isoformat()
+            })
         return JSONResponse({
-            "partner_type": partner_type,
-            "full_name": ptype["full_name"],
-            "economics": {
-                "margin_pct": ptype["margin_pct"],
-                "revenue_share_pct": ptype["revenue_share_pct"],
-                "annual_quota_usd": ptype["annual_quota_usd"],
-                "mdf_eligible": ptype["mdf_eligible"],
-                "mdf_pct": ptype["mdf_pct"],
-                "deal_registration": ptype["deal_registration"]
-            },
-            "requirements": ptype["requirements"],
-            "enablement_materials": ptype["enablement_materials"],
-            "support_tier": ptype["support_tier"],
-            "channel_economics_overview": CHANNEL_ECONOMICS,
-            "available_territories": TERRITORIES
+            "status": "ok",
+            "port": PORT,
+            "partner_types": PARTNER_TYPES,
+            "program_metrics": PROGRAM_METRICS,
+            "ts": datetime.utcnow().isoformat()
         })
 
     @app.post("/channel/onboard")
-    def channel_onboard(payload: dict = Body(default={})):
-        """partner_info → onboarding_plan + portal_access + assigned_territory."""
-        partner_info = payload.get("partner_info", {})
-        partner_type = payload.get("partner_type", "VAR")
-
-        if partner_type not in PARTNER_TYPES:
-            return JSONResponse(
-                {"error": f"Unknown partner_type '{partner_type}'. Valid: {list(PARTNER_TYPES.keys())}"},
-                status_code=400
-            )
-
-        plan = _generate_onboarding_plan(partner_info, partner_type)
+    def channel_onboard(body: dict):
+        """Partner info → onboarding_plan + portal_access + assigned_territory."""
+        if not body.get("company_name"):
+            return JSONResponse({"error": "company_name is required"}, status_code=422)
+        if not body.get("partner_type"):
+            return JSONResponse({"error": "partner_type is required (VAR, SI, ISV, distributor)"}, status_code=422)
+        plan = _generate_onboarding_plan(body)
         return JSONResponse({
-            "status": "onboarding_initiated",
-            "onboarding_plan": plan,
-            "ts": datetime.utcnow().isoformat()
+            "status": "ok",
+            "port": PORT,
+            "ts": datetime.utcnow().isoformat(),
+            "onboarding_plan": plan
         })
 
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
-
 else:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -272,9 +194,6 @@ else:
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"status": "ok", "port": PORT}).encode())
-
-        def log_message(self, *a):
-            pass
-
+        def log_message(self, *a): pass
     if __name__ == "__main__":
         HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
