@@ -1,4 +1,4 @@
-"""Partner technical enablement — GR00T API curriculum, OCI A100 sandbox environments, architecture workshops, and dedicated SE support for partners
+"""DAgger run 348 planner — consistency model distilled from diffusion policy for one-step 5ms trajectory generation, 9.4x faster than diffusion
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10947
-SERVICE = "partner_technical_enablement"
-DESCRIPTION = "Partner technical enablement — GR00T API curriculum, OCI A100 sandbox environments, architecture workshops, and dedicated SE support for partners"
+PORT = 10946
+SERVICE = "dagger_run348_planner"
+DESCRIPTION = "DAgger run 348 planner — consistency model distilled from diffusion policy for one-step 5ms trajectory generation, 9.4x faster than diffusion"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
