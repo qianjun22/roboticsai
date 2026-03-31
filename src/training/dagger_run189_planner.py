@@ -1,5 +1,5 @@
 """
-Track NVIDIA partnership milestones — intro to preferred cloud agreement and GTC 2027
+DAgger run189 uncertainty-guided planner: MC dropout targeting, 40 queries beat 100 random
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10295
-SERVICE = "nvidia_partnership_tracker"
-DESCRIPTION = "Track NVIDIA partnership milestones — intro to preferred cloud agreement and GTC 2027"
+PORT = 10294
+SERVICE = "dagger_run189_planner"
+DESCRIPTION = "DAgger run189: uncertainty-guided DAgger — MC dropout targeting, 40 queries beat 100 random"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,24 +37,26 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/partners/nvidia/tracker")
-    def nvidia_tracker():
+    @app.get("/dagger/run189/config")
+    def run189_config():
         return {
-            "milestones": [
-                {"name": "intro_via_greg", "status": "pending", "owner": "Jun"},
-                {"name": "isaac_team_meeting", "status": "not_started"},
-                {"name": "co_engineering_ask", "status": "not_started"},
-                {"name": "preferred_cloud", "status": "aspirational"}
-            ]
+            "run": 189,
+            "strategy": "uncertainty_guided_dagger",
+            "uncertainty_method": "mc_dropout",
+            "forward_passes": 10,
+            "query_top_pct": 0.10,
+            "expert_efficiency_factor": 2.5,
+            "sr_target": 0.96
         }
 
-    @app.get("/partners/nvidia/dashboard")
-    def nvidia_dashboard():
+    @app.get("/dagger/run189/metrics")
+    def run189_metrics():
         return {
-            "completion_pct": 0,
-            "critical_path": "intro_via_greg",
-            "revenue_at_stake_k": 840,
-            "gtc_2027_target": True
+            "corrections_collected": 0,
+            "avg_uncertainty": 0.0,
+            "targeted_queries": 0,
+            "current_sr": 0.0,
+            "status": "planned"
         }
 
     if __name__ == "__main__":
