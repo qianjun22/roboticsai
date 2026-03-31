@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11877
-SERVICE = "partner_revenue_share_optimizer"
-DESCRIPTION = "Partner revenue share optimizer for tiered commission modeling, deal registration management, and incentive program performance analytics"
+PORT = 12151
+SERVICE = "partner-revenue-share-optimizer"
+DESCRIPTION = "Revenue share optimization engine calculating fair partner compensation based on deal contribution, integration depth, and customer success metrics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
