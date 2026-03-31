@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13461
-SERVICE = "robotics_revenue_forecast_v3"
-DESCRIPTION = "Revenue forecast v3 predictive analytics engine for robotics quarterly and annual planning"
+PORT = 13460
+SERVICE = "robot_hospital_pharmacy_dispenser"
+DESCRIPTION = "Automated hospital pharmacy medication dispensing robot with barcode verification and safety interlocks"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
