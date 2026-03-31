@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14918
+PORT = 15158
 SERVICE = "robot_robotic_kidney_stone_crusher"
-DESCRIPTION = "Robotic system for precise non-invasive kidney stone fragmentation and removal"
+DESCRIPTION = "Robotic simulation for kidney stone crushing and removal procedures"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
