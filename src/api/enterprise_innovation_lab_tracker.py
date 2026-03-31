@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11733
+PORT = 11995
 SERVICE = "enterprise-innovation-lab-tracker"
-DESCRIPTION = "Enterprise innovation lab tracker for POC pipeline management, experiment success rates, and productization readiness"
+DESCRIPTION = "Enterprise innovation lab tracker for managing robotics R&D initiatives and technology pilots"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
