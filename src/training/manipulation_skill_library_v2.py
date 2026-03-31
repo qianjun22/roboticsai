@@ -1,4 +1,4 @@
-"""Customer success KPI dashboard — NPS, CSAT, health scores, churn risk model across all accounts
+"""Composable manipulation skill library v2 — 27 primitive skills composing 50+ tasks, 10x transfer efficiency to new embodiments
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10373
-SERVICE = "customer_success_metrics"
-DESCRIPTION = "Customer success KPI dashboard — NPS, CSAT, health scores, churn risk model across all accounts"
+PORT = 10372
+SERVICE = "manipulation_skill_library_v2"
+DESCRIPTION = "Composable manipulation skill library v2 — 27 primitive skills composing 50+ tasks, 10x transfer efficiency to new embodiments"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
