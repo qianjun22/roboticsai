@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11928
-SERVICE = "robot_hazmat_disposal_trainer"
-DESCRIPTION = "Hazardous material disposal robot trainer for chemical identification, containment protocol execution, and remote neutralization in dangerous environments"
+PORT = 12008
+SERVICE = "robot-hazmat-disposal-trainer"
+DESCRIPTION = "Robot training environment for hazardous material disposal and containment operations"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
