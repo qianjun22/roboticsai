@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11999
+PORT = 12221
 SERVICE = "enterprise-knowledge-management-platform"
-DESCRIPTION = "Enterprise knowledge management platform for capturing and sharing robot deployment best practices"
+DESCRIPTION = "Knowledge management platform capturing robot operational learnings, best practices, and tribal knowledge into a searchable enterprise knowledge base"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
