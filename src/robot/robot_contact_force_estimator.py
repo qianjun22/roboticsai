@@ -1,4 +1,4 @@
-"""Customer reference program — tiered advocate management with <48hr reference matching, co-created case studies, and reference health tracking
+"""Robot contact force estimator — model-based contact force estimation from joint torques at 500Hz without dedicated FT sensors, MAE 0.8N
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10957
-SERVICE = "customer_reference_program"
-DESCRIPTION = "Customer reference program — tiered advocate management with <48hr reference matching, co-created case studies, and reference health tracking"
+PORT = 10956
+SERVICE = "robot_contact_force_estimator"
+DESCRIPTION = "Robot contact force estimator — model-based contact force estimation from joint torques at 500Hz without dedicated FT sensors, MAE 0.8N"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
