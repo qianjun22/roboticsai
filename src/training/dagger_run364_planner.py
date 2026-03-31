@@ -1,4 +1,4 @@
-"""Partner Revenue Optimizer — co-sell incentive design and partner ROI maximization.
+"""DAgger Run 364 Planner — transformer decoder cross-attention policy DAgger.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11011
-SERVICE = "partner_revenue_optimizer"
-DESCRIPTION = "Partner revenue optimizer modeling co-sell incentive structures, MDF allocation ROI, and partner tier economics for maximum ecosystem revenue."
+PORT = 11010
+SERVICE = "dagger_run364_planner"
+DESCRIPTION = "DAgger run 364: transformer decoder with cross-attention between visual tokens and proprioception for state-conditioned action chunk prediction."
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
@@ -30,13 +30,18 @@ h1{{color:#C74634}}span{{color:#38bdf8}}</style></head>
 <svg width='240' height='30'><rect width='220' height='20' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='20' fill='#C74634' rx='4'/></svg>
 <p><span>{val}</span> efficiency</p></body></html>"""
-    @app.get("/api/partner_revenue/optimization_summary")
-    def optimization_summary():
-        return {"partner_sourced_arr_target": 1000000, "current_trajectory": 680000,
-                "top_revenue_partners": ["NVIDIA Solutions", "OCI Marketplace", "SI Partner A"],
-                "mdf_roi": 3.8, "referral_fee_effectiveness": 0.72,
-                "recommended_actions": ["increase NVIDIA MDF allocation 20%", "add tier 2 partner bonus", "co-sell training enablement"],
-                "projected_arr_with_optimization": 1100000}
+    @app.get("/api/dagger_run364/status")
+    def status():
+        return {"run": "dagger_run364", "strategy": "transformer-decoder-dagger",
+                "n_heads": 8, "n_layers": 6, "d_model": 256, "chunk_size": 16,
+                "target_sr": 0.92, "current_sr": round(random.uniform(0.80, 0.92), 3),
+                "cross_attention_entropy": round(random.uniform(1.8, 2.6), 4)}
+    @app.post("/training/dagger_run364/decoder_correct")
+    def decoder_correct():
+        return {"visual_tokens": random.randint(196, 256),
+                "action_chunk": [[round(random.uniform(-1, 1), 3) for _ in range(7)] for _ in range(4)],
+                "cross_attention_peaks": ["ee_position", "target_object"],
+                "chunk_confidence": round(random.uniform(0.82, 0.96), 3)}
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
 else:
