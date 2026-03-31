@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22286
+PORT = 12980
 SERVICE = "robot_autonomous_forklift"
-DESCRIPTION = "Autonomous forklift robot simulation — pallet handling in dynamic warehouse"
+DESCRIPTION = "Autonomous forklift robot controller — pallet detection, load balancing, route optimization, and warehouse map integration for indoor logistics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,7 +16,12 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title><style>body{{margin:0;font-family:sans-serif;background:#0f172a;color:#e2e8f0}}header{{background:#C74634;padding:16px 24px}}h1{{margin:0;font-size:1.4rem}}.dash{{display:flex;gap:12px;padding:24px;align-items:flex-end;height:160px}}.bar{{width:40px;border-radius:4px 4px 0 0;transition:height .3s}}.info{{padding:0 24px;color:#94a3b8}}</style></head><body><header><h1>OCI Robot Cloud — {SERVICE}</h1></header><div class="dash">{bars}</div><div class="info"><p>Port: {PORT} | {DESCRIPTION}</p></div></body></html>"""
+    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
+<style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:2rem}}
+h1{{color:#C74634;font-size:1.5rem}}p{{color:#94a3b8}}.chart{{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:1rem}}.bar{{width:24px;border-radius:3px 3px 0 0}}</style></head>
+<body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p><p>Port: {PORT}</p><div class="chart">{bars}</div>
+<script>setInterval(()=>document.querySelectorAll('.bar').forEach(b=>b.style.height=Math.random()*80+10+'%'),1200)</script>
+</body></html>"""
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)
