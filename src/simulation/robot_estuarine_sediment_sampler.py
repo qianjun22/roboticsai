@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23499
-SERVICE = "robotics_developer_sample_gallery"
-DESCRIPTION = "Clinical trial automation platform for surgical robotics validation"
+PORT = 23498
+SERVICE = "robot_estuarine_sediment_sampler"
+DESCRIPTION = "Simulates photovoltaic panel surface cleaning robot dynamics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
