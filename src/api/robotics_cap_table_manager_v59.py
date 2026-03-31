@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=79153
+PORT=79155
 SERVICE="robotics_cap_table_manager_v59"
 DESCRIPTION="GTM: cap_table_manager"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
