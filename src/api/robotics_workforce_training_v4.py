@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15186
-SERVICE = "robot_automated_spine_fusion_guide"
-DESCRIPTION = "Automated robotic simulation for spine fusion surgical guidance"
+PORT = 15187
+SERVICE = "robotics_workforce_training_v4"
+DESCRIPTION = "Robotics workforce training management and skills certification platform"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
