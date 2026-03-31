@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13397
-SERVICE = "robotics_competitive_intelligence_v3"
-DESCRIPTION = "Competitive intelligence v3 platform for robotics market landscape and competitor tracking"
+PORT = 13396
+SERVICE = "robot_coastal_erosion_monitor"
+DESCRIPTION = "Coastal erosion monitoring robot with LiDAR shoreline mapping and change detection"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
