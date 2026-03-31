@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12619
-SERVICE = "enterprise-robotics-vendor-scorecard"
-DESCRIPTION = "Scorecard platform for evaluating robotics hardware and software vendors against enterprise procurement criteria"
+PORT = 12618
+SERVICE = "dagger-run766-planner"
+DESCRIPTION = "DAgger run 766 online learning planner — closed-loop policy correction with real-time human intervention"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
