@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15507
-SERVICE = "robotics_endpoint_security_v3"
-DESCRIPTION = "Endpoint security management for robotics device fleet protection"
+PORT = 15506
+SERVICE = "robot_2d_material_transfer_bot"
+DESCRIPTION = "Simulation service for 2D material transfer and handling robotics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
