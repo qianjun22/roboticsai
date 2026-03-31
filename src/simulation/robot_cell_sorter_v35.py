@@ -1,7 +1,7 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=50047
-SERVICE="robotics_geographic_expansion_v35"
-DESCRIPTION="GTM: geographic_expansion"
+PORT=50046
+SERVICE="robot_cell_sorter_v35"
+DESCRIPTION="Sim: cell_sorter"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health():
