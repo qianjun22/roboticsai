@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=12858
-SERVICE="oci_robot_cloud_pricing_v2"
-DESCRIPTION="OCI Robot Cloud pricing v2 — aligned with OCI billing model"
+PORT=12878
+SERVICE="lora_pricing_v2"
+DESCRIPTION="LoRA pricing v2 — $50/task fine-tune vs $500 full finetune"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
