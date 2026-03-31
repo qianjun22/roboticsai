@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11719
-SERVICE = "sales-enablement-content-optimizer"
-DESCRIPTION = "Sales enablement content optimizer for battle card effectiveness, collateral usage, and win rate correlation"
+PORT = 11867
+SERVICE = "sales_enablement_content_optimizer"
+DESCRIPTION = "Sales enablement content optimizer for battle card effectiveness tracking, competitive response automation, and content-to-deal attribution"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
