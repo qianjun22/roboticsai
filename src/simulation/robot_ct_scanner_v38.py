@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=53850
+PORT=53970
 SERVICE="robot_ct_scanner_v38"
 DESCRIPTION="Sim: ct_scanner"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
