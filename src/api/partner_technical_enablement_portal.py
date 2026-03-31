@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12311
+PORT = 12457
 SERVICE = "partner_technical_enablement_portal"
-DESCRIPTION = "Partner technical enablement portal for robotics API documentation and developer onboarding"
+DESCRIPTION = "Partner technical enablement portal providing robotics API documentation, sandbox environments, and certification tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
