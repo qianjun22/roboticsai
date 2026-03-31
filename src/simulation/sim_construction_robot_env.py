@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11640
+PORT = 11696
 SERVICE = "sim-construction-robot-env"
-DESCRIPTION = "Construction robot simulation environment with material handling, structural assembly, and safety compliance monitoring"
+DESCRIPTION = "Construction site robot simulation environment for structural assembly and safety compliance scenarios"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
