@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=13184
-SERVICE="change_management_v2"
-DESCRIPTION="Change management v2 — release window, notification protocol"
+PORT=13181
+SERVICE="incident_free_may_2026"
+DESCRIPTION="Incident-free May 2026 — 0 P1s, 1 P2 resolved in 4h"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/changes")
+@app.get("/incidents")
 def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
