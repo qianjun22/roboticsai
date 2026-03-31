@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14922
+PORT = 15162
 SERVICE = "robot_automated_blood_clot_remover"
-DESCRIPTION = "Automated robotic system for targeted blood clot detection and removal in vascular procedures"
+DESCRIPTION = "Automated robotic simulation for blood clot removal procedures"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

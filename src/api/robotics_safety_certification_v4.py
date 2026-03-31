@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14923
+PORT = 15163
 SERVICE = "robotics_safety_certification_v4"
-DESCRIPTION = "Safety certification management and tracking platform for robotics deployments"
+DESCRIPTION = "Robotics safety certification management and compliance tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
