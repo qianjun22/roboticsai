@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=31666
+PORT=31766
 SERVICE="robot_microscope_navigator_v19"
 DESCRIPTION="Sim: microscope_navigator"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
