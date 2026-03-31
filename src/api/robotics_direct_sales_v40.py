@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=56225
+PORT=56227
 SERVICE="robotics_direct_sales_v40"
 DESCRIPTION="GTM: direct_sales"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
