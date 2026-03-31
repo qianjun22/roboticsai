@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23463
-SERVICE = "robotics_partner_deal_registration"
-DESCRIPTION = "API gateway management for robotics platform developer onboarding"
+PORT = 23462
+SERVICE = "robot_tsunami_warning_buoy_bot"
+DESCRIPTION = "Models grasp stability under friction and external perturbations"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
