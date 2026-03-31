@@ -1,4 +1,4 @@
-"""Enterprise SaaS contract lifecycle management — MSA, SOW, DPA, renewal tracking, at-risk contract alerts
+"""CLIP-based semantic grasping policy — pick objects by natural language description across 50 object categories
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10385
-SERVICE = "enterprise_contract_manager"
-DESCRIPTION = "Enterprise SaaS contract lifecycle management — MSA, SOW, DPA, renewal tracking, at-risk contract alerts"
+PORT = 10384
+SERVICE = "semantic_grasping_policy"
+DESCRIPTION = "CLIP-based semantic grasping policy — pick objects by natural language description across 50 object categories"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
