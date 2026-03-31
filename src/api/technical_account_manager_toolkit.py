@@ -1,4 +1,4 @@
-"""Sim articulation physics randomizer — joint stiffness, damping, friction, backlash, and drive model randomization for dynamics-robust robot policies
+"""Technical account manager toolkit — customer technical health scoring, escalation management, integration support, and 90-day success plans
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10944
-SERVICE = "sim_articulation_physics_randomizer"
-DESCRIPTION = "Sim articulation physics randomizer — joint stiffness, damping, friction, backlash, and drive model randomization for dynamics-robust robot policies"
+PORT = 10945
+SERVICE = "technical_account_manager_toolkit"
+DESCRIPTION = "Technical account manager toolkit — customer technical health scoring, escalation management, integration support, and 90-day success plans"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
