@@ -1,4 +1,4 @@
-"""Revenue Forecast Model — ML ensemble revenue forecasting with scenario analysis.
+"""Sim Environment Generator — LLM-directed procedural generation of diverse simulation environments.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10661
-SERVICE = "revenue_forecast_model"
-DESCRIPTION = "ML ensemble revenue forecasting with scenario analysis and accuracy tracking"
+PORT = 10660
+SERVICE = "sim_environment_generator"
+DESCRIPTION = "LLM-directed procedural generation of diverse simulation environments"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
