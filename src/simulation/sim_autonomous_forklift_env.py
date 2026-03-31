@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11884
-SERVICE = "sim_autonomous_forklift_env"
-DESCRIPTION = "Autonomous forklift simulation environment for pallet detection, load balancing, and warehouse aisle navigation"
+PORT = 12012
+SERVICE = "sim-autonomous-forklift-env"
+DESCRIPTION = "Autonomous forklift simulation environment for warehouse logistics and pallet handling robot training"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
