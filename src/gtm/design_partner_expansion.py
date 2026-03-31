@@ -1,4 +1,4 @@
-"""Whole-Body Motion Planner
+"""Design Partner Expansion
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10548
-SERVICE = "whole_body_motion_planner"
-DESCRIPTION = "Whole-body motion planner: 10-DOF arm+base joint planning for mobile manipulation"
+PORT = 10549
+SERVICE = "design_partner_expansion"
+DESCRIPTION = "Design partner expansion: 1→5 structured program, NVIDIA-referred + direct pipeline"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        sr = round(random.uniform(0.88, 0.94), 3); bar = int(sr * 220)
+        partners = random.randint(2, 4); bar = int((partners/5) * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Whole-Body SR: {sr}</p>
+<p>Port: {PORT} | Design Partners: {partners}/5 target</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Whole-Body SR: {sr}</text></svg>
+<text x='10' y='20' font-size='12'>Design Partners: {partners}/5</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
