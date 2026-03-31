@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=31009
+PORT=31011
 SERVICE="robotics_contract_redline_v19"
 DESCRIPTION="GTM: contract_redline"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
