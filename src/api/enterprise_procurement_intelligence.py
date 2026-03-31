@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11787
-SERVICE = "enterprise-procurement-intelligence"
-DESCRIPTION = "Enterprise procurement intelligence for vendor risk scoring, spend optimization, and contract compliance"
+PORT = 11847
+SERVICE = "enterprise_procurement_intelligence"
+DESCRIPTION = "Enterprise procurement intelligence platform for vendor performance scoring, contract optimization, and spend analytics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
