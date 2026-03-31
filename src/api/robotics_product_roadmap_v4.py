@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15210
-SERVICE = "robot_robotic_wetland_biodiversity_counter"
-DESCRIPTION = "Robotic simulation for wetland biodiversity counting and species mapping"
+PORT = 15211
+SERVICE = "robotics_product_roadmap_v4"
+DESCRIPTION = "Robotics product roadmap planning and feature prioritization service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
