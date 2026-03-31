@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=83625
+PORT=83627
 SERVICE="robotics_cohort_analytics_v62"
 DESCRIPTION="GTM: cohort_analytics"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
