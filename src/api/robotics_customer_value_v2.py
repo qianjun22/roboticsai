@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13568
-SERVICE = "robot_coastal_erosion_monitor"
-DESCRIPTION = "Autonomous robot coastal erosion monitor — shoreline change detection, sediment transport analysis, sea level impact modeling, and early warning for coastal infrastructure protection"
+PORT = 13569
+SERVICE = "robotics_customer_value_v2"
+DESCRIPTION = "Robotics customer value platform v2 — delivered outcome measurement, success metrics tracking, value realization reporting, and ROI validation for robotics deployments"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
