@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66114
+PORT=66214
 SERVICE="robot_metrology_arm_v48"
 DESCRIPTION="Sim: metrology_arm"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
