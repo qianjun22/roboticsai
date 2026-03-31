@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41946
+PORT = 42066
 SERVICE = "robot_forklift_navigation"
 DESCRIPTION = "Simulation service for forklift navigation"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot_forklift_navigation</h1><div class="subtitle">Simulation service for forklift navigation port 41946</div></div>
+<div class="header"><h1>robot_forklift_navigation</h1><div class="subtitle">Simulation service for forklift navigation port 42066</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 41946</div>
+<div class="metric"><strong>Port:</strong> 42066</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
