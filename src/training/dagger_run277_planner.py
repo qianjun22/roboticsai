@@ -1,4 +1,4 @@
-"""Customer Expansion Playbook — systematic upsell and cross-sell motions for customer expansion.
+"""DAgger Run 277 Planner — causal world model DAgger using learned causal structure for targeted interventions.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10647
-SERVICE = "customer_expansion_playbook"
-DESCRIPTION = "Systematic upsell and cross-sell motions for customer expansion"
+PORT = 10646
+SERVICE = "dagger_run277_planner"
+DESCRIPTION = "Causal world model DAgger: learned causal structure for targeted interventions"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
