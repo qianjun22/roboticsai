@@ -1,45 +1,49 @@
 #!/usr/bin/env python3
-"""eval_groot_cl.py — Closed-loop eval with Genesis 0.4.3+ API
+"""eval_groot_cl.py — Correct closed-loop eval (Genesis 0.4.3+, multipart server API)
 OCI Robot Cloud — roboticsai
 
-Usage:
-  python3 scripts/eval_groot_cl.py                         # prod (port 8001)
-  python3 scripts/eval_groot_cl.py --server-url http://127.0.0.1:8003 --label dagger_run5
+Server API: POST /predict multipart/form-data
+  image       : JPEG file upload
+  instruction : str
 
-Results (2026-03-31):
-  prod checkpoint-5000: SR=85% (17/20), 235ms
+Returns: { arm: (16,7), gripper: (16,2), latency_ms, checkpoint }
+
+Usage:
+  python3 scripts/eval_groot_cl.py                           # prod port 8001
+  python3 scripts/eval_groot_cl.py --server-url http://127.0.0.1:8003 --label dagger5
 """
-import time, json, base64, statistics, argparse
+import time, statistics, argparse, io
 import numpy as np
 import requests
 from PIL import Image
-import io
 
 MAX_STEPS = 200
-LIFT_THRESH = 0.78  # meters — cube center z
+LIFT_THRESH = 0.78   # cube center z (meters) — success threshold
 N_EPISODES = 20
 
 def query(server_url, rgb_array, lang="pick up the cube"):
-    """Query GR00T server, return (arm_chunk, grip_chunk, ok)."""
+    """Query GR00T server via multipart form-data. Returns (arm, grip, latency_s, ok)."""
     img = Image.fromarray(rgb_array.astype(np.uint8))
     buf = io.BytesIO()
     img.save(buf, format="JPEG", quality=85)
-    b64 = base64.b64encode(buf.getvalue()).decode()
+    buf.seek(0)
     try:
-        r = requests.post(f"{server_url}/predict",
-                          json={"image": b64, "lang_instruction": lang},
-                          timeout=2.0)
+        t0 = time.time()
+        r = requests.post(
+            f"{server_url}/predict",
+            files={"image": ("frame.jpg", buf, "image/jpeg")},
+            data={"instruction": lang},
+            timeout=5.0,
+        )
+        lat = time.time() - t0
         d = r.json()
-        arm = np.array(d["arm"])    # shape (16, 7)
-        grip = np.array(d["gripper"])  # shape (16, 2)
-        return arm, grip, True
+        return np.array(d["arm"]), np.array(d["gripper"]), lat, True
     except Exception:
-        return None, None, False
+        return None, None, 0.0, False
 
 def get_cube_z(cube):
     try:
-        pos = cube.get_pos()
-        return float(pos[2])
+        return float(cube.get_pos()[2])
     except Exception:
         return 0.0
 
@@ -58,12 +62,12 @@ def main():
     policy_failures = 0
 
     for ep in range(args.n_episodes):
-        # Genesis 0.4.3+: sim_freq/control_freq moved to SimOptions(dt=1/freq)
+        # Genesis 0.4.3+: use SimOptions(dt=1/freq) instead of sim_freq= kwarg
         scene = gs.Scene(
             show_viewer=False,
-            sim_options=gs.options.SimOptions(dt=0.02, substeps=1),
+            sim_options=gs.options.SimOptions(dt=0.02, substeps=2),
         )
-        plane = scene.add_entity(gs.morphs.Plane())
+        scene.add_entity(gs.morphs.Plane())
         robot = scene.add_entity(
             gs.morphs.MJCF(file="xml/franka_emika_panda/panda.xml"),
         )
@@ -82,18 +86,18 @@ def main():
         chunk_step = 0
 
         for step in range(MAX_STEPS):
-            # cam.render(rgb=True) returns 4-tuple (rgb, depth, seg, normal)
-            rgb_result = cam.render(rgb=True)
-            rgb = rgb_result[0] if isinstance(rgb_result, tuple) else rgb_result
+            # cam.render(rgb=True) → 4-tuple in Genesis 0.4+
+            rgb_res = cam.render(rgb=True)
+            rgb = rgb_res[0] if isinstance(rgb_res, tuple) else rgb_res
             if rgb is None:
                 break
 
             if arm_chunk is None or chunk_step >= 16:
-                t0 = time.time()
-                arm_chunk, grip_chunk, ok = query(args.server_url, rgb)
-                latencies.append(time.time() - t0)
+                arm_chunk, grip_chunk, lat, ok = query(args.server_url, rgb)
                 chunk_step = 0
-                if not ok:
+                if ok:
+                    latencies.append(lat)
+                else:
                     policy_failures += 1
                     arm_chunk = None
                     scene.step()
@@ -115,7 +119,7 @@ def main():
 
     sr = successes / args.n_episodes * 100
     avg_lat = statistics.mean(latencies) * 1000 if latencies else 0
-    pfr = policy_failures / max(len(latencies), 1)
+    pfr = policy_failures / max(len(latencies) + policy_failures, 1)
 
     print(f"\n{'='*50}")
     print(f"[{args.label.upper()}] EVAL COMPLETE")
