@@ -1,4 +1,4 @@
-"""Customer reference program managing champion calls, case studies, and proof-based selling assets
+"""DAgger run393 with attention-based goal-conditioned BC for flexible multi-modal goal specification
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11127
-SERVICE = "customer_reference_program"
-DESCRIPTION = "Customer reference program managing champion calls, case studies, and proof-based selling assets"
+PORT = 11126
+SERVICE = "dagger_run393_planner"
+DESCRIPTION = "DAgger run393 with attention-based goal-conditioned BC for flexible multi-modal goal specification"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
