@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=77441
+PORT=77443
 SERVICE="robotics_term_sheet_negotiator_v57"
 DESCRIPTION="GTM: term_sheet_negotiator"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
