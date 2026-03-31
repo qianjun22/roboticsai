@@ -1,4 +1,4 @@
-"""Partner Program Optimizer — tiering design, incentive structures, and ecosystem economics.
+"""Sim Environment Complexity Randomizer — scene complexity curriculum for progressive training.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11025
-SERVICE = "partner_program_optimizer"
-DESCRIPTION = "Partner program optimizer designing tier economics, co-sell incentives, and MDF allocation to maximize ecosystem revenue for OCI Robot Cloud."
+PORT = 11024
+SERVICE = "sim_environment_complexity_randomizer"
+DESCRIPTION = "Environment complexity domain randomization with curriculum scheduling from simple to complex scenes for progressive manipulation policy training."
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
@@ -30,13 +30,15 @@ h1{{color:#C74634}}span{{color:#38bdf8}}</style></head>
 <svg width='240' height='30'><rect width='220' height='20' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='20' fill='#C74634' rx='4'/></svg>
 <p><span>{val}</span> efficiency</p></body></html>"""
-    @app.get("/api/partner_program/tier_analysis")
-    def tier_analysis():
-        return {"tiers": {"registered": {"requirements": "certification", "benefits": "10% referral fee", "count": 5},
-                          "silver": {"requirements": "2 deals + 2 certified", "benefits": "15% fee + MDF $5K", "count": 2},
-                          "gold": {"requirements": "5 deals + $500K ARR", "benefits": "20% fee + MDF $20K + co-sell", "count": 1}},
-                "program_roi": 3.8, "top_optimization": "increase silver→gold pathway clarity",
-                "mdf_total": 50000, "mdf_utilized_pct": 0.64}
+    @app.get("/simulation/env_complexity/current_level")
+    def current_level():
+        level = random.randint(1, 10)
+        return {"complexity_level": level, "n_objects": level * 2,
+                "clutter_density": round(level * 0.08, 2),
+                "lighting_variation": level > 4,
+                "distractor_count": max(0, level - 3),
+                "curriculum_progress": round(level / 10, 1),
+                "transfer_sr_improvement": round(0.08 + level * 0.02, 2)}
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
 else:
