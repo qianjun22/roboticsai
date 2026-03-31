@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=30690
+PORT=30790
 SERVICE="robot_tablet_press_v18"
 DESCRIPTION="Sim: tablet_press"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
