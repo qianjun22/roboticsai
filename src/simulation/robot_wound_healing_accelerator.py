@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15414
+PORT = 15734
 SERVICE = "robot_wound_healing_accelerator"
-DESCRIPTION = "Simulation service for wound healing acceleration robotics"
+DESCRIPTION = "Robotic wound healing acceleration with precision biomedical intervention"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

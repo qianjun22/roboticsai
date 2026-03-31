@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15419
+PORT = 15735
 SERVICE = "robotics_blockchain_provenance_v3"
-DESCRIPTION = "Blockchain-based provenance tracking for robotics data and models"
+DESCRIPTION = "Blockchain provenance v3 for immutable robotics data lineage tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
