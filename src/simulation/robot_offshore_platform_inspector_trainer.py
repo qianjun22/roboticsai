@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11904
-SERVICE = "robot_offshore_platform_inspector_trainer"
-DESCRIPTION = "Offshore platform inspection robot trainer for corrosion detection, structural integrity assessment, and remote valve operation"
+PORT = 12160
+SERVICE = "robot-offshore-platform-inspector-trainer"
+DESCRIPTION = "Training environment for robotic offshore oil platform inspection — corrosion detection, flare stack inspection, subsea pipeline monitoring, and emergency response"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
