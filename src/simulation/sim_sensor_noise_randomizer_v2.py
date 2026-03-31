@@ -1,4 +1,4 @@
-"""Developer community platform — Discord, GitHub Discussions, and forum management with contribution tracking, developer spotlights, and community health scoring
+"""Sim sensor noise randomizer v2 — correlated noise models with temporal artifacts for camera, depth, IMU, and sensor fusion robustness
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10953
-SERVICE = "developer_community_platform"
-DESCRIPTION = "Developer community platform — Discord, GitHub Discussions, and forum management with contribution tracking, developer spotlights, and community health scoring"
+PORT = 10952
+SERVICE = "sim_sensor_noise_randomizer_v2"
+DESCRIPTION = "Sim sensor noise randomizer v2 — correlated noise models with temporal artifacts for camera, depth, IMU, and sensor fusion robustness"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
