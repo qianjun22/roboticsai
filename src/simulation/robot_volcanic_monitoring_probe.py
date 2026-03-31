@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13525
-SERVICE = "robotics_partner_enablement_v3"
-DESCRIPTION = "Partner enablement service v3 — delivers training content, certification workflows, and joint go-to-market resources for robotics ecosystem partners"
+PORT = 13524
+SERVICE = "robot_volcanic_monitoring_probe"
+DESCRIPTION = "Volcanic monitoring probe robot simulation — autonomous deployment near active volcanoes for gas sampling, seismic sensing, and eruption prediction"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
