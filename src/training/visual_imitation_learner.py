@@ -1,4 +1,4 @@
-"""OCI Marketplace Listing
+"""Visual Imitation Learner
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10509
-SERVICE = "oci_marketplace_listing"
-DESCRIPTION = "OCI Marketplace listing: SaaS listing, pricing tiers, conversion analytics"
+PORT = 10508
+SERVICE = "visual_imitation_learner"
+DESCRIPTION = "Visual imitation learner: learn from YouTube videos via inverse dynamics model"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        cvr = round(random.uniform(0.12, 0.16), 3); bar = int(cvr * 220 * 5)
+        sr = round(random.uniform(0.80, 0.87), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Trial→Paid CVR: {cvr}</p>
+<p>Port: {PORT} | VIL + Fine-tune SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Marketplace CVR: {cvr}</text></svg>
+<text x='10' y='20' font-size='12'>VIL Pre-train SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
