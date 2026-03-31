@@ -1,4 +1,4 @@
-"""GTM execution tracker — real-time dashboard for go-to-market milestone progress, pipeline conversion, and revenue targets
+"""DAgger run 340 planner — energy-based model policy with Langevin dynamics sampling for multimodal action distributions
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10915
-SERVICE = "gtm_execution_tracker"
-DESCRIPTION = "GTM execution tracker — real-time dashboard for go-to-market milestone progress, pipeline conversion, and revenue targets"
+PORT = 10914
+SERVICE = "dagger_run340_planner"
+DESCRIPTION = "DAgger run 340 planner — energy-based model policy with Langevin dynamics sampling for multimodal action distributions"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
