@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12544
-SERVICE = "robot_smart_grid_substation_inspector"
-DESCRIPTION = "Robot smart grid substation inspector simulation with thermal anomaly detection, SF6 gas leak monitoring, and transformer health assessment"
+PORT = 12656
+SERVICE = "robot-smart-grid-substation-inspector"
+DESCRIPTION = "Robotic inspection system for smart grid substations — thermal imaging, SF6 leak detection, and breaker diagnostics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -15,7 +15,7 @@ def health():
 
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
-    bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
+    bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}}</div>' for i in range(8))
     return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:2rem}}
 h1{{color:#C74634;font-size:1.5rem}}p{{color:#94a3b8}}.chart{{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:1rem}}.bar{{width:24px;border-radius:3px 3px 0 0}}</style></head>
