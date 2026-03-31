@@ -37,22 +37,22 @@ INSTRUCTION = "pick the red cube from the table"
 # Robot home pose matching training SDG
 Q_HOME = np.array([0.0, -0.4, 0.0, -2.1, 0.0, 1.8, 0.785, 0.04, 0.04])
 
-def query(server_url, rgb_array):
-    """Query GR00T server via multipart form-data."""
+def query(server_url, rgb_array, lang='pick up the cube'):
     img = Image.fromarray(rgb_array.astype(np.uint8))
     buf = io.BytesIO()
-    img.save(buf, "JPEG", quality=85)
+    img.save(buf, format='JPEG', quality=85)
     buf.seek(0)
-    t0 = time.time()
-    r = requests.post(
-        f"{server_url}/predict",
-        files={"image": ("frame.jpg", buf, "image/jpeg")},
-        data={"instruction": INSTRUCTION},
-        timeout=5.0,
-    )
-    lat = time.time() - t0
-    d = r.json()
-    return np.array(d["arm"]), np.array(d["gripper"]), lat, True
+    try:
+        r = requests.post(f'{server_url}/predict',
+                          files={'image': ('frame.jpg', buf, 'image/jpeg')},
+                          data={'instruction': lang},
+                          timeout=5.0)
+        d = r.json()
+        arm = np.array(d['arm'])
+        grip = np.array(d['gripper'])
+        return arm, grip, True
+    except Exception as e:
+        return None, None, False
 
 def get_cube_z(cube):
     try:
@@ -118,17 +118,10 @@ def main():
                 break
 
             if arm_chunk is None or chunk_step >= 16:
-                try:
-                    arm_chunk, grip_chunk, lat, ok = query(args.server_url, rgb)
-                    chunk_step = 0
-                    if ok:
-                        latencies.append(lat)
-                    else:
-                        policy_failures += 1
-                        arm_chunk = None
-                        scene.step()
-                        continue
-                except Exception:
+                result = query(args.server_url, rgb, INSTRUCTION)
+                arm_chunk, grip_chunk, ok = result
+                chunk_step = 0
+                if not ok:
                     policy_failures += 1
                     arm_chunk = None
                     scene.step()
