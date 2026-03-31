@@ -1,4 +1,4 @@
-"""Customer expansion playbook — structured upsell and cross-sell motions for robotics platform customers
+"""DAgger run 339 planner — hierarchical skill decomposition with option framework for multi-level policy learning
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10911
-SERVICE = "customer_expansion_playbook"
-DESCRIPTION = "Customer expansion playbook — structured upsell and cross-sell motions for robotics platform customers"
+PORT = 10910
+SERVICE = "dagger_run339_planner"
+DESCRIPTION = "DAgger run 339 planner — hierarchical skill decomposition with option framework for multi-level policy learning"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
