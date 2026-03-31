@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11600
+PORT=12607
 SERVICE="documentation_culture"
-DESCRIPTION="Documentation culture — write it down, keep it current"
+DESCRIPTION="Documentation culture — doc before deploy, always current"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
