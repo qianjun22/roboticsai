@@ -1,4 +1,4 @@
-"""Account-Based Marketing Engine
+"""Policy Gradient Fine-Tuner
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10521
-SERVICE = "account_based_marketing_engine"
-DESCRIPTION = "ABM engine: personalized outreach for 50 named accounts with NVIDIA co-marketing"
+PORT = 10520
+SERVICE = "policy_gradient_fine_tuner"
+DESCRIPTION = "Policy gradient fine-tuner: BC + PPO RL refinement for last-mile SR improvement"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        engagement = round(random.uniform(0.62, 0.72), 3); bar = int(engagement * 220)
+        sr = round(random.uniform(0.89, 0.94), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Tier-1 Account Engagement: {engagement}</p>
+<p>Port: {PORT} | BC+PG SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>ABM Engagement: {engagement}</text></svg>
+<text x='10' y='20' font-size='12'>BC+PG SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
