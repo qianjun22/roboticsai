@@ -1,4 +1,4 @@
-"""Track enterprise pilot programs — success criteria milestones, SR progression, blocker resolution, conversion tracking
+"""Parse robot scene into semantic regions — panoptic segmentation with 15 semantic classes for language-grounded navigation
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10369
-SERVICE = "enterprise_pilot_tracker"
-DESCRIPTION = "Track enterprise pilot programs — success criteria milestones, SR progression, blocker resolution, conversion tracking"
+PORT = 10368
+SERVICE = "scene_semantics_parser"
+DESCRIPTION = "Parse robot scene into semantic regions — panoptic segmentation with 15 semantic classes for language-grounded navigation"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
