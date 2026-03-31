@@ -1,4 +1,4 @@
-"""Systematic competitive intelligence v2 — PI Research, Covariant, AWS positioning, signal tracking, win-loss analysis
+"""DAgger run209 — multi-task DAgger training one policy on 5 tasks simultaneously with task embedding conditioner
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10375
-SERVICE = "competitive_intelligence_v2"
-DESCRIPTION = "Systematic competitive intelligence v2 — PI Research, Covariant, AWS positioning, signal tracking, win-loss analysis"
+PORT = 10374
+SERVICE = "dagger_run209_planner"
+DESCRIPTION = "DAgger run209 — multi-task DAgger training one policy on 5 tasks simultaneously with task embedding conditioner"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
