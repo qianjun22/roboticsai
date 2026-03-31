@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11799
-SERVICE = "sales-territory-optimization-engine"
-DESCRIPTION = "Sales territory optimization engine for geo-based carving, potential scoring, and coverage efficiency analysis"
+PORT = 11839
+SERVICE = "sales_territory_optimization_engine"
+DESCRIPTION = "Sales territory optimization engine for account coverage modeling, rep workload balancing, and revenue potential mapping"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
