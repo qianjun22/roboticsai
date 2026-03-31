@@ -1,4 +1,4 @@
-"""Product analytics platform for robotics AI tracking feature adoption, API usage patterns, and SDK developer engagement
+"""Simulation cable and harness deformation domain randomizer for training robot policies to handle flexible object manipulation
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11153
-SERVICE = "product_analytics_platform"
-DESCRIPTION = "Product analytics platform for robotics AI tracking feature adoption, API usage patterns, and SDK developer engagement"
+PORT = 11152
+SERVICE = "sim_cable_harness_deformation_randomizer"
+DESCRIPTION = "Simulation cable and harness deformation domain randomizer for training robot policies to handle flexible object manipulation"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
