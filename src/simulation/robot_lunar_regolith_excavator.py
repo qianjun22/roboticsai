@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22995
-SERVICE = "robotics_developer_community_hub"
-DESCRIPTION = "Developer community hub for robotics AI builders"
+PORT = 22994
+SERVICE = "robot_lunar_regolith_excavator"
+DESCRIPTION = "Simulates lunar regolith excavation forces and bucket wheel dynamics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
