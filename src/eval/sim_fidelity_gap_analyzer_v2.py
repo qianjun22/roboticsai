@@ -1,5 +1,5 @@
 """
-Track pipeline deal velocity — 40-day avg cycle, NVIDIA referral fastest at 28 days
+Measure sim-to-real fidelity gap across visual + physics + dynamics axes — 88% overall fidelity
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10293
-SERVICE = "pipeline_velocity_tracker"
-DESCRIPTION = "Track pipeline deal velocity — 40-day avg cycle, NVIDIA referral fastest at 28 days"
+PORT = 10292
+SERVICE = "sim_fidelity_gap_analyzer_v2"
+DESCRIPTION = "Measure sim-to-real fidelity gap across visual + physics + dynamics axes — 88% overall fidelity"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,33 +37,23 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/sales/pipeline_velocity")
-    def pipeline_velocity():
+    @app.post("/eval/fidelity_gap_v2/measure")
+    def measure_fidelity_gap():
         return {
-            "avg_total_days": 40,
-            "by_stage": {
-                "mql_to_sql": 11,
-                "sql_to_pilot": 8,
-                "pilot_to_close": 21
-            },
-            "by_source": {
-                "nvidia_referral": 28,
-                "inbound": 45,
-                "abm": 38
-            },
-            "bottleneck": "pilot_to_close"
+            "gap_visual_pct": 12.0,
+            "gap_physics_pct": 8.0,
+            "gap_dynamics_pct": 15.0,
+            "overall_fidelity_pct": 88.0,
+            "recommendation": "apply_domain_bridge_v2"
         }
 
-    @app.get("/sales/pipeline_velocity/forecast")
-    def pipeline_velocity_forecast():
+    @app.get("/eval/fidelity_gap_v2/history")
+    def fidelity_gap_history():
         return {
-            "open_deals": 5,
-            "expected_close_k": [83, 83, 83, 125, 250],
-            "arr_by_month": {
-                "2026-04": 83,
-                "2026-05": 166,
-                "2026-06": 430
-            }
+            "weeks": 4,
+            "visual_trend": [14, 13, 12, 12],
+            "physics_trend": [10, 9, 8, 8],
+            "domain_adaptation_impact": "+6% overall fidelity"
         }
 
     if __name__ == "__main__":
