@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15485
-SERVICE = "robotics_kyc_aml_v3"
-DESCRIPTION = "KYC/AML compliance automation for robotics customer onboarding"
+PORT = 15484
+SERVICE = "dagger_run1481_planner"
+DESCRIPTION = "DAgger run 1481 training planner for imitation learning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
