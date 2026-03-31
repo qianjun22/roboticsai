@@ -1,4 +1,4 @@
-"""Customer Segmentation V2 — FastAPI port 9985"""
+"""Whole Body Loco Manipulation — FastAPI port 9984"""
 import math, random
 from http.server import HTTPServer, BaseHTTPRequestHandler
 try:
@@ -8,17 +8,17 @@ try:
     USE_FASTAPI = True
 except ImportError:
     USE_FASTAPI = False
-PORT = 9985
+PORT = 9984
 def build_html():
     data = [round(random.uniform(0.5, 1.0) * math.sin(i/3) + 1.5, 3) for i in range(10)]
     bars = "".join(f'<rect x="{30+i*40}" y="{150-int(v*60)}" width="30" height="{int(v*60)}" fill="#C74634"/>' for i, v in enumerate(data))
-    return f"""<!DOCTYPE html><html><head><title>Customer Segmentation V2 — Port {PORT}</title>
+    return f"""<!DOCTYPE html><html><head><title>Whole Body Loco Manipulation — Port {PORT}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace}}h1{{color:#C74634;padding:20px}}svg{{display:block;margin:20px}}</style></head>
-<body><h1>Customer Segmentation V2 — Port {PORT}</h1>
+<body><h1>Whole Body Loco Manipulation — Port {PORT}</h1>
 <svg width="430" height="180" style="background:#1e293b;border-radius:8px">{bars}</svg>
 <p style="padding:20px;color:#38bdf8">status: operational | port: {PORT}</p></body></html>"""
 if USE_FASTAPI:
-    app = FastAPI(title="Customer Segmentation V2")
+    app = FastAPI(title="Whole Body Loco Manipulation")
     @app.get("/", response_class=HTMLResponse)
     def index(): return build_html()
     @app.get("/health")
