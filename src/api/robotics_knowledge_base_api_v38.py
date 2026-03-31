@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 39021
+PORT = 39023
 SERVICE = "robotics_knowledge_base_api"
 DESCRIPTION = "GTM service: knowledge base api"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_knowledge_base_api</h1><div class="subtitle">GTM service: knowledge base api port 39021</div></div>
+<div class="header"><h1>robotics_knowledge_base_api</h1><div class="subtitle">GTM service: knowledge base api port 39023</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 39021</div>
+<div class="metric"><strong>Port:</strong> 39023</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
