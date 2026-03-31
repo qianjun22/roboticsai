@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13535
-SERVICE = "robotics_alliance_management_v2"
-DESCRIPTION = "Alliance management service v2 — coordinates strategic robotics alliances, joint pipeline tracking, and cross-company GTM execution"
+PORT = 13534
+SERVICE = "dagger_run987_planner"
+DESCRIPTION = "DAgger run 987 trajectory planner — online imitation learning pipeline for GR00T fine-tuning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
