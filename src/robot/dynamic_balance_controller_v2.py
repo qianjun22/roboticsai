@@ -1,4 +1,4 @@
-"""Enterprise pilot program tracker managing success criteria, timelines, and conversion readiness
+"""Dynamic balance controller v2 with predictive stability margins and whole-body momentum control
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11125
-SERVICE = "enterprise_pilot_tracker"
-DESCRIPTION = "Enterprise pilot program tracker managing success criteria, timelines, and conversion readiness"
+PORT = 11124
+SERVICE = "robot_dynamic_balance_controller_v2"
+DESCRIPTION = "Dynamic balance controller v2 with predictive stability margins and whole-body momentum control"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
