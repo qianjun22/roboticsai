@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11016
+PORT=12071
 SERVICE="sre_runbook_v3"
-DESCRIPTION="SRE runbook v3 — GPU down, OOM, checkpoint corruption"
+DESCRIPTION="SRE runbook v3 — incident response, escalation, post-mortem"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}

@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11015
+PORT=12077
 SERVICE="capacity_planning_v3"
-DESCRIPTION="Capacity planning v3 — GPU demand forecast, headroom policy"
+DESCRIPTION="Capacity planning v3 — GPU demand forecast 6-month lookahead"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
