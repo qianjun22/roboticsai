@@ -1,4 +1,4 @@
-"""Sim lighting environment randomizer — 200 HDR sky environments, 10-100000 lux range, specular effects, shadow variation, and bloom/lens flare artifacts
+"""Brand awareness tracker — OCI Robot Cloud share-of-voice, developer mindshare (342 GitHub stars), PR coverage, and content performance across robotics AI market
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10968
-SERVICE = "sim_lighting_environment_randomizer"
-DESCRIPTION = "Sim lighting environment randomizer — 200 HDR sky environments, 10-100000 lux range, specular effects, shadow variation, and bloom/lens flare artifacts"
+PORT = 10969
+SERVICE = "brand_awareness_tracker"
+DESCRIPTION = "Brand awareness tracker — OCI Robot Cloud share-of-voice, developer mindshare (342 GitHub stars), PR coverage, and content performance across robotics AI market"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
