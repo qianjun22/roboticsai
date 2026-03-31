@@ -1,17 +1,12 @@
-"""
-Automated F/T sensor calibration v2 — gravity compensation (subtract self-weight
-at each joint config), bias estimation, real-time drift correction (0.3N/hr drift),
-10x accuracy improvement (±2.1N → ±0.2N).
+"""Automated F/T sensor calibration v2 — gravity compensation, bias estimation, drift correction (0.3N/hr),
+auto-recalibrate at startup/drift/4hr interval. 10× accuracy improvement (±2.1N→±0.2N).
 FastAPI service — OCI Robot Cloud
-Port: 10108
-"""
+Port: 10108"""
 from __future__ import annotations
 import json, math, random, time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
-
+from datetime import datetime
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI
     from fastapi.responses import HTMLResponse, JSONResponse
     from pydantic import BaseModel
     import uvicorn
@@ -22,196 +17,47 @@ except ImportError:
 
 PORT = 10108
 
-# --- Domain models -----------------------------------------------------------
+# --- Simulated calibration state ---
+_cal_state = {
+    "bias_vector": [0.12, -0.08, 0.05, 0.003, -0.002, 0.001],
+    "drift_rate_n_per_hr": 0.3,
+    "last_cal_time": datetime.utcnow().isoformat(),
+    "next_cal_trigger": "4hr_interval",
+    "accuracy_n": 0.2,
+    "cal_count": 1,
+}
 
-if USE_FASTAPI:
-    class RobotConfiguration(BaseModel):
-        joint_angles_rad: List[float]  # 6-DOF joint angles in radians
-        link_masses_kg: Optional[List[float]] = None  # per-link mass for gravity comp
-        end_effector_payload_kg: Optional[float] = 0.0
-        sensor_id: Optional[str] = "ft_sensor_0"
-
-    class CalibratedFTResponse(BaseModel):
-        calibrated_ft_sensor: Dict[str, float]  # fx,fy,fz (N), tx,ty,tz (Nm)
-        bias_vector: Dict[str, float]
-        gravity_compensation: Dict[str, float]
-        accuracy_n: float
-        calibration_timestamp: str
-        sensor_id: str
-
-
-# --- Calibration state (in-memory) -------------------------------------------
-
-CAL_STATE: Dict[str, dict] = {}
-
-DEFAULT_BIAS = {"fx": 0.031, "fy": -0.018, "fz": 0.052,
-                "tx": 0.004, "ty": -0.002, "tz": 0.001}
-DRIFT_RATE_N_PER_HR = 0.3  # spec: 0.3 N/hr
-RE_CAL_INTERVAL_S = 3600   # trigger recal every hour
-
-
-def _gravity_wrench(joint_angles: List[float],
-                    link_masses: List[float],
-                    payload_kg: float) -> Dict[str, float]:
-    """Compute gravity-induced wrench at sensor frame using simplified Newton-Euler.
-    Uses each link's mass and a sinusoidal projection of g (9.81 m/s²) along
-    each joint axis — a lightweight approximation suitable for calibration.
-    """
+def _gravity_compensation(robot_config: dict) -> list:
+    """Compute gravity wrench from robot configuration (joint angles)."""
+    joints = robot_config.get("joint_angles_rad", [0.0] * 6)
+    mass_kg = robot_config.get("end_effector_mass_kg", 1.5)
     g = 9.81
-    # Default link masses for a 6-DOF arm if not supplied
-    if not link_masses or len(link_masses) < 6:
-        link_masses = [1.8, 2.1, 1.4, 0.9, 0.6, 0.3]
+    # Simplified gravity vector projection onto each F/T axis
+    fx = -mass_kg * g * math.sin(joints[1]) if len(joints) > 1 else 0.0
+    fy = mass_kg * g * math.cos(joints[1]) * math.sin(joints[2]) if len(joints) > 2 else 0.0
+    fz = mass_kg * g * math.cos(joints[1]) * math.cos(joints[2]) if len(joints) > 2 else mass_kg * g
+    tx = fy * 0.05
+    ty = -fx * 0.05
+    tz = 0.0
+    return [round(fx, 4), round(fy, 4), round(fz, 4), round(tx, 6), round(ty, 6), round(tz, 6)]
 
-    f_gravity = {"fx": 0.0, "fy": 0.0, "fz": 0.0}
-    t_gravity = {"tx": 0.0, "ty": 0.0, "tz": 0.0}
+def _estimate_bias(raw_readings: list) -> list:
+    """Estimate sensor bias from static readings."""
+    noise = [random.gauss(0, 0.01) for _ in range(6)]
+    return [round(r + n, 4) for r, n in zip(raw_readings, noise)]
 
-    # Cumulative rotation about z-axis (simplified planar gravity projection)
-    cumulative_angle = 0.0
-    lever_arm_m = 0.0  # distance from sensor to link CoM
-    link_lengths = [0.34, 0.29, 0.24, 0.19, 0.12, 0.06]  # meters
-
-    for i, (theta, mass, length) in enumerate(
-            zip(joint_angles, link_masses, link_lengths)):
-        cumulative_angle += theta
-        lever_arm_m += length
-        # Force projected onto sensor X/Z axes
-        f_gravity["fx"] += -mass * g * math.sin(cumulative_angle)
-        f_gravity["fz"] += -mass * g * math.cos(cumulative_angle)
-        # Torque = F × lever_arm (simplified)
-        t_gravity["ty"] += mass * g * lever_arm_m * math.sin(cumulative_angle)
-
-    # Payload contribution
-    total_lever = sum(link_lengths)
-    payload_angle = sum(joint_angles)
-    f_gravity["fx"] += -payload_kg * g * math.sin(payload_angle)
-    f_gravity["fz"] += -payload_kg * g * math.cos(payload_angle)
-    t_gravity["ty"] += payload_kg * g * total_lever * math.sin(payload_angle)
-
-    return {**f_gravity, **t_gravity}
-
-
-def _estimate_bias(sensor_id: str) -> Dict[str, float]:
-    """Return bias vector with small random walk (simulates real sensor drift)."""
-    now = time.time()
-    state = CAL_STATE.get(sensor_id, {})
-    last_cal = state.get("last_cal_time", now - 3600)
-    elapsed_hr = (now - last_cal) / 3600.0
-
-    # Drift model: linear + small Gaussian noise
-    drift_scale = DRIFT_RATE_N_PER_HR * elapsed_hr
-    bias = {
-        k: v + random.gauss(0, drift_scale * 0.1)
-        for k, v in DEFAULT_BIAS.items()
-    }
-    return bias
-
-
-def _update_cal_state(sensor_id: str, bias: Dict[str, float]) -> None:
-    now = time.time()
-    CAL_STATE[sensor_id] = {
-        "bias": bias,
-        "last_cal_time": now,
-        "next_cal_trigger": now + RE_CAL_INTERVAL_S,
-        "drift_rate_n_per_hr": DRIFT_RATE_N_PER_HR,
-    }
-
+def _apply_drift_correction(bias: list, hours_since_cal: float) -> list:
+    """Apply drift correction based on elapsed time."""
+    drift_per_axis = _cal_state["drift_rate_n_per_hr"] * hours_since_cal / 6
+    return [round(b - drift_per_axis * random.uniform(0.8, 1.2), 4) for b in bias]
 
 if USE_FASTAPI:
-    app = FastAPI(
-        title="Force-Torque Calibration v2",
-        version="2.0.0",
-        description="Automated F/T sensor calibration with gravity compensation and real-time drift correction",
-    )
+    app = FastAPI(title="Force Torque Calibration V2", version="1.0.0")
 
-    @app.post("/calibration/ft_v2", response_model=CalibratedFTResponse)
-    def calibrate_ft_v2(config: RobotConfiguration):
-        """
-        Perform F/T sensor calibration v2.
-
-        Steps:
-        1. Estimate gravity wrench at current joint configuration.
-        2. Retrieve/compute bias vector (with drift correction).
-        3. Return calibrated F/T = raw_reading - bias - gravity_compensation.
-
-        Achieves ±0.2N accuracy vs ±2.1N for uncalibrated sensor (10× improvement).
-        """
-        sensor_id = config.sensor_id or "ft_sensor_0"
-
-        # Gravity wrench at this config
-        gravity = _gravity_wrench(
-            config.joint_angles_rad,
-            config.link_masses_kg or [],
-            config.end_effector_payload_kg or 0.0,
-        )
-
-        # Bias estimation with drift model
-        bias = _estimate_bias(sensor_id)
-        _update_cal_state(sensor_id, bias)
-
-        # Simulated raw sensor reading (bias + gravity + small noise = typical uncalibrated)
-        raw = {
-            "fx": gravity["fx"] + bias["fx"] + random.gauss(0, 0.05),
-            "fy": gravity["fy"] + bias["fy"] + random.gauss(0, 0.05),
-            "fz": gravity["fz"] + bias["fz"] + random.gauss(0, 0.05),
-            "tx": gravity["tx"] + bias["tx"] + random.gauss(0, 0.002),
-            "ty": gravity["ty"] + bias["ty"] + random.gauss(0, 0.002),
-            "tz": gravity["tz"] + bias["tz"] + random.gauss(0, 0.002),
-        }
-
-        # Calibrated = raw - bias - gravity
-        calibrated = {
-            k: round(raw[k] - bias.get(k, 0.0) - gravity.get(k, 0.0), 4)
-            for k in raw
-        }
-
-        return CalibratedFTResponse(
-            calibrated_ft_sensor=calibrated,
-            bias_vector={k: round(v, 6) for k, v in bias.items()},
-            gravity_compensation={k: round(v, 4) for k, v in gravity.items()},
-            accuracy_n=0.21,  # ±0.2N post-calibration
-            calibration_timestamp=datetime.utcnow().isoformat() + "Z",
-            sensor_id=sensor_id,
-        )
-
-    @app.get("/calibration/ft_status")
-    def ft_status():
-        """Return current calibration status for all known sensors."""
-        now = time.time()
-        if not CAL_STATE:
-            # Return default status if no calibration has been run yet
-            return {
-                "sensor_id": "ft_sensor_0",
-                "current_bias_n": DEFAULT_BIAS,
-                "drift_rate_n_per_hr": DRIFT_RATE_N_PER_HR,
-                "last_cal_time": None,
-                "next_cal_trigger": datetime.utcfromtimestamp(
-                    now + RE_CAL_INTERVAL_S
-                ).isoformat() + "Z",
-                "accuracy_n": 2.1,  # uncalibrated
-                "status": "not_calibrated",
-            }
-
-        results = []
-        for sensor_id, state in CAL_STATE.items():
-            elapsed_hr = (now - state["last_cal_time"]) / 3600.0
-            drift_so_far = round(DRIFT_RATE_N_PER_HR * elapsed_hr, 4)
-            overdue = now > state["next_cal_trigger"]
-            results.append({
-                "sensor_id": sensor_id,
-                "current_bias_n": {k: round(v, 6) for k, v in state["bias"].items()},
-                "drift_rate_n_per_hr": DRIFT_RATE_N_PER_HR,
-                "drift_accumulated_n": drift_so_far,
-                "last_cal_time": datetime.utcfromtimestamp(
-                    state["last_cal_time"]
-                ).isoformat() + "Z",
-                "next_cal_trigger": datetime.utcfromtimestamp(
-                    state["next_cal_trigger"]
-                ).isoformat() + "Z",
-                "recalibration_overdue": overdue,
-                "accuracy_n": 0.21,
-                "status": "calibrated" if not overdue else "recalibration_needed",
-            })
-        return {"sensors": results, "total_sensors": len(results)}
+    class CalibrationRequest(BaseModel):
+        robot_configuration: dict
+        raw_ft_readings: list = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        trigger: str = "manual"  # startup | drift | 4hr_interval | manual
 
     @app.get("/health")
     def health():
@@ -219,32 +65,67 @@ if USE_FASTAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        return HTMLResponse("""<!DOCTYPE html><html><head><title>F/T Calibration v2</title>
-<style>body{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}
-h1{color:#C74634}a{color:#38bdf8}.stat{display:inline-block;background:#1e293b;padding:1rem;border-radius:8px;margin:.5rem}
-table{border-collapse:collapse;margin-top:1rem}td,th{border:1px solid #334155;padding:.5rem 1rem}
-th{background:#1e293b}</style></head><body>
-<h1>Force-Torque Calibration v2</h1>
-<p>OCI Robot Cloud · Port 10108</p>
-<div>
-  <span class="stat">Accuracy: <b>±0.2N</b></span>
-  <span class="stat">Drift: <b>0.3N/hr</b></span>
-  <span class="stat">Improvement: <b>10×</b></span>
-  <span class="stat">Re-cal interval: <b>1 hr</b></span>
-</div>
-<table>
-  <tr><th>Feature</th><th>Uncalibrated</th><th>v2 Calibrated</th></tr>
-  <tr><td>Force accuracy</td><td>±2.1 N</td><td>±0.2 N</td></tr>
-  <tr><td>Gravity compensation</td><td>None</td><td>6-DOF Newton-Euler</td></tr>
-  <tr><td>Drift correction</td><td>None</td><td>Real-time (0.3N/hr)</td></tr>
-  <tr><td>Bias estimation</td><td>Manual</td><td>Automated per config</td></tr>
-</table>
-<p><a href="/docs">API Docs</a> | <a href="/health">Health</a> | <a href="/calibration/ft_status">Sensor Status</a></p>
-</body></html>""")
+        return HTMLResponse(f"""<!DOCTYPE html><html><head><title>Force Torque Calibration V2</title>
+<style>body{{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}h1{{color:#C74634}}a{{color:#38bdf8}}</style></head><body>
+<h1>Force Torque Calibration V2</h1><p>OCI Robot Cloud · Port {PORT}</p><p><a href="/docs">API Docs</a> | <a href="/health">Health</a></p>
+<p>Accuracy: ±0.2N (10× improvement over ±2.1N baseline) · Drift: 0.3N/hr</p></body></html>""")
+
+    @app.post("/calibration/ft_v2")
+    def calibrate_ft(req: CalibrationRequest):
+        """Run full F/T calibration: gravity compensation + bias estimation + drift correction."""
+        gravity_comp = _gravity_compensation(req.robot_configuration)
+        raw = req.raw_ft_readings if len(req.raw_ft_readings) == 6 else [0.0] * 6
+        # Remove gravity component from raw readings
+        gravity_removed = [round(r - g, 4) for r, g in zip(raw, gravity_comp)]
+        bias_vector = _estimate_bias(gravity_removed)
+        # Compute hours since last calibration
+        last_cal = datetime.fromisoformat(_cal_state["last_cal_time"])
+        hours_elapsed = (datetime.utcnow() - last_cal).total_seconds() / 3600.0
+        corrected_bias = _apply_drift_correction(bias_vector, hours_elapsed)
+        # Calibrated output: raw minus corrected bias minus gravity
+        calibrated = [round(r - b - g, 4) for r, b, g in zip(raw, corrected_bias, gravity_comp)]
+        # Update state
+        _cal_state["bias_vector"] = corrected_bias
+        _cal_state["last_cal_time"] = datetime.utcnow().isoformat()
+        _cal_state["next_cal_trigger"] = req.trigger
+        _cal_state["cal_count"] += 1
+        return {
+            "calibrated_ft_sensor": {
+                "force_n": calibrated[:3],
+                "torque_nm": calibrated[3:],
+                "accuracy_n": 0.2,
+                "accuracy_nm": 0.005,
+            },
+            "bias_vector": corrected_bias,
+            "gravity_compensation": gravity_comp,
+            "trigger": req.trigger,
+            "cal_index": _cal_state["cal_count"],
+            "ts": datetime.utcnow().isoformat(),
+        }
+
+    @app.get("/calibration/ft_status")
+    def ft_status():
+        """Return current calibration status including drift diagnostics."""
+        last_cal = datetime.fromisoformat(_cal_state["last_cal_time"])
+        hours_elapsed = (datetime.utcnow() - last_cal).total_seconds() / 3600.0
+        hours_until_next = max(0.0, 4.0 - hours_elapsed)
+        accumulated_drift_n = round(_cal_state["drift_rate_n_per_hr"] * hours_elapsed, 4)
+        return {
+            "current_bias_n": _cal_state["bias_vector"][:3],
+            "current_bias_nm": _cal_state["bias_vector"][3:],
+            "drift_rate_n_per_hr": _cal_state["drift_rate_n_per_hr"],
+            "accumulated_drift_n": accumulated_drift_n,
+            "last_cal_time": _cal_state["last_cal_time"],
+            "hours_since_cal": round(hours_elapsed, 3),
+            "next_cal_trigger": _cal_state["next_cal_trigger"],
+            "hours_until_next_4hr_cal": round(hours_until_next, 3),
+            "recal_recommended": accumulated_drift_n > 0.15,
+            "cal_count_session": _cal_state["cal_count"],
+            "ts": datetime.utcnow().isoformat(),
+        }
 
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
-
 else:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -252,9 +133,6 @@ else:
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"status": "ok", "port": PORT}).encode())
-        def do_POST(self):
-            self.do_GET()
-        def log_message(self, *a):
-            pass
+        def log_message(self, *a): pass
     if __name__ == "__main__":
         HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

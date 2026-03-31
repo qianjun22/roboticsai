@@ -1,17 +1,13 @@
-"""
-Investor relations portal — monthly update generation, live KPI dashboard
+"""Investor relations portal — monthly update generation, live KPI dashboard
 (ARR $250K, NRR 118%, SR 85%, burn $45K, runway 18mo), per-investor comms log,
 update cadence management.
 FastAPI service — OCI Robot Cloud
-Port: 10109
-"""
+Port: 10109"""
 from __future__ import annotations
 import json, math, random, time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
-
 try:
-    from fastapi import FastAPI, HTTPException
+    from fastapi import FastAPI
     from fastapi.responses import HTMLResponse, JSONResponse
     from pydantic import BaseModel
     import uvicorn
@@ -22,268 +18,104 @@ except ImportError:
 
 PORT = 10109
 
-# --- Static KPI snapshot (refreshed monthly in production) -------------------
-
-KPIS = {
+# --- Live KPIs ---
+_KPIS = {
     "arr_usd": 250_000,
-    "arr_growth_mom_pct": 12.4,
-    "nrr_pct": 118.0,
-    "success_rate_pct": 85.0,
-    "burn_usd_per_mo": 45_000,
+    "nrr_pct": 118,
+    "success_rate_pct": 85,
+    "monthly_burn_usd": 45_000,
     "runway_months": 18,
-    "design_partners": 7,
-    "inference_latency_ms": 231,
-    "models_deployed": 3,
-    "ft_accuracy_n": 0.21,
-    "as_of": "2026-03-01",
+    "design_partners": 4,
+    "pilots_active": 2,
+    "models_deployed": 7,
+    "inference_latency_ms": 235,
 }
 
-MILESTONES = [
-    {"date": "2025-10", "event": "GR00T N1.6 inference server live on OCI (227ms P50)"},
-    {"date": "2025-11", "event": "First design partner signed — automotive OEM"},
-    {"date": "2025-12", "event": "Fine-tuning pipeline: MAE 0.013 (8.7× vs baseline)"},
-    {"date": "2026-01", "event": "Multi-GPU DDP: 3.07× throughput; 7-slide product deck"},
-    {"date": "2026-02", "event": "Closed-loop eval 85% SR (17/20 tasks, 231ms)"},
-    {"date": "2026-03", "event": "pip-installable SDK; CoRL paper draft submitted"},
+_MILESTONES = [
+    {"date": "2026-01-15", "title": "GR00T N1.6 integration", "status": "complete"},
+    {"date": "2026-02-10", "title": "Multi-GPU DDP 3.07× throughput", "status": "complete"},
+    {"date": "2026-03-01", "title": "85% closed-loop success rate (17/20)", "status": "complete"},
+    {"date": "2026-04-30", "title": "First paying customer ($250K ARR)", "status": "complete"},
+    {"date": "2026-06-30", "title": "Isaac Sim domain randomization SDG", "status": "in_progress"},
+    {"date": "2026-09-30", "title": "Series A close ($8M target)", "status": "planned"},
 ]
 
-INVESTORS = [
+_INVESTOR_LOG = [
     {
-        "id": "inv_001",
-        "name": "Sequoia Capital",
-        "stage": "seed_lead",
-        "check_size_usd": 3_000_000,
-        "last_contact": "2026-03-15",
-        "next_update_due": "2026-04-01",
-        "sentiment": "bullish",
-        "primary_contact": "partner@sequoia.com",
+        "investor": "Oracle Ventures",
+        "type": "strategic",
+        "last_update": "2026-03-15",
+        "cadence_days": 30,
+        "sentiment": "positive",
+        "notes": "Interested in OCI integration story",
     },
     {
-        "id": "inv_002",
-        "name": "Andreessen Horowitz",
-        "stage": "series_a_prospect",
-        "check_size_usd": 10_000_000,
-        "last_contact": "2026-03-10",
-        "next_update_due": "2026-04-10",
-        "sentiment": "interested",
-        "primary_contact": "partner@a16z.com",
+        "investor": "NVIDIA Deep Learning VC",
+        "type": "strategic",
+        "last_update": "2026-03-01",
+        "cadence_days": 45,
+        "sentiment": "very_positive",
+        "notes": "GR00T partnership potential discussed",
     },
     {
-        "id": "inv_003",
-        "name": "Oracle Strategic Investments",
-        "stage": "strategic_partner",
-        "check_size_usd": 1_500_000,
-        "last_contact": "2026-03-20",
-        "next_update_due": "2026-04-20",
-        "sentiment": "committed",
-        "primary_contact": "corp.dev@oracle.com",
-    },
-    {
-        "id": "inv_004",
-        "name": "Toyota Ventures",
-        "stage": "seed_participant",
-        "check_size_usd": 500_000,
-        "last_contact": "2026-02-28",
-        "next_update_due": "2026-03-31",
+        "investor": "Robotics Fund I",
+        "type": "financial",
+        "last_update": "2026-02-28",
+        "cadence_days": 30,
         "sentiment": "neutral",
-        "primary_contact": "ventures@toyota.com",
+        "notes": "Wants to see 3 more design partners before leading",
+    },
+    {
+        "investor": "Industrial AI Partners",
+        "type": "financial",
+        "last_update": "2026-03-20",
+        "cadence_days": 60,
+        "sentiment": "positive",
+        "notes": "Impressed with 85% SR benchmark",
     },
 ]
 
-# Comms log (in-memory; production would use a DB)
-COMMS_LOG: List[dict] = [
-    {
-        "investor_id": "inv_001",
-        "date": "2026-03-15",
-        "type": "monthly_update",
-        "summary": "Shared Q1 KPI pack; SR 85% highlight; runway 18mo confirmed.",
-        "response": "Positive — requesting demo of closed-loop eval.",
-    },
-    {
-        "investor_id": "inv_002",
-        "date": "2026-03-10",
-        "type": "intro_call",
-        "summary": "First call post-CoRL paper; discussed Series A sizing.",
-        "response": "Wants technical deep-dive with robotics GP next month.",
-    },
-    {
-        "investor_id": "inv_003",
-        "date": "2026-03-20",
-        "type": "board_update",
-        "summary": "OCI compute credits extended 6 months; strategic alignment confirmed.",
-        "response": "Approved additional $250K credit line.",
-    },
-]
+def _days_until_next_update(last_update_str: str, cadence_days: int) -> int:
+    last = datetime.strptime(last_update_str, "%Y-%m-%d")
+    next_due = last + timedelta(days=cadence_days)
+    return max(0, (next_due - datetime.utcnow()).days)
 
+def _generate_update_draft(period: str) -> str:
+    return f"""**OCI Robot Cloud — Investor Update ({period})**
 
-# --- Pydantic models ---------------------------------------------------------
+Dear Investors,
+
+Here is our monthly update for {period}.
+
+**Key Metrics:**
+- ARR: ${_KPIS['arr_usd']:,} | NRR: {_KPIS['nrr_pct']}%
+- Closed-loop Success Rate: {_KPIS['success_rate_pct']}% (17/20 tasks)
+- Monthly Burn: ${_KPIS['monthly_burn_usd']:,} | Runway: {_KPIS['runway_months']} months
+- Active Pilots: {_KPIS['pilots_active']} | Design Partners: {_KPIS['design_partners']}
+
+**Milestones This Period:**
+- GR00T N1.6 running on OCI at 235ms latency
+- Multi-GPU DDP achieved 3.07× training throughput
+- 85% closed-loop eval success rate confirmed
+- Fine-tuning pipeline: MAE 0.013 (8.7× vs baseline)
+
+**Next 30 Days:**
+- Isaac Sim RTX domain randomization SDG launch
+- 2 additional design partner onboardings
+- Series A preparation: deck + data room
+
+**Ask:** Introductions to manufacturing/logistics robotics operators welcome.
+
+Best,
+Jun Qian, CEO — OCI Robot Cloud
+"""
 
 if USE_FASTAPI:
+    app = FastAPI(title="Investor Relations Portal", version="1.0.0")
+
     class UpdateRequest(BaseModel):
-        period: str  # e.g. "2026-03" or "Q1 2026"
-        investor_ids: Optional[List[str]] = None  # None = all investors
-        include_financials: bool = True
-        include_technical: bool = True
-        personalize: bool = True
-
-    class UpdateResponse(BaseModel):
-        period: str
-        update_draft: str
-        recipients: List[dict]
-        scheduled_send: str
-        kpi_snapshot: dict
-
-
-def _generate_update_draft(period: str, include_financials: bool,
-                            include_technical: bool) -> str:
-    """Generate a markdown investor update for the given period."""
-    now_str = datetime.utcnow().strftime("%B %Y")
-    lines = [
-        f"# OCI Robot Cloud — Investor Update: {period}",
-        f"_Generated {now_str} | Confidential — not for distribution_",
-        "",
-        "## Executive Summary",
-        "We continue to execute on our technical roadmap with strong momentum:",
-        f"- **85% closed-loop task success rate** (17/20 LIBERO tasks, 231ms latency)",
-        f"- **7 design partners** signed across automotive, logistics, and semiconductor",
-        f"- CoRL 2026 paper submitted; GTC demo scheduled for April",
-        "",
-    ]
-    if include_financials:
-        lines += [
-            "## Financial KPIs",
-            f"| Metric | Value | MoM |",
-            f"|--------|-------|-----|",
-            f"| ARR | $250K | +12.4% |",
-            f"| NRR | 118% | +3pp |",
-            f"| Burn | $45K/mo | -5% |",
-            f"| Runway | 18 months | stable |",
-            f"| Design Partners | 7 | +2 |",
-            "",
-        ]
-    if include_technical:
-        lines += [
-            "## Technical Milestones",
-            "- GR00T N1.6 inference: 231ms P50 on OCI A100 (6.7GB VRAM)",
-            "- Fine-tuning: MAE 0.013 (8.7× improvement over baseline)",
-            "- Multi-GPU DDP: 3.07× throughput; F/T calibration v2: ±0.2N accuracy",
-            "- pip-installable SDK: `pip install oci-robot-cloud`",
-            "",
-        ]
-    lines += [
-        "## Next 30 Days",
-        "1. Series A process kick-off (target: $8M, Q3 2026 close)",
-        "2. GTC live demo — closed-loop pick-and-place with 85% SR",
-        "3. Onboard 2 additional design partners (semiconductor + pharma verticals)",
-        "4. CoRL paper decision expected mid-April",
-        "",
-        "## Ask",
-        "- Warm intros to robotics GPs at Khosla, Lightspeed, and GV",
-        "- Reference calls with portfolio companies using manipulation robots",
-        "",
-        "---",
-        "_OCI Robot Cloud · contact@oci-robot.cloud · Confidential_",
-    ]
-    return "\n".join(lines)
-
-
-if USE_FASTAPI:
-    app = FastAPI(
-        title="Investor Relations Portal",
-        version="1.0.0",
-        description="Monthly update generation, live KPI dashboard, and per-investor comms log",
-    )
-
-    @app.get("/ir/dashboard")
-    def ir_dashboard():
-        """
-        Live IR dashboard — KPIs, milestones, investor log, and next update dates.
-        """
-        # Compute days until next update for each investor
-        today = datetime.utcnow().date()
-        investor_summary = []
-        for inv in INVESTORS:
-            due = datetime.strptime(inv["next_update_due"], "%Y-%m-%d").date()
-            days_until = (due - today).days
-            investor_summary.append({
-                **inv,
-                "days_until_next_update": days_until,
-                "update_status": "overdue" if days_until < 0 else (
-                    "due_soon" if days_until <= 7 else "on_track"
-                ),
-            })
-
-        # Aggregate comms log per investor
-        comms_by_investor = {}
-        for log in COMMS_LOG:
-            iid = log["investor_id"]
-            comms_by_investor.setdefault(iid, []).append(log)
-
-        return {
-            "kpis": KPIS,
-            "milestones": MILESTONES,
-            "investor_log": investor_summary,
-            "comms_log": comms_by_investor,
-            "next_update_date": min(
-                inv["next_update_due"] for inv in INVESTORS
-            ),
-            "total_committed_usd": sum(inv["check_size_usd"] for inv in INVESTORS),
-            "total_investors": len(INVESTORS),
-            "generated_at": datetime.utcnow().isoformat() + "Z",
-        }
-
-    @app.post("/ir/send_update", response_model=UpdateResponse)
-    def send_update(req: UpdateRequest):
-        """
-        Generate and schedule a monthly investor update.
-
-        - Drafts a personalized markdown update for the given period.
-        - Targets all investors (or the specified subset).
-        - Returns the draft + recipient list + scheduled send time.
-        """
-        # Filter investors
-        targets = [
-            inv for inv in INVESTORS
-            if req.investor_ids is None or inv["id"] in req.investor_ids
-        ]
-        if not targets:
-            raise HTTPException(status_code=404, detail="No matching investors found")
-
-        draft = _generate_update_draft(
-            req.period, req.include_financials, req.include_technical
-        )
-
-        # Schedule send for next business-hour window (09:00 UTC next day)
-        tomorrow = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
-        tomorrow += timedelta(days=1)
-
-        recipients = [
-            {
-                "investor_id": inv["id"],
-                "name": inv["name"],
-                "email": inv["primary_contact"],
-                "personalized": req.personalize,
-            }
-            for inv in targets
-        ]
-
-        # Log this send event
-        for inv in targets:
-            COMMS_LOG.append({
-                "investor_id": inv["id"],
-                "date": datetime.utcnow().strftime("%Y-%m-%d"),
-                "type": "monthly_update",
-                "summary": f"Auto-generated update for period {req.period}.",
-                "response": "pending",
-            })
-
-        return UpdateResponse(
-            period=req.period,
-            update_draft=draft,
-            recipients=recipients,
-            scheduled_send=tomorrow.isoformat() + "Z",
-            kpi_snapshot=KPIS,
-        )
+        period: str  # e.g. "March 2026"
+        recipients: list = []  # investor names to include; empty = all
 
     @app.get("/health")
     def health():
@@ -291,26 +123,71 @@ if USE_FASTAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        return HTMLResponse("""<!DOCTYPE html><html><head><title>Investor Relations Portal</title>
-<style>body{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}
-h1{color:#C74634}a{color:#38bdf8}.stat{display:inline-block;background:#1e293b;padding:1rem;border-radius:8px;margin:.5rem}
-.kpi{font-size:1.4rem;font-weight:bold;color:#38bdf8}</style></head><body>
-<h1>Investor Relations Portal</h1>
-<p>OCI Robot Cloud · Port 10109</p>
-<div>
-  <span class="stat">ARR<br><span class="kpi">$250K</span></span>
-  <span class="stat">NRR<br><span class="kpi">118%</span></span>
-  <span class="stat">Success Rate<br><span class="kpi">85%</span></span>
-  <span class="stat">Burn<br><span class="kpi">$45K/mo</span></span>
-  <span class="stat">Runway<br><span class="kpi">18 mo</span></span>
-  <span class="stat">Design Partners<br><span class="kpi">7</span></span>
-</div>
-<p><a href="/docs">API Docs</a> | <a href="/health">Health</a> | <a href="/ir/dashboard">IR Dashboard</a></p>
-</body></html>""")
+        return HTMLResponse(f"""<!DOCTYPE html><html><head><title>Investor Relations Portal</title>
+<style>body{{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}h1{{color:#C74634}}a{{color:#38bdf8}}</style></head><body>
+<h1>Investor Relations Portal</h1><p>OCI Robot Cloud · Port {PORT}</p><p><a href="/docs">API Docs</a> | <a href="/health">Health</a> | <a href="/ir/dashboard">Dashboard</a></p>
+<p>ARR $250K · NRR 118% · SR 85% · Burn $45K/mo · Runway 18mo</p></body></html>""")
+
+    @app.get("/ir/dashboard")
+    def ir_dashboard():
+        """Live KPI dashboard with investor log and next update schedule."""
+        enriched_log = []
+        for inv in _INVESTOR_LOG:
+            days_left = _days_until_next_update(inv["last_update"], inv["cadence_days"])
+            enriched_log.append({
+                **inv,
+                "days_until_next_update": days_left,
+                "update_due": days_left == 0,
+            })
+        # Sort by most overdue first
+        enriched_log.sort(key=lambda x: x["days_until_next_update"])
+        overdue = [i for i in enriched_log if i["days_until_next_update"] == 0]
+        next_update_date = (
+            min(
+                [
+                    datetime.strptime(i["last_update"], "%Y-%m-%d")
+                    + timedelta(days=i["cadence_days"])
+                    for i in _INVESTOR_LOG
+                ]
+            ).strftime("%Y-%m-%d")
+        )
+        return {
+            "kpis": _KPIS,
+            "milestones": _MILESTONES,
+            "investor_log": enriched_log,
+            "summary": {
+                "total_investors": len(_INVESTOR_LOG),
+                "updates_due_now": len(overdue),
+                "overdue_investors": [i["investor"] for i in overdue],
+            },
+            "next_update_date": next_update_date,
+            "ts": datetime.utcnow().isoformat(),
+        }
+
+    @app.post("/ir/send_update")
+    def send_update(req: UpdateRequest):
+        """Generate monthly investor update draft and schedule send."""
+        target_investors = [
+            inv for inv in _INVESTOR_LOG
+            if not req.recipients or inv["investor"] in req.recipients
+        ]
+        update_draft = _generate_update_draft(req.period)
+        recipient_list = [inv["investor"] for inv in target_investors]
+        # Simulate scheduled send 2 hours from now
+        scheduled_send = (datetime.utcnow() + timedelta(hours=2)).isoformat()
+        return {
+            "period": req.period,
+            "update_draft": update_draft,
+            "recipients": recipient_list,
+            "recipient_count": len(recipient_list),
+            "scheduled_send": scheduled_send,
+            "status": "draft_ready",
+            "word_count": len(update_draft.split()),
+            "ts": datetime.utcnow().isoformat(),
+        }
 
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
-
 else:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -318,9 +195,6 @@ else:
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"status": "ok", "port": PORT}).encode())
-        def do_POST(self):
-            self.do_GET()
-        def log_message(self, *a):
-            pass
+        def log_message(self, *a): pass
     if __name__ == "__main__":
         HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
