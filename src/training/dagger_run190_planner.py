@@ -1,5 +1,5 @@
 """
-Formalize customer reference program — 3 tiers: advocate, champion, evangelist
+DAgger run190: goal-conditioned DAgger — goal image spec, 1 policy handles 50+ tasks
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10299
-SERVICE = "customer_reference_program"
-DESCRIPTION = "Formalize customer reference program — 3 tiers: advocate, champion, evangelist"
+PORT = 10298
+SERVICE = "dagger_run190_planner"
+DESCRIPTION = "DAgger run190: goal-conditioned DAgger — goal image spec, 1 policy handles 50+ tasks"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,25 +37,25 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/customers/reference_program/status")
-    def reference_program_status():
+    @app.get("/dagger/run190/config")
+    def dagger_run190_config():
         return {
-            "customer": "Machina",
-            "tier": "champion",
-            "nps": 74,
-            "availability": True,
-            "completed": ["reference_call_q1"],
-            "scheduled": ["case_study_april"]
+            "run": 190,
+            "strategy": "goal_conditioned_dagger",
+            "goal_encoder": "resnet18",
+            "tasks_per_policy": 50,
+            "seen_goal_sr": 0.88,
+            "novel_goal_sr": 0.79,
+            "sr_target": 0.88
         }
 
-    @app.post("/customers/reference_program/request")
-    def reference_program_request():
+    @app.get("/dagger/run190/metrics")
+    def dagger_run190_metrics():
         return {
-            "customer_id": "machina",
-            "reference_type": "case_study",
-            "accepted": True,
-            "scheduled_date": "2026-04-15",
-            "credit_applied": "1_month_free"
+            "corrections_collected": 0,
+            "goals_seen": 0,
+            "policy_reuse_rate": 0.0,
+            "status": "planned"
         }
 
     if __name__ == "__main__":
