@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15850
-SERVICE = "robot_seed_germination_accelerator"
-DESCRIPTION = "Robotic seed germination acceleration using optimized light, temperature, and moisture control"
+PORT = 15851
+SERVICE = "robotics_accelerator_program_v3"
+DESCRIPTION = "Accelerator program v3 for fast-tracking robotics startups with funding and mentorship"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
