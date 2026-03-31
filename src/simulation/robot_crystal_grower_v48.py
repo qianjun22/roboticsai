@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66474
+PORT=66574
 SERVICE="robot_crystal_grower_v48"
 DESCRIPTION="Sim: crystal_grower"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
