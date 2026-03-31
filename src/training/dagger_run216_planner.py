@@ -1,4 +1,4 @@
-"""Enterprise security compliance tracker — SOC2 Type II, FedRAMP Moderate, GDPR, US data residency status
+"""DAgger run216 — reward-free pure imitation DAgger, provably expert-aligned behavior for safety-critical deployments
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10403
-SERVICE = "enterprise_security_compliance"
-DESCRIPTION = "Enterprise security compliance tracker — SOC2 Type II, FedRAMP Moderate, GDPR, US data residency status"
+PORT = 10402
+SERVICE = "dagger_run216_planner"
+DESCRIPTION = "DAgger run216 — reward-free pure imitation DAgger, provably expert-aligned behavior for safety-critical deployments"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
