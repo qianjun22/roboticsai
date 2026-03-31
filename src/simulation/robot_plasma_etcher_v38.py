@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=53922
+PORT=54042
 SERVICE="robot_plasma_etcher_v38"
 DESCRIPTION="Sim: plasma_etcher"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
