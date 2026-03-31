@@ -1,4 +1,4 @@
-"""Competitive win rate tracking and attribution by deal stage, competitor, and rep
+"""Joint stiffness distribution randomization across robot links for sim diversity
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11057
-SERVICE = "competitive_win_rate_tracker"
-DESCRIPTION = "Competitive win rate tracking and attribution by deal stage, competitor, and rep"
+PORT = 11056
+SERVICE = "sim_joint_stiffness_distribution_randomizer"
+DESCRIPTION = "Joint stiffness distribution randomization across robot links for sim diversity"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
