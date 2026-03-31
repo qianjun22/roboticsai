@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12687
-SERVICE = "partner-solution-bundle-configurator"
-DESCRIPTION = "Configures solution bundles for robotics channel partners — hardware, software, and cloud service packaging tools"
+PORT = 12686
+SERVICE = "dagger-run783-planner"
+DESCRIPTION = "DAgger run 783 online learning planner — generalizable manipulation policies via interactive imitation learning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
