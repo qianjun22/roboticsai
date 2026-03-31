@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13104
-SERVICE = "robot_coral_reef_restoration"
-DESCRIPTION = "Robot training for coral reef restoration with precision coral fragment placement and transplantation"
+PORT = 13105
+SERVICE = "robotics_platform_reliability_tracker"
+DESCRIPTION = "Platform reliability tracker monitoring uptime, SLA adherence, and incident resolution for robotics cloud services"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
