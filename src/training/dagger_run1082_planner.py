@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13889
-SERVICE = "robotics_partner_scorecard_v3"
-DESCRIPTION = "Robotics partner scorecard platform v3 — partner performance metrics, tiering criteria, and QBR dashboards"
+PORT = 13888
+SERVICE = "dagger_run1082_planner"
+DESCRIPTION = "DAgger run 1082 trajectory planner — online imitation learning pipeline for GR00T fine-tuning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
