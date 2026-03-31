@@ -1,4 +1,4 @@
-"""Demand generation platform for robotics AI orchestrating multi-channel inbound and outbound campaigns with pipeline attribution
+"""Reactive obstacle avoidance controller v2 using potential fields and dynamic window approach for real-time robot navigation
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11149
-SERVICE = "demand_generation_platform"
-DESCRIPTION = "Demand generation platform for robotics AI orchestrating multi-channel inbound and outbound campaigns with pipeline attribution"
+PORT = 11148
+SERVICE = "robot_reactive_obstacle_avoider_v2"
+DESCRIPTION = "Reactive obstacle avoidance controller v2 using potential fields and dynamic window approach for real-time robot navigation"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
