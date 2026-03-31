@@ -1,4 +1,4 @@
-"""GTM ROI calculator — OCI Robot Cloud
+"""Manipulation task sequencer — OCI Robot Cloud
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10777
-SERVICE = "gtm_roi_calculator"
-DESCRIPTION = "GTM ROI calculator — OCI Robot Cloud"
+PORT = 10776
+SERVICE = "manipulation_task_sequencer"
+DESCRIPTION = "Manipulation task sequencer — OCI Robot Cloud"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
