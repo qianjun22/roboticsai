@@ -1,46 +1,27 @@
-"""Customer Journey Orchestrator
-OCI Robot Cloud — roboticsai
-"""
-from __future__ import annotations
-import json, time, random, math
-try:
-    from fastapi import FastAPI
-    from fastapi.responses import HTMLResponse, JSONResponse
-    import uvicorn
-except ImportError:
-    FastAPI = None
+import datetime
+import fastapi
+import fastapi.responses
+import uvicorn
 
-PORT = 10519
-SERVICE = "customer_journey_orchestrator"
-DESCRIPTION = "Customer journey orchestrator: aware→eval→purchase→onboard→expand automation"
+PORT = 11685
+SERVICE = "customer-journey-orchestrator"
+DESCRIPTION = "Customer journey orchestration platform for mapping touchpoints and automating engagement sequences"
 
-if FastAPI:
-    app = FastAPI(title=SERVICE, description=DESCRIPTION)
+app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
-    @app.get("/health")
-    def health():
-        return {"status": "ok", "service": SERVICE, "port": PORT, "ts": time.time()}
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": SERVICE, "port": PORT, "ts": datetime.datetime.utcnow().isoformat()}
 
-    @app.get("/", response_class=HTMLResponse)
-    def dashboard():
-        on_track = round(random.uniform(0.82, 0.94), 3); bar = int(on_track * 220)
-        return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
-<style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
-h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
-<body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | On-Track Journeys: {on_track}</p>
-<svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
-<rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>On-Track Journeys: {on_track}</text></svg>
+@app.get("/", response_class=fastapi.responses.HTMLResponse)
+def dashboard():
+    bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
+    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
+<style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:2rem}}
+h1{{color:#C74634;font-size:1.5rem}}p{{color:#94a3b8}}.chart{{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:1rem}}.bar{{width:24px;border-radius:3px 3px 0 0}}</style></head>
+<body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p><p>Port: {PORT}</p><div class="chart">{bars}</div>
+<script>setInterval(()=>document.querySelectorAll('.bar').forEach(b=>b.style.height=Math.random()*80+10+'%'),1200)</script>
 </body></html>"""
 
-    if __name__ == "__main__":
-        uvicorn.run(app, host="0.0.0.0", port=PORT)
-else:
-    import http.server, socketserver
-    class H(http.server.BaseHTTPRequestHandler):
-        def do_GET(self):
-            body = json.dumps({"status": "ok", "service": SERVICE, "port": PORT}).encode()
-            self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
-        def log_message(self, *a): pass
-    with socketserver.TCPServer(("", PORT), H) as s: s.serve_forever()
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
