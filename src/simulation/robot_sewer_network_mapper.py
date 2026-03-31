@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15339
-SERVICE = "robotics-world-model-v5"
-DESCRIPTION = "World model v5 for robot environment prediction and model-based planning"
+PORT = 15338
+SERVICE = "robot-sewer-network-mapper"
+DESCRIPTION = "Autonomous robot for sewer network mapping, blockage detection, and pipe condition assessment"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
