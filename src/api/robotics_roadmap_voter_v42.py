@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 42149
+PORT = 42151
 SERVICE = "robotics_roadmap_voter"
 DESCRIPTION = "GTM service: roadmap voter"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_roadmap_voter</h1><div class="subtitle">GTM service: roadmap voter port 42149</div></div>
+<div class="header"><h1>robotics_roadmap_voter</h1><div class="subtitle">GTM service: roadmap voter port 42151</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 42149</div>
+<div class="metric"><strong>Port:</strong> 42151</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
