@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=54422
+PORT=54542
 SERVICE="robot_flip_chip_bonder_v38"
 DESCRIPTION="Sim: flip_chip_bonder"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
