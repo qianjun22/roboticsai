@@ -1,4 +1,4 @@
-"""Sales enablement platform v2 with AI-generated objection handling and personalized competitive battlecards
+"""DAgger run 323 planner with Bayesian optimization GP-UCB acquisition for maximum information gain query selection
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10847
-SERVICE = "sales_enablement_platform_v2"
-DESCRIPTION = "Sales enablement platform v2 with AI-generated objection handling and personalized competitive battlecards"
+PORT = 10846
+SERVICE = "dagger_run323_planner"
+DESCRIPTION = "DAgger run 323 planner with Bayesian optimization GP-UCB acquisition for maximum information gain query selection"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
