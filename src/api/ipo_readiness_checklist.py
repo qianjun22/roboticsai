@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11131
+PORT=11981
 SERVICE="ipo_readiness_checklist"
-DESCRIPTION="IPO readiness checklist — $200M ARR, 300 customers, S-1"
+DESCRIPTION="IPO readiness checklist — SOX compliance, audit, S-1 prep"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
