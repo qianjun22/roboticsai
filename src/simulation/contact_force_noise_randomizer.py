@@ -1,4 +1,4 @@
-"""Customer data platform unifying behavioral, firmographic, and product usage data for GTM intelligence
+"""Contact force sensor noise randomization for F/T sensor calibration drift and signal jitter
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11105
-SERVICE = "customer_data_platform"
-DESCRIPTION = "Customer data platform unifying behavioral, firmographic, and product usage data for GTM intelligence"
+PORT = 11104
+SERVICE = "sim_contact_force_noise_randomizer"
+DESCRIPTION = "Contact force sensor noise randomization for F/T sensor calibration drift and signal jitter"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
