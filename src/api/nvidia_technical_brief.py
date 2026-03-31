@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11418
-SERVICE="greg_pavlik_brief"
-DESCRIPTION="Greg Pavlik brief — OCI CTO context, robotics conviction"
+PORT=11415
+SERVICE="nvidia_technical_brief"
+DESCRIPTION="NVIDIA technical brief — GR00T on OCI benchmark results"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}

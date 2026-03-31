@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=11418
-SERVICE="greg_pavlik_brief"
-DESCRIPTION="Greg Pavlik brief — OCI CTO context, robotics conviction"
+PORT=11423
+SERVICE="cosmos_team_meeting"
+DESCRIPTION="Cosmos team meeting — OCI compute for world model video"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/brief")
+@app.get("/meeting")
 def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
