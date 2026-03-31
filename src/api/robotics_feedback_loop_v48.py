@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66285
+PORT=66287
 SERVICE="robotics_feedback_loop_v48"
 DESCRIPTION="GTM: feedback_loop"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
