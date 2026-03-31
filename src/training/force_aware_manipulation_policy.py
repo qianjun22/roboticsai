@@ -1,4 +1,4 @@
-"""Customer Success Playbook v2
+"""Force-Aware Manipulation Policy
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10505
-SERVICE = "customer_success_playbook_v2"
-DESCRIPTION = "CS playbook v2: onboarding + QBR + expansion + renewal lifecycle"
+PORT = 10504
+SERVICE = "force_aware_manipulation_policy"
+DESCRIPTION = "Force-aware manipulation: vision + proprioception + F/T multimodal GR00T policy"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        renewal = round(random.uniform(0.96, 1.0), 3); bar = int(renewal * 220)
+        sr = round(random.uniform(0.89, 0.94), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Renewal Rate: {renewal}</p>
+<p>Port: {PORT} | Force-Aware SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Renewal Rate: {renewal}</text></svg>
+<text x='10' y='20' font-size='12'>Force-Aware SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
