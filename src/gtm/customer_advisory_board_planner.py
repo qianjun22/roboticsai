@@ -1,4 +1,4 @@
-"""Long-horizon task planner v2 — 10-step tasks, 84% SR, LLM-guided recovery in 120ms
+"""Customer advisory board — 5 design partners, quarterly roadmap input, Series A social proof
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10328
-SERVICE = "long_horizon_task_planner_v2"
-DESCRIPTION = "Long-horizon task planner v2 — 10-step tasks, 84% SR, LLM-guided recovery in 120ms"
+PORT = 10329
+SERVICE = "customer_advisory_board_planner"
+DESCRIPTION = "Customer advisory board — 5 design partners, quarterly roadmap input, Series A social proof"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -36,24 +36,23 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.post("/planning/long_horizon_v2/plan")
-    def plan():
+    @app.get("/customers/cab/planner")
+    def cab_planner():
         return {
-            "plan_id": f"lh_{int(time.time())}",
-            "steps": 10,
-            "estimated_sr": 0.84,
-            "planning_ms": 80,
-            "subtasks": ["fetch", "orient", "insert", "fasten"]
+            "members": [{"company": "Machina", "status": "confirmed"}],
+            "target_size": 5,
+            "next_meeting": "2026-06-01",
+            "agenda": ["H2_roadmap", "series_a_reference_ask", "feature_beta_access"]
         }
 
-    @app.post("/planning/long_horizon_v2/replan")
-    def replan():
+    @app.post("/customers/cab/recruit")
+    def cab_recruit():
         return {
-            "recovery_plan_id": f"rec_{int(time.time())}",
-            "failed_step": 6,
-            "remaining_steps": 4,
-            "completion_probability": 0.79,
-            "replan_ms": 120
+            "company_id": "target_robotics_co",
+            "source": "nvidia_referral",
+            "outreach_sent": True,
+            "value_prop": "beta_access_roadmap_input",
+            "expected_response_days": 14
         }
 
     if __name__ == "__main__":
