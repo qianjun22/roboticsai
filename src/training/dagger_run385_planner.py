@@ -1,4 +1,4 @@
-"""Product-market fit v2 tracker measuring Sean Ellis score, retention cohorts, and ICP density
+"""DAgger run385 with BEAR behavior-regularized ensemble RL using kernel MMD support constraint
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11095
-SERVICE = "product_market_fit_v2"
-DESCRIPTION = "Product-market fit v2 tracker measuring Sean Ellis score, retention cohorts, and ICP density"
+PORT = 11094
+SERVICE = "dagger_run385_planner"
+DESCRIPTION = "DAgger run385 with BEAR behavior-regularized ensemble RL using kernel MMD support constraint"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
