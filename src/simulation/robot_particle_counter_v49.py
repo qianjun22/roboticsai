@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=67010
+PORT=67110
 SERVICE="robot_particle_counter_v49"
 DESCRIPTION="Sim: particle_counter"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
