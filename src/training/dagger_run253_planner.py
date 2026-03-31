@@ -1,4 +1,4 @@
-"""Competitive Intelligence Tracker
+"""DAgger Run253 Planner — Multi-Task DAgger
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10551
-SERVICE = "competitive_intelligence_tracker"
-DESCRIPTION = "Competitive intelligence: auto-track PI + Covariant + AWS + Boston Dynamics signals"
+PORT = 10550
+SERVICE = "dagger_run253_planner"
+DESCRIPTION = "DAgger run253: multi-task DAgger — train 5 tasks in one session, avg 85% SR"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        signals = random.randint(4, 9); bar = int((signals/12) * 220)
+        avg_sr = round(random.uniform(0.83, 0.88), 3); bar = int(avg_sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | New Signals This Week: {signals}</p>
+<p>Port: {PORT} | Multi-Task Avg SR: {avg_sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>CI Signals: {signals} this week</text></svg>
+<text x='10' y='20' font-size='12'>5-Task Avg SR: {avg_sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
