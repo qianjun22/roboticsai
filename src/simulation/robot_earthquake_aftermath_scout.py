@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23459
-SERVICE = "robotics_partner_channel_enablement"
-DESCRIPTION = "Platform ecosystem GTM: partner integrations and marketplace for robotics AI"
+PORT = 23458
+SERVICE = "robot_earthquake_aftermath_scout"
+DESCRIPTION = "Simulates force-torque sensor calibration procedures"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
