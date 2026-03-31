@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=77781
+PORT=77783
 SERVICE="robotics_pitch_deck_optimizer_v58"
 DESCRIPTION="GTM: pitch_deck_optimizer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
