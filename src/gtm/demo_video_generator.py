@@ -1,14 +1,9 @@
-"""
-Automated demo video generator — script generator for 3 audience types
-(executive 3min / technical 8min / social 60s), metrics overlay specs, QA checklist.
+"""Automated demo video generator — script generation for 3 audience types (executive 3min / technical 8min / social 60s), metrics overlay planner, QA checklist (SR>85%, latency<250ms, Oracle branding).
 FastAPI service — OCI Robot Cloud
-Port: 10111
-"""
+Port: 10111"""
 from __future__ import annotations
 import json, math, random, time
 from datetime import datetime
-from typing import Optional
-
 try:
     from fastapi import FastAPI
     from fastapi.responses import HTMLResponse, JSONResponse
@@ -24,163 +19,89 @@ PORT = 10111
 VIDEO_VARIANTS = {
     "executive": {
         "duration_s": 180,
-        "audience": "executive",
         "key_moments": [
-            {"t": 0, "label": "Hook: robot picks object in 231ms"},
-            {"t": 30, "label": "Business value: $0.0043/10k steps"},
-            {"t": 90, "label": "93% success rate live demo"},
-            {"t": 150, "label": "OCI integration + call to action"},
+            {"t": 0, "label": "Hook: robot completes pick-and-place in 2s"},
+            {"t": 20, "label": "Problem: manual robot programming costs $200K+/deployment"},
+            {"t": 50, "label": "Solution: OCI Robot Cloud — train once, deploy anywhere"},
+            {"t": 100, "label": "Demo: live fine-tune from 100 demos → 93% SR"},
+            {"t": 150, "label": "ROI: 10× faster deployment, $0.004/10k training steps"},
+            {"t": 170, "label": "CTA: Join design partner program"},
         ],
         "key_messages": [
-            "OCI Robot Cloud cuts fine-tuning cost 8.7× vs baseline",
-            "93% task success rate with DAgger skill composition",
-            "Deploy in minutes on OCI GPU shapes",
+            "93% task success rate — 8pp above industry baseline",
+            "Fine-tune in under 40 minutes on OCI A100",
+            "Multi-robot, multi-task, multi-cloud ready",
+            "Oracle infrastructure — enterprise security & compliance",
         ],
         "qc_checklist": [
-            "Exec summary slide shown within first 10s",
-            "No jargon — plain language throughout",
-            "Logo + Oracle branding visible",
-            "CTA and contact info in final 15s",
-            "Total duration 2:45–3:15",
+            "SR > 85% shown on screen",
+            "Latency < 250ms overlay visible",
+            "Oracle branding on all slides",
+            "No competitor logos",
+            "Legal disclaimer at end",
         ],
     },
     "technical": {
         "duration_s": 480,
-        "audience": "technical",
         "key_moments": [
-            {"t": 0, "label": "Architecture overview: GR00T N1.6 + Isaac Sim"},
-            {"t": 60, "label": "SDG pipeline: Genesis→LeRobot→fine-tune"},
-            {"t": 180, "label": "DAgger run143: boundary corrections demo"},
-            {"t": 300, "label": "Multi-GPU DDP 3.07× throughput benchmark"},
-            {"t": 420, "label": "API walkthrough: /train, /eval, /dagger"},
+            {"t": 0, "label": "Architecture overview: GR00T N1.5 + LeRobot + OCI"},
+            {"t": 60, "label": "Data collection: Genesis SDG pipeline"},
+            {"t": 120, "label": "Fine-tuning: DDP multi-GPU, 2.35 it/s on A100"},
+            {"t": 200, "label": "DAgger skill-composition: boundary corrections demo"},
+            {"t": 280, "label": "Closed-loop eval: 93% SR, 231ms inference"},
+            {"t": 360, "label": "Jetson deploy: edge inference < 250ms"},
+            {"t": 420, "label": "SDK walkthrough: pip install oci-robot-cloud"},
+            {"t": 460, "label": "API tour: /train, /eval, /deploy endpoints"},
         ],
         "key_messages": [
             "End-to-end pipeline: SDG → fine-tune → eval → deploy",
-            "MAE 0.013 (8.7× vs GR00T baseline) after 2000 steps",
-            "FastAPI microservices, ports 8000-10111, pip-installable SDK",
-            "DAgger run143: 93% SR with skill boundary corrections",
+            "DAgger run143: skill boundary corrections → 93% SR",
+            "Multi-GPU DDP: 3.07× throughput vs single GPU",
+            "Cosmos world model integration for sim-to-real transfer",
+            "Open SDK + REST API — bring your own robot",
         ],
         "qc_checklist": [
-            "Code snippets readable at 1080p",
-            "Terminal output shown for key commands",
-            "Benchmark numbers match session memory",
-            "API /docs URL visible during API section",
-            "Total duration 7:30–8:30",
+            "SR > 85% shown on screen",
+            "Latency < 250ms overlay visible",
+            "Oracle branding on all slides",
+            "Code snippets syntax-highlighted",
+            "Architecture diagram included",
+            "GPU utilization metrics shown (87%+)",
+            "No competitor logos",
+            "Legal disclaimer at end",
         ],
     },
     "social": {
         "duration_s": 60,
-        "audience": "social",
         "key_moments": [
-            {"t": 0, "label": "Robot picks cube — 3s loop"},
-            {"t": 10, "label": "Text overlay: 93% success rate"},
-            {"t": 25, "label": "Split screen: sim vs real"},
-            {"t": 45, "label": "OCI logo + link"},
+            {"t": 0, "label": "Eye-catch: robot arm moving fast"},
+            {"t": 5, "label": "Text overlay: '93% success rate'"},
+            {"t": 15, "label": "Split screen: training UI + robot action"},
+            {"t": 35, "label": "Metric burst: latency, SR, cost"},
+            {"t": 50, "label": "CTA: oracle.com/robotics"},
         ],
         "key_messages": [
-            "AI robots trained in the cloud in minutes",
-            "93% success rate — powered by Oracle OCI",
+            "Train a robot in 40 minutes",
+            "93% task success — powered by Oracle Cloud",
+            "The future of manufacturing is here",
         ],
         "qc_checklist": [
-            "Vertical crop (9:16) for Reels/TikTok",
-            "Captions/subtitles present",
-            "No music licensing issues",
-            "Hook in first 3s",
-            "Total duration 55–65s",
+            "SR > 85% shown on screen",
+            "Latency < 250ms overlay visible",
+            "Oracle branding prominent",
+            "Aspect ratio: 9:16 (vertical) + 1:1 (square) exports",
+            "Captions / subtitles included",
+            "No competitor logos",
         ],
     },
 }
 
-METRICS_OVERLAY = {
-    "inference_latency_ms": 231,
-    "composition_sr_pct": 93,
-    "cost_per_10k_steps_usd": 0.0043,
-    "mae": 0.013,
-    "throughput_its": 2.35,
-    "gpu_util_pct": 87,
-    "ddp_speedup": 3.07,
-}
-
 if USE_FASTAPI:
-    app = FastAPI(
-        title="Demo Video Generator",
-        version="1.0.0",
-        description="Automated demo video script generator for executive / technical / social audiences.",
-    )
+    app = FastAPI(title="Demo Video Generator", version="1.0.0")
 
-    class GenerateRequest(BaseModel):
-        audience_type: str  # executive | technical | social
-        duration_s: Optional[int] = None  # override default duration
-        include_metrics_overlay: Optional[bool] = True
-
-    @app.post("/demo/generate_script")
-    def generate_script(req: GenerateRequest):
-        atype = req.audience_type.lower()
-        if atype not in VIDEO_VARIANTS:
-            return JSONResponse(
-                status_code=400,
-                content={"error": f"Unknown audience_type '{atype}'. Valid: {list(VIDEO_VARIANTS.keys())}"},
-            )
-
-        variant = VIDEO_VARIANTS[atype]
-        duration = req.duration_s or variant["duration_s"]
-
-        # Generate a simple timed script
-        script_lines = []
-        prev_t = 0
-        for moment in variant["key_moments"]:
-            t = moment["t"]
-            script_lines.append({
-                "time_range": f"{prev_t}s–{t if t > prev_t else t + 10}s",
-                "action": moment["label"],
-            })
-            prev_t = t
-        script_lines.append({
-            "time_range": f"{prev_t}s–{duration}s",
-            "action": "Closing / CTA",
-        })
-
-        result = {
-            "audience_type": atype,
-            "duration_s": duration,
-            "script": script_lines,
-            "timing": {"total_s": duration, "sections": len(script_lines)},
-            "key_messages": variant["key_messages"],
-            "qc_checklist": variant["qc_checklist"],
-            "ts": datetime.utcnow().isoformat(),
-        }
-        if req.include_metrics_overlay:
-            result["metrics_overlay"] = METRICS_OVERLAY
-
-        return result
-
-    @app.get("/demo/video_variants")
-    def video_variants(variant: Optional[str] = None):
-        if variant:
-            v = variant.lower()
-            if v not in VIDEO_VARIANTS:
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": f"Unknown variant '{v}'. Valid: {list(VIDEO_VARIANTS.keys())}"},
-                )
-            data = VIDEO_VARIANTS[v]
-            return {
-                "variant": v,
-                "script": [m["label"] for m in data["key_moments"]],
-                "duration": data["duration_s"],
-                "key_moments": data["key_moments"],
-                "qc_checklist": data["qc_checklist"],
-                "ts": datetime.utcnow().isoformat(),
-            }
-        # Return summary of all variants
-        return {
-            "variants": {
-                k: {"duration_s": v["duration_s"], "audience": v["audience"], "key_message_count": len(v["key_messages"])}
-                for k, v in VIDEO_VARIANTS.items()
-            },
-            "metrics_overlay": METRICS_OVERLAY,
-            "ts": datetime.utcnow().isoformat(),
-        }
+    class ScriptRequest(BaseModel):
+        audience_type: str
+        duration_s: int = None
 
     @app.get("/health")
     def health():
@@ -188,25 +109,70 @@ if USE_FASTAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        return HTMLResponse("""<!DOCTYPE html><html><head><title>Demo Video Generator</title>
-<style>body{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}
-h1{color:#C74634}a{color:#38bdf8}
-table{border-collapse:collapse;margin-top:1rem}
-td,th{padding:0.5rem 1rem;border:1px solid #334155}</style></head><body>
-<h1>Demo Video Generator</h1>
-<p>OCI Robot Cloud &middot; Port 10111</p>
-<table>
-<tr><th>Variant</th><th>Audience</th><th>Duration</th></tr>
-<tr><td>executive</td><td>C-suite / leadership</td><td>3 min</td></tr>
-<tr><td>technical</td><td>Engineers / architects</td><td>8 min</td></tr>
-<tr><td>social</td><td>Social media</td><td>60 s</td></tr>
-</table>
-<p><a href="/docs">API Docs</a> | <a href="/demo/video_variants">All Variants</a> | <a href="/health">Health</a></p>
-</body></html>""")
+        return HTMLResponse(f"""<!DOCTYPE html><html><head><title>Demo Video Generator</title>
+<style>body{{background:#0f172a;color:#f1f5f9;font-family:sans-serif;padding:2rem}}h1{{color:#C74634}}a{{color:#38bdf8}}</style></head><body>
+<h1>Demo Video Generator</h1><p>OCI Robot Cloud · Port {PORT}</p><p><a href="/docs">API Docs</a> | <a href="/health">Health</a></p></body></html>""")
+
+    @app.post("/demo/generate_script")
+    def generate_script(req: ScriptRequest):
+        audience = req.audience_type if req.audience_type in VIDEO_VARIANTS else "executive"
+        variant = VIDEO_VARIANTS[audience]
+        duration = req.duration_s if req.duration_s else variant["duration_s"]
+
+        # Generate a basic timed script from key moments
+        script = []
+        moments = variant["key_moments"]
+        for i, moment in enumerate(moments):
+            end_t = moments[i + 1]["t"] if i + 1 < len(moments) else duration
+            script.append({
+                "start_s": moment["t"],
+                "end_s": end_t,
+                "duration_s": end_t - moment["t"],
+                "narration": moment["label"],
+                "metrics_overlay": {
+                    "sr": "93%",
+                    "latency_ms": "231ms",
+                    "show": moment["t"] >= 10,
+                },
+            })
+
+        return JSONResponse({
+            "audience_type": audience,
+            "total_duration_s": duration,
+            "script": script,
+            "timing": {
+                "hook_s": moments[0]["t"],
+                "demo_s": next((m["t"] for m in moments if "Demo" in m["label"] or "demo" in m["label"]), None),
+                "cta_s": moments[-1]["t"],
+            },
+            "key_messages": variant["key_messages"],
+            "qc_checklist": variant["qc_checklist"],
+            "ts": datetime.utcnow().isoformat(),
+        })
+
+    @app.get("/demo/video_variants")
+    def video_variants(variant: str = None):
+        if variant and variant in VIDEO_VARIANTS:
+            v = VIDEO_VARIANTS[variant]
+            return JSONResponse({
+                "variant": variant,
+                "duration_s": v["duration_s"],
+                "key_moments": v["key_moments"],
+                "qc_checklist": v["qc_checklist"],
+                "key_messages": v["key_messages"],
+                "ts": datetime.utcnow().isoformat(),
+            })
+        return JSONResponse({
+            "available_variants": list(VIDEO_VARIANTS.keys()),
+            "summary": {
+                k: {"duration_s": v["duration_s"], "moments": len(v["key_moments"])}
+                for k, v in VIDEO_VARIANTS.items()
+            },
+            "ts": datetime.utcnow().isoformat(),
+        })
 
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
-
 else:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -214,7 +180,6 @@ else:
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps({"status": "ok", "port": PORT}).encode())
-        def log_message(self, *a):
-            pass
+        def log_message(self, *a): pass
     if __name__ == "__main__":
         HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
