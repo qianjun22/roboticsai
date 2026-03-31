@@ -1,5 +1,5 @@
 """
-Product-led growth engine — SDK to freemium pilot to paid self-serve funnel
+DAgger run183: reward-weighted imitation planning service
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10271
-SERVICE = "product_led_growth_engine"
-DESCRIPTION = "Product-led growth engine — SDK to freemium pilot to paid self-serve funnel"
+PORT = 10270
+SERVICE = "dagger_run183_planner"
+DESCRIPTION = "DAgger run183: reward-weighted imitation — weight corrections by outcome quality"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,23 +37,23 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/growth/plg/funnel")
-    def plg_funnel():
+    @app.get("/dagger/run183/config")
+    def dagger_run183_config():
         return {
-            "sdk_downloads": 847,
-            "api_calls": 312,
-            "demo_requests": 47,
-            "pilots": 12,
-            "paid": 3,
-            "sdk_to_paid_rate": 0.0035
+            "run": 183,
+            "strategy": "reward_weighted_imitation",
+            "weight_scheme": "sr_delta",
+            "high_impact_multiplier": 3.0,
+            "sr_target": 0.95
         }
 
-    @app.get("/growth/plg/pql")
-    def plg_pql():
+    @app.get("/dagger/run183/metrics")
+    def dagger_run183_metrics():
         return {
-            "pql_threshold": {"eval_runs": 3, "sr_min": 0.70},
-            "current_pqls": 8,
-            "conversion_rate": 0.375
+            "corrections_collected": 0,
+            "weighted_sr": 0.0,
+            "data_efficiency_factor": 1.5,
+            "status": "planned"
         }
 
     if __name__ == "__main__":
