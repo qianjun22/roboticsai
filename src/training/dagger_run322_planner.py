@@ -1,4 +1,4 @@
-"""Market development fund tracker for NVIDIA co-marketing and robotics channel incentive programs
+"""DAgger run 322 planner with neural tangent kernel approximation for fast policy adaptation
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10843
-SERVICE = "market_development_fund_tracker"
-DESCRIPTION = "Market development fund tracker for NVIDIA co-marketing and robotics channel incentive programs"
+PORT = 10842
+SERVICE = "dagger_run322_planner"
+DESCRIPTION = "DAgger run 322 planner with neural tangent kernel approximation for fast policy adaptation"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
