@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=28985
+PORT=28987
 SERVICE="robotics_stakeholder_map_v17"
 DESCRIPTION="GTM: stakeholder_map"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
