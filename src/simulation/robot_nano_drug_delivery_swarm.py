@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15394
+PORT = 15714
 SERVICE = "robot_nano_drug_delivery_swarm"
-DESCRIPTION = "Simulation service for nano-scale drug delivery swarm robotics"
+DESCRIPTION = "Nano-scale drug delivery swarm coordination for targeted therapy"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

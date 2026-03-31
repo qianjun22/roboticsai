@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15395
+PORT = 15715
 SERVICE = "robotics_ai_governance_platform_v4"
-DESCRIPTION = "AI governance platform for robotics compliance and oversight"
+DESCRIPTION = "AI governance platform v4 for robotics compliance and oversight"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
