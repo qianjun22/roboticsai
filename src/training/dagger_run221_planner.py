@@ -1,4 +1,4 @@
-"""Customer journey analytics — 5-stage funnel from awareness to advocate with conversion rates and timing
+"""DAgger run221 — visual goal DAgger using CLIP-encoded goal images, task specification by photo
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10423
-SERVICE = "customer_journey_analytics"
-DESCRIPTION = "Customer journey analytics — 5-stage funnel from awareness to advocate with conversion rates and timing"
+PORT = 10422
+SERVICE = "dagger_run221_planner"
+DESCRIPTION = "DAgger run221 — visual goal DAgger using CLIP-encoded goal images, task specification by photo"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
