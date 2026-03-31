@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15754
-SERVICE = "robot_ocean_microplastic_digester"
-DESCRIPTION = "Robotic ocean microplastic digestion using enzymatic degradation swarms"
+PORT = 15755
+SERVICE = "robotics_tax_automation_v3"
+DESCRIPTION = "Tax automation v3 for multi-jurisdiction robotics service tax compliance"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
