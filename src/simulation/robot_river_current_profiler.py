@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23507
-SERVICE = "robotics_analyst_briefing_portal"
-DESCRIPTION = "Grid resilience monitoring service for energy sector robots"
+PORT = 23506
+SERVICE = "robot_river_current_profiler"
+DESCRIPTION = "Simulates mine-detection crawler with ground-penetrating radar"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
