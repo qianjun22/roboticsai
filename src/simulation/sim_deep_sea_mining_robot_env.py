@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11916
-SERVICE = "sim_deep_sea_mining_robot_env"
-DESCRIPTION = "Deep sea mining robot simulation environment for seafloor resource extraction, pressure adaptation, and sediment management in extreme depths"
+PORT = 11996
+SERVICE = "sim-deep-sea-mining-robot-env"
+DESCRIPTION = "Deep sea mining robot simulation environment for underwater excavation and mineral extraction training"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
