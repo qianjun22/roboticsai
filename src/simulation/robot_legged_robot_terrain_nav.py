@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17559
-SERVICE = "robotics_partner_ecosystem_v3"
-DESCRIPTION = "Partner ecosystem management for robotics platform integrations v3"
+PORT = 17558
+SERVICE = "robot_legged_robot_terrain_nav"
+DESCRIPTION = "Legged robot terrain navigation with adaptive gait control simulation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
