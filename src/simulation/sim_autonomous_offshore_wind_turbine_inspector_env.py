@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12325
-SERVICE = "partner_sandbox_environment_manager"
-DESCRIPTION = "Partner sandbox environment manager for robotics API testing and integration development"
+PORT = 12324
+SERVICE = "sim_autonomous_offshore_wind_turbine_inspector_env"
+DESCRIPTION = "Simulation environment for autonomous offshore wind turbine inspection robot aerial navigation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
