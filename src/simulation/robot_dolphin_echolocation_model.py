@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23543
-SERVICE = "robotics_sales_territory_mapper"
-DESCRIPTION = "Soil health monitoring network powered by robotic probes"
+PORT = 23542
+SERVICE = "robot_dolphin_echolocation_model"
+DESCRIPTION = "Models atmospheric profiling balloon ascent and descent control"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
