@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11569
-SERVICE = "customer-success-automation-platform"
-DESCRIPTION = "Automates customer success workflows including QBRs, health checks, renewal alerts, and expansion triggers"
+PORT = 11881
+SERVICE = "customer_success_automation_platform"
+DESCRIPTION = "Customer success automation platform for health score monitoring, automated intervention playbooks, and risk-to-green escalation workflows"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
