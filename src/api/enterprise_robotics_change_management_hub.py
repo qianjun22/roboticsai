@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12297
+PORT = 12453
 SERVICE = "enterprise_robotics_change_management_hub"
-DESCRIPTION = "Enterprise robotics change management hub for workforce transition planning and adoption tracking"
+DESCRIPTION = "Enterprise robotics change management hub supporting organizational readiness assessment, stakeholder communication, and adoption tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
