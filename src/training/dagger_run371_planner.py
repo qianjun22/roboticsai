@@ -1,4 +1,4 @@
-"""Customer expansion and net revenue retention tracking platform
+"""DAgger run371 with GNN attention aggregation for graph-structured state representations
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11039
-SERVICE = "customer_expansion_revenue_tracker"
-DESCRIPTION = "Customer expansion and net revenue retention tracking platform"
+PORT = 11038
+SERVICE = "dagger_run371_planner"
+DESCRIPTION = "DAgger run371 with GNN attention aggregation for graph-structured state representations"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
