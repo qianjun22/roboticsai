@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12313
+PORT = 12491
 SERVICE = "enterprise_robotics_workforce_analytics"
-DESCRIPTION = "Enterprise robotics workforce analytics for human-robot collaboration efficiency and safety metrics"
+DESCRIPTION = "Enterprise robotics workforce analytics platform measuring human-robot collaboration efficiency, operator utilization, and skill gap identification"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
