@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15483
-SERVICE = "robotics_fraud_detection_v4"
-DESCRIPTION = "Real-time fraud detection for robotics marketplace transactions"
+PORT = 15482
+SERVICE = "robot_solid_state_battery_assembler"
+DESCRIPTION = "Simulation service for solid-state battery assembly robotics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
