@@ -1,4 +1,4 @@
-"""LSTM proprioceptive state estimator v2 — 0.3mm position error at 2ms, fault-tolerant camera-free operation
+"""Monte Carlo revenue forecasting — 10K simulations, P10/P50/P90 distribution, NVIDIA partnership as key driver
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10448
-SERVICE = "proprioceptive_state_estimator_v2"
-DESCRIPTION = "LSTM proprioceptive state estimator v2 — 0.3mm position error at 2ms, fault-tolerant camera-free operation"
+PORT = 10449
+SERVICE = "revenue_forecasting_engine"
+DESCRIPTION = "Monte Carlo revenue forecasting — 10K simulations, P10/P50/P90 distribution, NVIDIA partnership as key driver"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
