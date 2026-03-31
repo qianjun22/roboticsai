@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=51010
+PORT=51130
 SERVICE="robot_gene_editor_v35"
 DESCRIPTION="Sim: gene_editor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
