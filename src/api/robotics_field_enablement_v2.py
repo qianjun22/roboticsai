@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13308
-SERVICE = "robot_construction_rebar_tier"
-DESCRIPTION = "Robot training for construction rebar tying with wire feed control and joint positioning in reinforced concrete structures"
+PORT = 13309
+SERVICE = "robotics_field_enablement_v2"
+DESCRIPTION = "Field enablement v2 for equipping robotics sales teams with competitive positioning, demo scripts, and technical objection handling"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
