@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23483
-SERVICE = "robotics_startup_pitch_deck_builder"
-DESCRIPTION = "Data governance framework for enterprise robotics training data"
+PORT = 23482
+SERVICE = "robot_hydrothermal_vent_sampler"
+DESCRIPTION = "Simulates continuum soft arm kinematics and path planning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
