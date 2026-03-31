@@ -1,4 +1,4 @@
-"""Revenue Operations Dashboard — unified RevOps metrics: pipeline, win rate, forecast, CAC/LTV.
+"""Neural Scene Completion — completes partial point clouds for occluded object grasping.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10557
-SERVICE = "revenue_operations_dashboard"
-DESCRIPTION = "Unified RevOps: pipeline coverage, win rate, forecast, CAC/LTV, single source of truth."
+PORT = 10556
+SERVICE = "neural_scene_completion"
+DESCRIPTION = "Completes partial point clouds; occluded object reconstruction; full scene from partial RGB-D observation."
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -24,17 +24,17 @@ if _has_fastapi:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        coverage = round(random.uniform(3.8, 4.8), 1)
-        win_rate = round(random.uniform(0.30, 0.42), 2)
-        bar = int(win_rate * 220)
+        iou = round(random.uniform(0.80, 0.88), 3)
+        latency = round(random.uniform(72, 85), 1)
+        bar = int(iou * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}span.val{{color:#38bdf8}}</style></head><body>
 <h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Pipeline Coverage: <span class="val">{coverage}×</span> | Win Rate: <span class="val">{win_rate}</span> | Port: <span class="val">{PORT}</span></p>
+<p>IoU: <span class="val">{iou}</span> | Latency: <span class="val">{latency}ms</span> | Port: <span class="val">{PORT}</span></p>
 <svg width="260" height="40"><rect width="{bar}" height="30" y="5" fill="#38bdf8" rx="3"/>
-<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{win_rate}</text></svg>
-<p style="color:#64748b;font-size:12px">GET /gtm/revops/dashboard/summary | GET /gtm/revops/alerts/active</p>
+<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{iou}</text></svg>
+<p style="color:#64748b;font-size:12px">POST /training/scene/complete | GET /training/scene/completion/metrics</p>
 </body></html>"""
 
     if __name__ == "__main__":
