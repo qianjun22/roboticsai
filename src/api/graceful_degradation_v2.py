@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=10925
+PORT=12827
 SERVICE="graceful_degradation_v2"
-DESCRIPTION="Graceful degradation v2 — fallback to BC when DAgger fails"
+DESCRIPTION="Graceful degradation v2 — cached responses when GPU down"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/degrade")
+@app.get("/degradation")
 def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
