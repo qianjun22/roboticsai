@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=67198
+PORT=67298
 SERVICE="robot_diffusion_furnace_v49"
 DESCRIPTION="Sim: diffusion_furnace"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
