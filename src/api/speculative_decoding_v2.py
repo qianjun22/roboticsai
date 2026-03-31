@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=10805
+PORT=12293
 SERVICE="speculative_decoding_v2"
-DESCRIPTION="Speculative decoding v2 — 3x action prediction speedup"
+DESCRIPTION="Speculative decoding v2 — draft model for action generation"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}

@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11081
+PORT=12307
 SERVICE="pipeline_parallelism_v2"
-DESCRIPTION="Pipeline parallelism v2 — 4-stage GR00T inference"
+DESCRIPTION="Pipeline parallelism v2 — 4-GPU training, micro-batch pipeline"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
