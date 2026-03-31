@@ -1,10 +1,11 @@
-"""Expansion Revenue Tracker — FastAPI service (port 10205).
+"""Optical Flow Trainer — FastAPI service (port 10204).
 
-Tracks expansion ARR separate from new logo ARR; monitors NRR toward >100% target.
-Q3 forecast: $85K expansion from 3 customers. NRR trend: 118% → target 130%.
+RAFT-based optical flow training for robot motion perception.
+Detects moving objects (conveyors, dynamic parts) at 4ms/frame pair, 192x192.
 """
 
 import json
+import time
 from typing import Any, Dict
 
 try:
@@ -15,8 +16,8 @@ try:
 except ImportError:
     _FASTAPI_AVAILABLE = False
 
-PORT = 10205
-SERVICE_NAME = "expansion_revenue_tracker"
+PORT = 10204
+SERVICE_NAME = "optical_flow_trainer"
 
 _DASHBOARD_HTML = """
 <!DOCTYPE html>
@@ -24,7 +25,7 @@ _DASHBOARD_HTML = """
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expansion Revenue Tracker | OCI Robot Cloud</title>
+  <title>Optical Flow Trainer | OCI Robot Cloud</title>
   <style>
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; }
     header { background: #1e293b; border-bottom: 2px solid #C74634; padding: 16px 32px; display: flex; align-items: center; gap: 16px; }
@@ -43,53 +44,44 @@ _DASHBOARD_HTML = """
     .endpoint-list li:last-child { border-bottom: none; }
     .method { display: inline-block; width: 46px; text-align: center; border-radius: 4px; font-size: 0.72rem; font-weight: 700; padding: 1px 0; margin-right: 8px; }
     .get { background: #0369a1; color: #e0f2fe; }
+    .post { background: #065f46; color: #d1fae5; }
     footer { text-align: center; padding: 24px; font-size: 0.75rem; color: #475569; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Expansion Revenue Tracker</h1>
-    <span class="badge">port 10205</span>
+    <h1>Optical Flow Trainer</h1>
+    <span class="badge">port 10204</span>
   </header>
   <div class="container">
     <div class="metrics">
-      <div class="metric"><div class="val">118%</div><div class="lbl">Current NRR</div></div>
-      <div class="metric"><div class="val">130%</div><div class="lbl">NRR Target</div></div>
-      <div class="metric"><div class="val">$85K</div><div class="lbl">Q3 Expansion Forecast</div></div>
+      <div class="metric"><div class="val">4ms</div><div class="lbl">Per Frame Pair</div></div>
+      <div class="metric"><div class="val">192&times;192</div><div class="lbl">Resolution</div></div>
+      <div class="metric"><div class="val">89%</div><div class="lbl">Flow-Augmented SR</div></div>
     </div>
 
     <div class="card">
-      <h2>Expansion ARR by Motion — $K</h2>
+      <h2>Success Rate — Flow-Augmented vs RGB-Only</h2>
       <div class="chart-wrap">
-        <svg viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+        <svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
           <!-- Y-axis labels -->
-          <text x="34" y="20" fill="#94a3b8" font-size="10" text-anchor="end">$80K</text>
-          <text x="34" y="65" fill="#94a3b8" font-size="10" text-anchor="end">$60K</text>
-          <text x="34" y="105" fill="#94a3b8" font-size="10" text-anchor="end">$40K</text>
-          <text x="34" y="145" fill="#94a3b8" font-size="10" text-anchor="end">$20K</text>
-          <text x="34" y="170" fill="#94a3b8" font-size="10" text-anchor="end">$0</text>
+          <text x="30" y="20" fill="#94a3b8" font-size="11" text-anchor="end">100%</text>
+          <text x="30" y="65" fill="#94a3b8" font-size="11" text-anchor="end">75%</text>
+          <text x="30" y="110" fill="#94a3b8" font-size="11" text-anchor="end">50%</text>
+          <text x="30" y="155" fill="#94a3b8" font-size="11" text-anchor="end">0%</text>
           <!-- Gridlines -->
-          <line x1="38" y1="16" x2="510" y2="16" stroke="#334155" stroke-width="1"/>
-          <line x1="38" y1="61" x2="510" y2="61" stroke="#334155" stroke-width="1"/>
-          <line x1="38" y1="101" x2="510" y2="101" stroke="#334155" stroke-width="1"/>
-          <line x1="38" y1="141" x2="510" y2="141" stroke="#334155" stroke-width="1"/>
-          <line x1="38" y1="166" x2="510" y2="166" stroke="#334155" stroke-width="1"/>
-          <!-- Bar: robot expansion $41K → height ~84 -->
-          <rect x="52" y="83" width="72" height="83" rx="4" fill="#38bdf8"/>
-          <text x="88" y="76" fill="#38bdf8" font-size="11" font-weight="bold" text-anchor="middle">$41K</text>
-          <text x="88" y="184" fill="#94a3b8" font-size="10" text-anchor="middle">Robot Exp.</text>
-          <!-- Bar: use case $28K → height ~57 -->
-          <rect x="166" y="109" width="72" height="57" rx="4" fill="#C74634"/>
-          <text x="202" y="102" fill="#C74634" font-size="11" font-weight="bold" text-anchor="middle">$28K</text>
-          <text x="202" y="184" fill="#94a3b8" font-size="10" text-anchor="middle">Use Case</text>
-          <!-- Bar: tier upgrade $67K → height ~136 -->
-          <rect x="280" y="30" width="72" height="136" rx="4" fill="#7c3aed"/>
-          <text x="316" y="23" fill="#a78bfa" font-size="11" font-weight="bold" text-anchor="middle">$67K</text>
-          <text x="316" y="184" fill="#94a3b8" font-size="10" text-anchor="middle">Tier Upgrade</text>
-          <!-- Bar: volume $15K → height ~30 -->
-          <rect x="394" y="136" width="72" height="30" rx="4" fill="#0284c7"/>
-          <text x="430" y="129" fill="#7dd3fc" font-size="11" font-weight="bold" text-anchor="middle">$15K</text>
-          <text x="430" y="184" fill="#94a3b8" font-size="10" text-anchor="middle">Volume</text>
+          <line x1="36" y1="16" x2="460" y2="16" stroke="#334155" stroke-width="1"/>
+          <line x1="36" y1="61" x2="460" y2="61" stroke="#334155" stroke-width="1"/>
+          <line x1="36" y1="106" x2="460" y2="106" stroke="#334155" stroke-width="1"/>
+          <line x1="36" y1="151" x2="460" y2="151" stroke="#334155" stroke-width="1"/>
+          <!-- Bar: flow-augmented 89% -->
+          <rect x="80" y="24" width="100" height="127" rx="4" fill="#38bdf8"/>
+          <text x="130" y="18" fill="#38bdf8" font-size="12" font-weight="bold" text-anchor="middle">89%</text>
+          <text x="130" y="168" fill="#94a3b8" font-size="11" text-anchor="middle">Flow-Augmented</text>
+          <!-- Bar: RGB-only 84% -->
+          <rect x="260" y="30" width="100" height="121" rx="4" fill="#C74634"/>
+          <text x="310" y="24" fill="#C74634" font-size="12" font-weight="bold" text-anchor="middle">84%</text>
+          <text x="310" y="168" fill="#94a3b8" font-size="11" text-anchor="middle">RGB-Only</text>
         </svg>
       </div>
     </div>
@@ -99,12 +91,12 @@ _DASHBOARD_HTML = """
       <ul class="endpoint-list">
         <li><span class="method get">GET</span>/health — liveness probe</li>
         <li><span class="method get">GET</span>/ — this dashboard</li>
-        <li><span class="method get">GET</span>/expansion/revenue — current expansion ARR breakdown</li>
-        <li><span class="method get">GET</span>/expansion/forecast — Q3 expansion forecast details</li>
+        <li><span class="method post">POST</span>/perception/flow_estimate — estimate optical flow for a frame pair</li>
+        <li><span class="method get">GET</span>/perception/flow_stats — current flow training statistics</li>
       </ul>
     </div>
   </div>
-  <footer>OCI Robot Cloud &mdash; Expansion Revenue Tracker &mdash; port 10205</footer>
+  <footer>OCI Robot Cloud &mdash; Optical Flow Trainer &mdash; port 10204</footer>
 </body>
 </html>
 """
@@ -120,31 +112,29 @@ if _FASTAPI_AVAILABLE:
     async def dashboard() -> HTMLResponse:
         return HTMLResponse(_DASHBOARD_HTML)
 
-    @app.get("/expansion/revenue")
-    async def expansion_revenue() -> JSONResponse:
-        """Stub: return current expansion ARR breakdown."""
+    @app.post("/perception/flow_estimate")
+    async def flow_estimate() -> JSONResponse:
+        """Stub: estimate optical flow for a submitted frame pair."""
         return JSONResponse({
             "status": "ok",
-            "nrr_current_pct": 118,
-            "nrr_target_pct": 130,
-            "expansion_by_motion": {
-                "robot_expansion_k": 41,
-                "use_case_k": 28,
-                "tier_upgrade_k": 67,
-                "volume_k": 15,
-            },
-            "total_expansion_arr_k": 151,
+            "inference_ms": 4.1,
+            "resolution": "192x192",
+            "moving_objects_detected": 2,
+            "flow_magnitude_mean": 3.72,
+            "model": "RAFT-small",
         })
 
-    @app.get("/expansion/forecast")
-    async def expansion_forecast() -> JSONResponse:
-        """Stub: return Q3 expansion forecast."""
+    @app.get("/perception/flow_stats")
+    async def flow_stats() -> JSONResponse:
+        """Stub: return current optical flow training statistics."""
         return JSONResponse({
             "status": "ok",
-            "quarter": "Q3",
-            "forecast_expansion_k": 85,
-            "customer_count": 3,
-            "nrr_trend": [{"period": "current", "nrr_pct": 118}, {"period": "target", "nrr_pct": 130}],
+            "success_rate_flow_augmented": 0.89,
+            "success_rate_rgb_only": 0.84,
+            "avg_inference_ms": 4.0,
+            "resolution": "192x192",
+            "training_steps": 12000,
+            "dataset_size": 48000,
         })
 
 else:
