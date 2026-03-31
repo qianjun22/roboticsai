@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 53218
+PORT = 52258
 SERVICE = "robot-underwater-welding-agent"
 DESCRIPTION = "Robotics simulation for underwater welding agent"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-underwater-welding-agent</h1><div class="subtitle">Robotics simulation for underwater welding agent · port 53218</div></div>
+<div class="header"><h1>robot-underwater-welding-agent</h1><div class="subtitle">Robotics simulation for underwater welding agent · port 52258</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 53218</div>
+<div class="metric"><strong>Port:</strong> 52258</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
