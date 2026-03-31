@@ -1,4 +1,4 @@
-"""Account-based marketing platform for targeted multi-channel enterprise campaigns
+"""DAgger run379 with A2C generalized advantage estimation for stable on-policy corrections
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11071
-SERVICE = "account_based_marketing_platform"
-DESCRIPTION = "Account-based marketing platform for targeted multi-channel enterprise campaigns"
+PORT = 11070
+SERVICE = "dagger_run379_planner"
+DESCRIPTION = "DAgger run379 with A2C generalized advantage estimation for stable on-policy corrections"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
