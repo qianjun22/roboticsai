@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41133
+PORT = 41135
 SERVICE = "robotics_partner_portal"
 DESCRIPTION = "GTM service: partner portal"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_partner_portal</h1><div class="subtitle">GTM service: partner portal port 41133</div></div>
+<div class="header"><h1>robotics_partner_portal</h1><div class="subtitle">GTM service: partner portal port 41135</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 41133</div>
+<div class="metric"><strong>Port:</strong> 41135</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
