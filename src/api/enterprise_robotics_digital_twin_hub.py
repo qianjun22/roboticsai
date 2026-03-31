@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12301
+PORT = 12461
 SERVICE = "enterprise_robotics_digital_twin_hub"
-DESCRIPTION = "Enterprise robotics digital twin hub for virtual robot fleet modeling and predictive maintenance"
+DESCRIPTION = "Enterprise robotics digital twin hub for virtual commissioning, predictive maintenance simulation, and fleet shadow modeling"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
