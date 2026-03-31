@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14247
+PORT = 15203
 SERVICE = "robotics_developer_experience_v4"
-DESCRIPTION = "Developer experience v4 for streamlined onboarding and productivity in robotics platform APIs"
+DESCRIPTION = "Robotics developer experience platform with SDK tooling and sandbox"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

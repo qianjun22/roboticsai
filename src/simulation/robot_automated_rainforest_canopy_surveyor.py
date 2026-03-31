@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14962
+PORT = 15202
 SERVICE = "robot_automated_rainforest_canopy_surveyor"
-DESCRIPTION = "Automated aerial robotic system for rainforest canopy biodiversity and health surveys"
+DESCRIPTION = "Automated robotic simulation for rainforest canopy biodiversity surveys"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
