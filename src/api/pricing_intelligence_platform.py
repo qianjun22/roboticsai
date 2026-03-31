@@ -1,4 +1,4 @@
-"""Multi-Robot Coordinator — auction-based task allocation and collision-free coordination for robot fleets.
+"""Pricing Intelligence Platform — dynamic pricing optimization with competitor tracking and WTP analysis.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10672
-SERVICE = "multi_robot_coordinator"
-DESCRIPTION = "Auction-based task allocation and collision-free coordination for robot fleets"
+PORT = 10673
+SERVICE = "pricing_intelligence_platform"
+DESCRIPTION = "Dynamic pricing optimization with competitor tracking and willingness-to-pay analysis"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
