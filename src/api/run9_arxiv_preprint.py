@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11125
+PORT=12847
 SERVICE="run9_arxiv_preprint"
-DESCRIPTION="Run9 arXiv preprint — DAgger + GR00T on OCI A100"
+DESCRIPTION="Run9 arXiv preprint — 8-page technical report on DAgger v3"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
