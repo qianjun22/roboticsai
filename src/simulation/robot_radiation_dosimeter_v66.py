@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=87586
+PORT=87686
 SERVICE="robot_radiation_dosimeter_v66"
 DESCRIPTION="Sim: radiation_dosimeter"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
