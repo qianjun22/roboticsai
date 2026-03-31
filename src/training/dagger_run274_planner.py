@@ -1,4 +1,4 @@
-"""GTM Budget Optimizer — optimizes go-to-market budget allocation across channels.
+"""DAgger Run 274 Planner — multi-agent DAgger with multiple expert agents providing diverse corrections.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10635
-SERVICE = "gtm_budget_optimizer"
-DESCRIPTION = "Optimizes go-to-market budget allocation across channels"
+PORT = 10634
+SERVICE = "dagger_run274_planner"
+DESCRIPTION = "Multi-agent DAgger: multiple expert agents provide diverse corrections"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
