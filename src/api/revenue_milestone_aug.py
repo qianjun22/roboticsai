@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=11867
-SERVICE="customer_portal_v2"
-DESCRIPTION="Customer portal v2 — self-serve model management and eval"
+PORT=11868
+SERVICE="revenue_milestone_aug"
+DESCRIPTION="Revenue milestone August 2026 — $5k MRR, 1 customer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/portal")
+@app.get("/milestone")
 def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
