@@ -1,4 +1,4 @@
-"""Customer lifetime value v2 prediction with expansion and churn probability scoring
+"""DAgger run376 with TCN dilated causal convolutions for temporal sequence modeling
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11059
-SERVICE = "customer_lifetime_value_v2"
-DESCRIPTION = "Customer lifetime value v2 prediction with expansion and churn probability scoring"
+PORT = 11058
+SERVICE = "dagger_run376_planner"
+DESCRIPTION = "DAgger run376 with TCN dilated causal convolutions for temporal sequence modeling"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
