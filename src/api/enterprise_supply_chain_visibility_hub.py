@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12095
+PORT = 12141
 SERVICE = "enterprise-supply-chain-visibility-hub"
-DESCRIPTION = "Enterprise supply chain visibility hub for end-to-end tracking of robot-enabled logistics"
+DESCRIPTION = "End-to-end supply chain visibility platform integrating robot fleet data with ERP systems for real-time inventory and logistics optimization"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
