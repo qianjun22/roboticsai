@@ -1,4 +1,4 @@
-"""Customer expansion engine — OCI Robot Cloud
+"""DAgger run 301 planner — predictive world model rollout — OCI Robot Cloud
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -12,9 +12,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10711
-SERVICE = "customer_expansion_engine"
-DESCRIPTION = "Customer expansion engine — OCI Robot Cloud"
+PORT = 10710
+SERVICE = "dagger_run301_planner"
+DESCRIPTION = "DAgger run 301 planner — predictive world model rollout — OCI Robot Cloud"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
