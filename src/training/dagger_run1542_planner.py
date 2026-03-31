@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15729
-SERVICE = "robotics_federated_learning_v3"
-DESCRIPTION = "Federated learning v3 for distributed robotics model training across fleets"
+PORT = 15728
+SERVICE = "dagger_run1542_planner"
+DESCRIPTION = "DAgger run 1542 planning and trajectory optimization service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
