@@ -1,5 +1,5 @@
 """
-Churn prevention engine: predict and prevent customer churn with risk signals and proactive playbooks.
+DAgger run187 curriculum planner: progressive difficulty scheduling for DAgger training.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10287
-SERVICE = "churn_prevention_engine"
-DESCRIPTION = "Predict and prevent customer churn — risk signals + proactive playbooks, AUC 0.91"
+PORT = 10286
+SERVICE = "dagger_run187_planner"
+DESCRIPTION = "DAgger run187: curriculum DAgger — progressive difficulty from 80% to 40% success tasks, +4% SR"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,22 +37,27 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/customers/churn/risk")
-    def churn_risk():
+    @app.get("/dagger/run187/config")
+    def run187_config():
         return {
-            "customer": "Helix",
-            "churn_probability": 0.28,
-            "risk_level": "high",
-            "risk_factors": ["api_usage_down_30pct", "nps_41"],
-            "playbook": "executive_checkin_dagger_rescue"
+            "run": 187,
+            "strategy": "curriculum_dagger",
+            "stages": [
+                {"difficulty": "easy", "threshold": 0.80},
+                {"difficulty": "medium", "threshold": 0.60},
+                {"difficulty": "hard", "threshold": 0.40}
+            ],
+            "advance_sr": 0.85,
+            "sr_target": 0.97
         }
 
-    @app.post("/customers/churn/trigger_play")
-    def trigger_play():
+    @app.get("/dagger/run187/metrics")
+    def run187_metrics():
         return {
-            "play_id": f"play_{int(time.time())}",
-            "actions_scheduled": ["exec_checkin_48h", "dagger_rescue_week", "sla_review"],
-            "estimated_risk_reduction": 0.18
+            "current_stage": "planned",
+            "corrections_collected": 0,
+            "stage_sr": 0.0,
+            "status": "planned"
         }
 
     if __name__ == "__main__":
