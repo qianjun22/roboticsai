@@ -1,4 +1,4 @@
-"""Pipeline Conversion Optimizer — stage-by-stage conversion analysis; bottleneck identification; lift levers.
+"""Semantic Grasp Selector — selects grasp by semantic intent; task-aware grasping via CLIP.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10573
-SERVICE = "pipeline_conversion_optimizer"
-DESCRIPTION = "Funnel: 120 leads→48 MQL→19 SQL→8 proposals→3 closed; SQL→proposal is bottleneck."
+PORT = 10572
+SERVICE = "semantic_grasp_selector"
+DESCRIPTION = "Task-aware grasping: CLIP encodes intent → grasp type; pour vs handover vs precision each mapped."
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -24,17 +24,17 @@ if _has_fastapi:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        mql_rate = round(random.uniform(0.36, 0.44), 2)
-        sql_rate = round(random.uniform(0.36, 0.44), 2)
-        bar = int(mql_rate * 220)
+        sr = round(random.uniform(0.86, 0.95), 3)
+        intent = random.choice(["pour", "handover", "precision", "power"])
+        bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}span.val{{color:#38bdf8}}</style></head><body>
 <h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Lead→MQL: <span class="val">{mql_rate*100:.0f}%</span> | MQL→SQL: <span class="val">{sql_rate*100:.0f}%</span> | Port: <span class="val">{PORT}</span></p>
+<p>SR: <span class="val">{sr}</span> | Intent: <span class="val">{intent}</span> | Port: <span class="val">{PORT}</span></p>
 <svg width="260" height="40"><rect width="{bar}" height="30" y="5" fill="#38bdf8" rx="3"/>
-<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{mql_rate*100:.0f}% L→MQL</text></svg>
-<p style="color:#64748b;font-size:12px">GET /gtm/pipeline/conversion/funnel | POST /gtm/pipeline/conversion/optimize</p>
+<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{sr}</text></svg>
+<p style="color:#64748b;font-size:12px">POST /training/grasp/select | GET /training/grasp/vocabulary</p>
 </body></html>"""
 
     if __name__ == "__main__":
