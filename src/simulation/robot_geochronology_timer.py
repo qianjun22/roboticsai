@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 26175
-SERVICE = "robotics-developer-relations"
-DESCRIPTION = "Developer relations hub for robotics SDK adoption and API engagement"
+PORT = 26174
+SERVICE = "robot-geochronology-timer-sim"
+DESCRIPTION = "Geochronology timer simulation for robotic age-dating operations"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
