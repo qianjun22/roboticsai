@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=56126
+PORT=56246
 SERVICE="robot_xray_inspector_v40"
 DESCRIPTION="Sim: xray_inspector"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
