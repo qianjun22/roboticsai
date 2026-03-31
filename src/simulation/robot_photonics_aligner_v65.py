@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=87038
+PORT=87138
 SERVICE="robot_photonics_aligner_v65"
 DESCRIPTION="Sim: photonics_aligner"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
