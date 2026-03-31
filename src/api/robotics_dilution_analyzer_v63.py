@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=84105
+PORT=84107
 SERVICE="robotics_dilution_analyzer_v63"
 DESCRIPTION="GTM: dilution_analyzer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
