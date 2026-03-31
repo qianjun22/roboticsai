@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13669
-SERVICE = "robotics_digital_marketing_v3"
-DESCRIPTION = "Robotics digital marketing v3 — multi-channel digital campaign management and ROI analytics for robotics product lines"
+PORT = 13668
+SERVICE = "robot_seabed_mineral_nodule_harvester"
+DESCRIPTION = "Robotic seabed mineral nodule harvester — autonomous deep-sea collection and processing of polymetallic nodules for critical mineral extraction"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
