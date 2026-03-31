@@ -1,4 +1,4 @@
-"""Joint-space trajectory optimization v2 — STOMP with task-space costs, jerk-limited smooth time-optimal paths
+"""Sales enablement toolkit — battle cards vs PI/AWS, 20-min demo script, ROI calculator, objection handling playbook
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10376
-SERVICE = "trajectory_optimization_v2"
-DESCRIPTION = "Joint-space trajectory optimization v2 — STOMP with task-space costs, jerk-limited smooth time-optimal paths"
+PORT = 10377
+SERVICE = "sales_enablement_toolkit"
+DESCRIPTION = "Sales enablement toolkit — battle cards vs PI/AWS, 20-min demo script, ROI calculator, objection handling playbook"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
