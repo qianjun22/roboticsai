@@ -1,4 +1,4 @@
-"""Enterprise pilot tracker — OCI Robot Cloud
+"""DAgger run 303 planner — latent space VAE DAgger — OCI Robot Cloud
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10767
-SERVICE = "enterprise_pilot_tracker"
-DESCRIPTION = "Enterprise pilot tracker — OCI Robot Cloud"
+PORT = 10766
+SERVICE = "dagger_run303_planner"
+DESCRIPTION = "DAgger run 303 planner — latent space VAE DAgger — OCI Robot Cloud"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
