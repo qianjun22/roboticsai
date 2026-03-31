@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13613
-SERVICE = "robotics_partner_co_sell_v2"
-DESCRIPTION = "Robotics partner co-sell coordination platform v2 — manages joint pipeline with SI and ISV partners, tracks co-sell registrations, aligns field teams on shared opportunities, and measures partner-sourced revenue attribution"
+PORT = 13612
+SERVICE = "robot_deep_mine_ventilation_bot"
+DESCRIPTION = "Autonomous ventilation management robot for deep mines — monitors air quality, CO2, and methane levels in real time, adjusting fan systems and issuing evacuation triggers when hazardous thresholds are reached"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
