@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=77994
+PORT=78094
 SERVICE="robot_lab_centrifuge_v58"
 DESCRIPTION="Sim: lab_centrifuge"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
