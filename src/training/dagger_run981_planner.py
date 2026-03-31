@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13511
-SERVICE = "robotics_product_launch_v3"
-DESCRIPTION = "Robotics product launch v3 — coordinated release management, launch readiness tracking, and cross-functional alignment for OCI Robot Cloud new product introductions"
+PORT = 13510
+SERVICE = "dagger_run981_planner"
+DESCRIPTION = "DAgger run 981 trajectory planner — online imitation learning pipeline for GR00T fine-tuning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
