@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=11580
+PORT=12338
 SERVICE="privileged_access_mgmt"
-DESCRIPTION="Privileged access mgmt — JIT access for GPU infrastructure"
+DESCRIPTION="Privileged access management — PAM for GPU host access"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
