@@ -1,4 +1,4 @@
-"""Partner deal registration — OCI Robot Cloud
+"""Sim articulation randomizer — OCI Robot Cloud
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10769
-SERVICE = "partner_deal_registration"
-DESCRIPTION = "Partner deal registration — OCI Robot Cloud"
+PORT = 10768
+SERVICE = "sim_articulation_randomizer"
+DESCRIPTION = "Sim articulation randomizer — OCI Robot Cloud"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
