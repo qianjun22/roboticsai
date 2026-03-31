@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23495
-SERVICE = "robotics_developer_sdk_v2"
-DESCRIPTION = "EHR connector service for robotics AI clinical workflow integration"
+PORT = 23494
+SERVICE = "robot_submarine_canyon_mapper"
+DESCRIPTION = "Models radar-based obstacle detection in low-visibility environments"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
