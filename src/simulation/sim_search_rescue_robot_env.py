@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11692
-SERVICE = "sim-search-rescue-robot-env"
-DESCRIPTION = "Search and rescue robot simulation environment with debris navigation and victim detection scenarios"
+PORT = 11860
+SERVICE = "sim_search_rescue_robot_env"
+DESCRIPTION = "Search and rescue robot simulation environment for victim detection, debris navigation, and multi-robot coordination in disaster scenarios"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
