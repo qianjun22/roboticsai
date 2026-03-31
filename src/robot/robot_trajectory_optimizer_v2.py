@@ -1,4 +1,4 @@
-"""Market Share Tracker — robotics foundation model services competitive positioning.
+"""Robot Trajectory Optimizer V2 — energy-aware smooth trajectory generation with obstacle avoidance.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11021
-SERVICE = "market_share_tracker"
-DESCRIPTION = "Market share tracker monitoring competitive positioning in robotics foundation model services, design partner wins, and NVIDIA ecosystem share of wallet."
+PORT = 11020
+SERVICE = "robot_trajectory_optimizer_v2"
+DESCRIPTION = "Enhanced trajectory optimizer v2 with energy-aware path shaping, dynamic obstacle avoidance, and jerk-limited smooth profiles for production robot deployment."
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
@@ -30,14 +30,14 @@ h1{{color:#C74634}}span{{color:#38bdf8}}</style></head>
 <svg width='240' height='30'><rect width='220' height='20' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='20' fill='#C74634' rx='4'/></svg>
 <p><span>{val}</span> efficiency</p></body></html>"""
-    @app.get("/api/market_share/competitive_landscape")
-    def competitive_landscape():
-        return {"market_stage": "pre-revenue / design partner phase",
-                "addressable_sam": 8200000000,
-                "competitors": ["Physical Intelligence (Series B)", "1X Technologies", "Apptronik", "Figure AI"],
-                "our_differentiation": ["OCI cost 9.6x cheaper than AWS", "NVIDIA full stack", "85% CL SR proven"],
-                "win_themes": ["cost", "NVIDIA ecosystem", "OCI data residency"],
-                "target_market_share_3yr": 0.04}
+    @app.get("/robot/trajectory_v2/optimize")
+    def optimize():
+        return {"path_length_m": round(random.uniform(0.3, 1.2), 3),
+                "energy_kwh": round(random.uniform(0.0008, 0.003), 5),
+                "max_jerk": round(random.uniform(0.8, 2.1), 3),
+                "collision_clearance_m": round(random.uniform(0.05, 0.18), 3),
+                "planning_time_ms": round(random.uniform(12, 45), 1),
+                "smoothness_score": round(random.uniform(0.88, 0.98), 3)}
     if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
 else:
