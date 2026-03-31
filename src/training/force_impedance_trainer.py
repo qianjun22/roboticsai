@@ -1,5 +1,5 @@
 """
-Enhanced customer health scoring with 8 ML signals — proactive at-risk detection
+Learn impedance control policy — compliant contact with variable stiffness for assembly tasks
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10273
-SERVICE = "customer_health_score_v2"
-DESCRIPTION = "Enhanced customer health scoring with 8 ML signals — proactive at-risk detection"
+PORT = 10272
+SERVICE = "force_impedance_trainer"
+DESCRIPTION = "Learn impedance control policy — compliant contact with variable stiffness for assembly tasks"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -37,31 +37,21 @@ h1{{color:#C74634}}h2{{color:#38bdf8}}.metric{{background:#1e293b;padding:1rem;b
 <div class="metric"><h2>Service Info</h2><p>Port: {PORT} | Status: operational</p></div>
 </body></html>"""
 
-    @app.get("/customers/health_v2")
-    def customer_health_v2():
+    @app.post("/training/impedance/train")
+    def train_impedance():
         return {
-            "customer": "Machina",
-            "score": 94,
-            "grade": "excellent",
-            "signals": {
-                "sr_progress": 95,
-                "api_usage": 92,
-                "nps": 74,
-                "support_tickets": 1
-            },
-            "trend": "stable"
+            "policy_id": f"impedance_{int(time.time())}",
+            "optimal_stiffness_nm": 850,
+            "sr_estimate": 0.93,
+            "training_time_min": 42
         }
 
-    @app.get("/customers/health_v2/portfolio")
-    def customer_health_portfolio():
+    @app.post("/inference/impedance/infer")
+    def infer_impedance():
         return {
-            "avg_score": 76,
-            "customers": [
-                {"name": "Machina", "score": 94},
-                {"name": "Verdant", "score": 71},
-                {"name": "Helix", "score": 63}
-            ],
-            "at_risk": 1
+            "commanded_stiffness": round(random.uniform(100, 2000), 1),
+            "velocity_ms": round(random.uniform(0.01, 0.15), 3),
+            "contact_force_n": round(random.uniform(0.5, 8), 2)
         }
 
     if __name__ == "__main__":
