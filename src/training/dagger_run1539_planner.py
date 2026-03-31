@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15717
-SERVICE = "robotics_responsible_ai_v4"
-DESCRIPTION = "Responsible AI v4 framework for ethical robotics deployment"
+PORT = 15716
+SERVICE = "dagger_run1539_planner"
+DESCRIPTION = "DAgger run 1539 planning and trajectory optimization service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
