@@ -1,4 +1,4 @@
-"""Contact State Estimator
+"""Channel Partner Portal
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10480
-SERVICE = "contact_state_estimator"
-DESCRIPTION = "Contact state estimator: classify no/soft/firm/grasp contact from F/T sensor"
+PORT = 10481
+SERVICE = "channel_partner_portal"
+DESCRIPTION = "Channel partner portal: deal registration, training, commissions, co-marketing"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        acc = round(random.uniform(0.92, 0.97), 3); bar = int(acc * 220)
+        pipeline = random.randint(165, 195); bar = int((pipeline/200) * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Classification Accuracy: {acc}</p>
+<p>Port: {PORT} | Partner Pipeline: ${pipeline}k</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Contact Accuracy: {acc}</text></svg>
+<text x='10' y='20' font-size='12'>Partner Pipeline: ${pipeline}k</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
