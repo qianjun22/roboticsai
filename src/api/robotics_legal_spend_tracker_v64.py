@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=85789
+PORT=85791
 SERVICE="robotics_legal_spend_tracker_v64"
 DESCRIPTION="GTM: legal_spend_tracker"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
