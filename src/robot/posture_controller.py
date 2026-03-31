@@ -1,4 +1,4 @@
-"""Sales velocity dashboard tracking deal count, value, win rate, and cycle time KPIs
+"""Whole-body posture controller optimizing joint configurations for dexterity and reach
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11069
-SERVICE = "sales_velocity_dashboard"
-DESCRIPTION = "Sales velocity dashboard tracking deal count, value, win rate, and cycle time KPIs"
+PORT = 11068
+SERVICE = "robot_posture_controller"
+DESCRIPTION = "Whole-body posture controller optimizing joint configurations for dexterity and reach"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
