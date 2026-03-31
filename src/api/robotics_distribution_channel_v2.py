@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17626
-SERVICE = "robot_space_debris_collector"
-DESCRIPTION = "Space debris collection robot with rendezvous, capture and disposal simulation"
+PORT = 17627
+SERVICE = "robotics_distribution_channel_v2"
+DESCRIPTION = "Distribution channel manager for robotics cloud multi-tier go-to-market v2"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
