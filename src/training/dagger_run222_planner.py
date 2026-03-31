@@ -1,4 +1,4 @@
-"""Series A financial model v2 — 36-month ARR projection to 14.2M, burn model, unit economics, scenario ranges
+"""DAgger run222 — ensemble distillation DAgger compressing 5-policy ensemble to single 12ms policy at 94 percent SR
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10427
-SERVICE = "series_a_financial_model_v2"
-DESCRIPTION = "Series A financial model v2 — 36-month ARR projection to 14.2M, burn model, unit economics, scenario ranges"
+PORT = 10426
+SERVICE = "dagger_run222_planner"
+DESCRIPTION = "DAgger run222 — ensemble distillation DAgger compressing 5-policy ensemble to single 12ms policy at 94 percent SR"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
