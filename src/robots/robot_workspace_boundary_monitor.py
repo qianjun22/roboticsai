@@ -1,4 +1,4 @@
-"""Standardized customer success scorecard measuring adoption, outcomes, relationship, support, and financial health
+"""Real-time robot workspace boundary monitor with soft and hard joint limits for safety compliance
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10853
-SERVICE = "customer_success_scorecard"
-DESCRIPTION = "Standardized customer success scorecard measuring adoption, outcomes, relationship, support, and financial health"
+PORT = 10852
+SERVICE = "robot_workspace_boundary_monitor"
+DESCRIPTION = "Real-time robot workspace boundary monitor with soft and hard joint limits for safety compliance"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
