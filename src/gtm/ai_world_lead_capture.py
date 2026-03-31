@@ -1,4 +1,4 @@
-"""Robot action space coverage explorer — novelty-seeking exploration mapping 73 percent joint space with safe boundary enforcement
+"""AI World Sep 2026 lead capture system — badge scan scoring, hot lead routing, 500-scan to 5-pilot funnel
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10420
-SERVICE = "action_space_explorer"
-DESCRIPTION = "Robot action space coverage explorer — novelty-seeking exploration mapping 73 percent joint space with safe boundary enforcement"
+PORT = 10421
+SERVICE = "ai_world_lead_capture"
+DESCRIPTION = "AI World Sep 2026 lead capture system — badge scan scoring, hot lead routing, 500-scan to 5-pilot funnel"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
