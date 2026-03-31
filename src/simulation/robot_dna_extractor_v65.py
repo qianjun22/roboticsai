@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=86798
+PORT=86898
 SERVICE="robot_dna_extractor_v65"
 DESCRIPTION="Sim: dna_extractor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
