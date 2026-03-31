@@ -1,4 +1,4 @@
-"""Enterprise contract lifecycle management with renewal automation and compliance tracking
+"""DAgger run378 with Fourier neural operator for physics-informed trajectory learning
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11067
-SERVICE = "enterprise_contract_manager"
-DESCRIPTION = "Enterprise contract lifecycle management with renewal automation and compliance tracking"
+PORT = 11066
+SERVICE = "dagger_run378_planner"
+DESCRIPTION = "DAgger run378 with Fourier neural operator for physics-informed trajectory learning"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
