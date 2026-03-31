@@ -1,4 +1,4 @@
-"""Revenue cycle optimizer for robotics AI subscription billing, renewals, and expansion revenue management
+"""DAgger run397 planner using Dreamer-v2 world model with categorical latents for robot imagination-based planning
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11143
-SERVICE = "revenue_cycle_optimizer"
-DESCRIPTION = "Revenue cycle optimizer for robotics AI subscription billing, renewals, and expansion revenue management"
+PORT = 11142
+SERVICE = "dagger_run397_planner"
+DESCRIPTION = "DAgger run397 planner using Dreamer-v2 world model with categorical latents for robot imagination-based planning"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
