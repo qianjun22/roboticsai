@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12332
+PORT = 12476
 SERVICE = "sim_autonomous_dam_inspection_env"
-DESCRIPTION = "Simulation environment for autonomous dam inspection robot crack detection and structural monitoring"
+DESCRIPTION = "Autonomous dam inspection robot simulation with underwater hull scanning, crack detection, and structural integrity assessment"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
