@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23469
-SERVICE = "robotics_partner_roi_calculator"
-DESCRIPTION = "Edge compute deployment strategy for low-latency robotics inference"
+PORT = 23468
+SERVICE = "dagger_run3477_planner"
+DESCRIPTION = "DAgger run 3477 planning and trajectory optimization service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
