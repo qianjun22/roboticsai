@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11643
-SERVICE = "sales-quota-attainment-optimizer"
-DESCRIPTION = "Optimizes quota attainment through territory rebalancing, activity coaching, and pipeline quality improvement recommendations"
+PORT = 11849
+SERVICE = "sales_quota_attainment_optimizer"
+DESCRIPTION = "Sales quota attainment optimizer for rep performance coaching, pipeline gap analysis, and deal acceleration recommendations"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
