@@ -1,4 +1,4 @@
-"""Grasp Success Predictor — predicts grasp success probability before execution.
+"""Enterprise Health Ops V2 — enterprise customer health operations and monitoring.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10620
-SERVICE = "grasp_success_predictor"
-DESCRIPTION = "Predicts grasp success probability before execution"
+PORT = 10621
+SERVICE = "enterprise_health_ops_v2"
+DESCRIPTION = "Enterprise customer health operations and monitoring"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
