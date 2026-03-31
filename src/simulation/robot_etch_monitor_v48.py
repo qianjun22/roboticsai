@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66694
+PORT=66794
 SERVICE="robot_etch_monitor_v48"
 DESCRIPTION="Sim: etch_monitor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
