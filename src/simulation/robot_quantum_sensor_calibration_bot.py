@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 13785
-SERVICE = "robotics_demand_generation_v3"
-DESCRIPTION = "Demand generation platform v3 for robotics lead acquisition, nurture campaigns, and pipeline creation"
+PORT = 13784
+SERVICE = "robot_quantum_sensor_calibration_bot"
+DESCRIPTION = "Precision calibration robot for quantum sensors, interferometers, and atomic clock systems"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
