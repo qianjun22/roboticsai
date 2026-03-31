@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=29521
+PORT=29523
 SERVICE="robotics_security_review_v17"
 DESCRIPTION="GTM: security_review"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
