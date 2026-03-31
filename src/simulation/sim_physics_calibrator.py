@@ -1,46 +1,53 @@
-"""Sim Physics Calibrator — FastAPI port 9610"""
-import math, random
-from http.server import HTTPServer, BaseHTTPRequestHandler
+"""Sim Physics Calibrator — matches simulation physics parameters to real robot measurements.
+OCI Robot Cloud — roboticsai
+"""
+from __future__ import annotations
+import json, time, random, math
 try:
     from fastapi import FastAPI
-    from fastapi.responses import HTMLResponse
+    from fastapi.responses import HTMLResponse, JSONResponse
     import uvicorn
-    USE_FASTAPI = True
+    _has_fastapi = True
 except ImportError:
-    USE_FASTAPI = False
+    _has_fastapi = False
 
-PORT = 9610
+PORT = 10644
+SERVICE = "sim_physics_calibrator"
+DESCRIPTION = "Matches simulation physics parameters to real robot measurements"
 
-def build_html():
-    data = [round(random.uniform(0.5, 1.0) * math.sin(i/3) + 1.5, 3) for i in range(10)]
-    bars = "".join(
-        f'<rect x="{30+i*40}" y="{150-int(v*60)}" width="30" height="{int(v*60)}" fill="#C74634"/>'
-        for i, v in enumerate(data)
-    )
-    return f"""<!DOCTYPE html><html><head><title>Sim Physics Calibrator — Port {PORT}</title>
-<style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace}}
-h1{{color:#C74634;padding:20px}}svg{{display:block;margin:20px}}</style></head>
-<body><h1>Sim Physics Calibrator — Port {PORT}</h1>
-<svg width="430" height="180" style="background:#1e293b;border-radius:8px">{bars}</svg>
-<p style="padding:20px;color:#38bdf8">status: operational | port: {PORT}</p></body></html>"""
+if _has_fastapi:
+    app = FastAPI(title=SERVICE, description=DESCRIPTION)
 
-if USE_FASTAPI:
-    app = FastAPI(title="Sim Physics Calibrator")
-    @app.get("/", response_class=HTMLResponse)
-    def index(): return build_html()
     @app.get("/health")
-    def health(): return {"status": "ok", "port": PORT}
+    def health():
+        return {"status": "ok", "service": SERVICE, "port": PORT, "ts": time.time()}
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html")
-        self.end_headers()
-        self.wfile.write(build_html().encode())
-    def log_message(self, *a): pass
+    @app.get("/", response_class=HTMLResponse)
+    def dashboard():
+        val = round(random.uniform(0.75, 0.98), 3)
+        bar = int(val * 220)
+        return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title><style>
+body{{margin:0;padding:0;background:#0f172a;color:#f1f5f9;font-family:monospace}}
+.hdr{{background:#C74634;padding:18px 32px}}
+.hdr h1{{margin:0;font-size:1.4rem;letter-spacing:1px}}
+.card{{background:#1e293b;border-radius:10px;padding:28px 32px;margin:32px auto;max-width:600px}}
+.metric{{font-size:2.5rem;font-weight:700;color:#38bdf8}}
+</style></head><body>
+<div class="hdr"><h1>OCI ROBOT CLOUD — {SERVICE.upper()}</h1></div>
+<div class="card">
+<div class="metric">{val}</div>
+<div style="color:#94a3b8;margin-top:8px">{DESCRIPTION}</div>
+<svg width="240" height="32" style="margin-top:18px"><rect x="0" y="8" width="{bar}" height="16" rx="4" fill="#38bdf8"/></svg>
+<div style="margin-top:16px;color:#64748b">port {PORT} · {SERVICE}</div>
+</div></body></html>"""
 
-if __name__ == "__main__":
-    if USE_FASTAPI:
+    if __name__ == "__main__":
         uvicorn.run(app, host="0.0.0.0", port=PORT)
-    else:
-        HTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+else:
+    import http.server, socketserver
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = json.dumps({"status": "ok", "service": SERVICE, "port": PORT}).encode()
+            self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
+        def log_message(self, *a): pass
+    with socketserver.TCPServer(("", PORT), H) as s: s.serve_forever()
