@@ -1,4 +1,4 @@
-"""Competitive Intelligence Hub — real-time competitor tracking across news, patents, and job postings.
+"""Manipulation Task Planner — LLM-driven high-level task planning to skill sequence execution.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10665
-SERVICE = "competitive_intelligence_hub"
-DESCRIPTION = "Real-time competitor tracking across news, patents, and job postings"
+PORT = 10664
+SERVICE = "manipulation_task_planner"
+DESCRIPTION = "LLM-driven high-level task planning to skill sequence execution"
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
