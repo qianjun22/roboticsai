@@ -1,13 +1,13 @@
 import datetime, fastapi, fastapi.responses, uvicorn
-PORT=49717
-SERVICE="robotics_paid_media_v41"
-DESCRIPTION="GTM: paid_media"
+PORT=49716
+SERVICE="dagger_run10039_planner"
+DESCRIPTION="DAgger run 10039"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health():
     return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/",response_class=fastapi.responses.HTMLResponse)
 def dashboard():
-    return f"<html><body style='background:#0f172a;color:#e2e8f0;font-family:system-ui'><div style='background:#C74634;padding:20px'><h1 style='color:white;margin:0'>robotics_paid_media_v41</h1></div><div style='padding:20px'><p>Port: 49717</p><p>Status: operational</p></div></body></html>"
+    return f"<html><body style='background:#0f172a;color:#e2e8f0;font-family:system-ui'><div style='background:#C74634;padding:20px'><h1 style='color:white;margin:0'>dagger_run10039_planner</h1></div><div style='padding:20px'><p>Port: 49716</p><p>Status: operational</p></div></body></html>"
 if __name__=="__main__":
     uvicorn.run(app,host="0.0.0.0",port=PORT)
