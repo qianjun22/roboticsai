@@ -1,4 +1,4 @@
-"""End-to-end customer journey analytics from awareness through advocacy with 127-day journey mapping and acceleration paths
+"""Real-time joint torque monitoring for robot health, anomaly detection, and predictive maintenance scheduling
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 10893
-SERVICE = "customer_journey_analytics"
-DESCRIPTION = "End-to-end customer journey analytics from awareness through advocacy with 127-day journey mapping and acceleration paths"
+PORT = 10892
+SERVICE = "robot_torque_monitoring_system"
+DESCRIPTION = "Real-time joint torque monitoring for robot health, anomaly detection, and predictive maintenance scheduling"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
