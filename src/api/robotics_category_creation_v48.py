@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66433
+PORT=66435
 SERVICE="robotics_category_creation_v48"
 DESCRIPTION="GTM: category_creation"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
