@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=66890
+PORT=66990
 SERVICE="robot_litho_aligner_v49"
 DESCRIPTION="Sim: litho_aligner"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
