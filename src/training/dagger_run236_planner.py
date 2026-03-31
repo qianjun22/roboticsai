@@ -1,4 +1,4 @@
-"""Product-Led Growth Engine
+"""DAgger Run236 Planner — Reward-Shaped DAgger
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10483
-SERVICE = "product_led_growth_engine"
-DESCRIPTION = "Product-led growth engine: GitHub → SDK → eval → paid conversion funnel"
+PORT = 10482
+SERVICE = "dagger_run236_planner"
+DESCRIPTION = "DAgger run236: reward-shaped DAgger — expert scores corrections, priority replay"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        cvr = round(random.uniform(0.11, 0.16), 3); bar = int(cvr * 220 * 6)
+        sr = round(random.uniform(0.88, 0.93), 3); bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | PLG Conversion: {cvr}</p>
+<p>Port: {PORT} | Reward-Shaped SR: {sr}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>PLG Conversion: {cvr}</text></svg>
+<text x='10' y='20' font-size='12'>Reward-Shaped DAgger SR: {sr}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
