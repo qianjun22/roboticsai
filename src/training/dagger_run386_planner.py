@@ -1,4 +1,4 @@
-"""Developer relations platform managing advocacy, technical content, and community partnerships
+"""DAgger run386 with Decision Transformer return-conditioned sequence modeling for goal-conditioned policy
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11099
-SERVICE = "developer_relations_platform"
-DESCRIPTION = "Developer relations platform managing advocacy, technical content, and community partnerships"
+PORT = 11098
+SERVICE = "dagger_run386_planner"
+DESCRIPTION = "DAgger run386 with Decision Transformer return-conditioned sequence modeling for goal-conditioned policy"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
