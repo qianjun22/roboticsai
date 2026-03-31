@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=10926
+PORT=12113
 SERVICE="event_driven_arch_v2"
-DESCRIPTION="Event-driven arch v2 — OCI Streaming for async eval events"
+DESCRIPTION="Event-driven architecture v2 — Kafka + OCI Streaming"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
