@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=83242
+PORT=83342
 SERVICE="robot_waveguide_coupler_v62"
 DESCRIPTION="Sim: waveguide_coupler"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
