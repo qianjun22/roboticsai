@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40189
+PORT = 40191
 SERVICE = "robotics_developer_signup_flow"
 DESCRIPTION = "GTM service: developer signup flow"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics_developer_signup_flow</h1><div class="subtitle">GTM service: developer signup flow port 40189</div></div>
+<div class="header"><h1>robotics_developer_signup_flow</h1><div class="subtitle">GTM service: developer signup flow port 40191</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 40189</div>
+<div class="metric"><strong>Port:</strong> 40191</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
