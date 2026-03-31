@@ -1,4 +1,4 @@
-"""Revenue operations v2 — full funnel MQL to close, velocity tracking, monthly net new ARR, quarterly forecast
+"""DAgger run213 — model-based DAgger learning dynamics model from corrections, 50% fewer real rollouts via imagination
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10391
-SERVICE = "revenue_operations_v2"
-DESCRIPTION = "Revenue operations v2 — full funnel MQL to close, velocity tracking, monthly net new ARR, quarterly forecast"
+PORT = 10390
+SERVICE = "dagger_run213_planner"
+DESCRIPTION = "DAgger run213 — model-based DAgger learning dynamics model from corrections, 50% fewer real rollouts via imagination"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
