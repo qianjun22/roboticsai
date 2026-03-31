@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17579
-SERVICE = "robotics_product_launch_v3"
-DESCRIPTION = "Product launch coordination platform for robotics platform releases v3"
+PORT = 17578
+SERVICE = "robot_soft_gripper_controller"
+DESCRIPTION = "Soft pneumatic gripper controller with compliant grasping force regulation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
