@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=54550
+PORT=54670
 SERVICE="robot_die_attacher_v38"
 DESCRIPTION="Sim: die_attacher"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
