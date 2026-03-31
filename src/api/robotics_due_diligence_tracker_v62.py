@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=83445
+PORT=83447
 SERVICE="robotics_due_diligence_tracker_v62"
 DESCRIPTION="GTM: due_diligence_tracker"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
