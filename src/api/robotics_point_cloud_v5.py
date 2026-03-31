@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15258
-SERVICE = "robot_precision_photovoltaic_cell_inspector"
-DESCRIPTION = "Precision robotic simulation for photovoltaic solar cell quality inspection"
+PORT = 15259
+SERVICE = "robotics_point_cloud_v5"
+DESCRIPTION = "Robotics point cloud processing service for 3D scene understanding"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
