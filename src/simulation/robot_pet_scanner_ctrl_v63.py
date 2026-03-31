@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=83778
+PORT=83878
 SERVICE="robot_pet_scanner_ctrl_v63"
 DESCRIPTION="Sim: pet_scanner_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
