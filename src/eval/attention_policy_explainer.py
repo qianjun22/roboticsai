@@ -1,4 +1,4 @@
-"""Pricing Strategy Optimizer
+"""Attention-Based Policy Explainer
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
 except ImportError:
     FastAPI = None
 
-PORT = 10533
-SERVICE = "pricing_strategy_optimizer"
-DESCRIPTION = "Pricing strategy optimizer: WTP research + elasticity + A/B test framework"
+PORT = 10532
+SERVICE = "attention_policy_explainer"
+DESCRIPTION = "Attention-based policy explainer: ViT attention maps show what the robot looks at"
 
 if FastAPI:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -23,15 +23,15 @@ if FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        rev_uplift = round(random.uniform(0.12, 0.20), 3); bar = int(rev_uplift * 220 * 4)
+        trust = round(random.uniform(0.82, 0.92), 3); bar = int(trust * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
 <body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | Pricing Uplift: +{rev_uplift:.0%}</p>
+<p>Port: {PORT} | Operator Trust Score: {trust}</p>
 <svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
 <rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>Revenue Uplift: +{rev_uplift:.0%}</text></svg>
+<text x='10' y='20' font-size='12'>Operator Trust: {trust}</text></svg>
 </body></html>"""
 
     if __name__ == "__main__":
