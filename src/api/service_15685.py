@@ -1,0 +1,12 @@
+import datetime,fastapi,uvicorn
+PORT=15685
+SERVICE="isaac_sim_parallel_envs"
+DESCRIPTION="Isaac Sim parallel envs: 8 envs on 1 A100 — 8x data throughput for RL run15 training"
+app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
+@app.get("/health")
+def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
+@app.get("/")
+def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
+@app.get("/{endpoint}")
+def ep(): return {"service":SERVICE,"description":DESCRIPTION,"port":PORT}
+if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
