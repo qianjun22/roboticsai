@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 18051
-SERVICE = "robotics_competitive_intel"
-DESCRIPTION = "Competitive intelligence gathering and analysis for robotics market positioning"
+PORT = 15277
+SERVICE = "robotics-competitive-intel"
+DESCRIPTION = "GTM platform for competitive intel automation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,7 +16,7 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title><style>
+    return f"""<!DOCTYPE html><html><head><title>robotics-competitive-intel</title><style>
 body{{margin:0;padding:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;}}
 .header{{background:#C74634;padding:20px 32px;}}
 h1{{margin:0;font-size:24px;color:#fff;}}
@@ -26,9 +26,9 @@ h1{{margin:0;font-size:24px;color:#fff;}}
 .bars{{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:12px;}}
 .bar{{width:20px;border-radius:4px 4px 0 0;}}
 </style></head><body>
-<div class="header"><h1>{SERVICE}</h1><div class="sub">{DESCRIPTION}</div></div>
+<div class="header"><h1>robotics-competitive-intel</h1><div class="sub">GTM platform for competitive intel automation</div></div>
 <div class="content">
-<div class="metric"><b>Port:</b> {PORT} &nbsp;|&nbsp; <b>Status:</b> <span style="color:#4ade80">● Live</span>
+<div class="metric"><b>Port:</b> 15277 | <b>Status:</b> <span style="color:#4ade80">Live</span>
 <div class="bars">{bars}</div></div>
 </div></body></html>"""
 
