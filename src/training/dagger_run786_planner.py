@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12699
-SERVICE = "enterprise-robotics-predictive-maintenance-scheduler"
-DESCRIPTION = "AI-driven predictive maintenance scheduler for enterprise robot fleets — failure prediction and optimal downtime windows"
+PORT = 12698
+SERVICE = "dagger-run786-planner"
+DESCRIPTION = "DAgger run 786 online learning planner — warehouse logistics policy training with autonomous correction aggregation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
