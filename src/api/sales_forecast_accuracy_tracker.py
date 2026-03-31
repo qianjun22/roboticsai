@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11623
-SERVICE = "sales-forecast-accuracy-tracker"
-DESCRIPTION = "Tracks sales forecast accuracy by rep, segment, and product with bias detection and calibration recommendations"
+PORT = 12487
+SERVICE = "sales_forecast_accuracy_tracker"
+DESCRIPTION = "Sales forecast accuracy tracker measuring pipeline commit vs. actual close, stage progression fidelity, and rep-level forecast bias"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
