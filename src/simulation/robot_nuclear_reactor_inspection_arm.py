@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 13392
 SERVICE = "robot_nuclear_reactor_inspection_arm"
-DESCRIPTION = "Remote nuclear reactor inspection arm with radiation-hardened sensor suite"
+DESCRIPTION = "Nuclear reactor inspection robot arm with radiation-hardened sensors and remote manipulation"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

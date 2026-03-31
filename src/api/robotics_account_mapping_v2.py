@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 13393
 SERVICE = "robotics_account_mapping_v2"
-DESCRIPTION = "Account mapping v2 tool for robotics enterprise org chart and stakeholder analysis"
+DESCRIPTION = "Account mapping v2 relationship intelligence for robotics enterprise sales"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
