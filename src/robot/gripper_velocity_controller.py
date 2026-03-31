@@ -1,4 +1,4 @@
-"""Strategic sales territory planning with TAM segmentation and rep capacity modeling
+"""Gripper velocity controller for smooth jaw speed regulation during approach and release
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -10,9 +10,9 @@ try:
     _has_fastapi = True
 except ImportError:
     _has_fastapi = False
-PORT = 11085
-SERVICE = "sales_territory_planner"
-DESCRIPTION = "Strategic sales territory planning with TAM segmentation and rep capacity modeling"
+PORT = 11084
+SERVICE = "robot_gripper_velocity_controller"
+DESCRIPTION = "Gripper velocity controller for smooth jaw speed regulation during approach and release"
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
     @app.get("/health")
