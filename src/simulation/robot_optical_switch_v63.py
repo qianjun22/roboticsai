@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=84162
+PORT=84262
 SERVICE="robot_optical_switch_v63"
 DESCRIPTION="Sim: optical_switch"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
