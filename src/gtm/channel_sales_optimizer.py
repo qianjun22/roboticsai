@@ -1,4 +1,4 @@
-"""Visual Affordance Detector — grasp/push/pour affordances; 91% mAP; 93% SR affordance-conditioned.
+"""Channel Sales Optimizer — direct vs channel mix; channel CAC 42% cheaper; target 60/40 Year 2.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10612
-SERVICE = "visual_affordance_detector"
-DESCRIPTION = "Affordance detection: grasp 91% mAP / push 84% / pour spout 88%; +7pp SR over blind grasping."
+PORT = 10613
+SERVICE = "channel_sales_optimizer"
+DESCRIPTION = "Channel mix: current 80/20 direct/channel; target Year 2: 60/40; channel CAC $1.4k vs $2.4k direct."
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -24,17 +24,18 @@ if _has_fastapi:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        map_grasp = round(random.uniform(0.88, 0.94), 3)
-        sr_affordance = round(random.uniform(0.90, 0.95), 3)
-        bar = int(map_grasp * 220)
+        channel_pct = round(random.uniform(0.18, 0.28), 2)
+        channel_cac = round(random.uniform(1200, 1600))
+        direct_cac = round(random.uniform(2200, 2600))
+        bar = int(channel_pct * 500)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}span.val{{color:#38bdf8}}</style></head><body>
 <h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Grasp mAP: <span class="val">{map_grasp}</span> | Affordance-cond SR: <span class="val">{sr_affordance}</span> | Port: <span class="val">{PORT}</span></p>
+<p>Channel %: <span class="val">{channel_pct*100:.0f}%</span> | Channel CAC: <span class="val">${channel_cac:,}</span> | Direct CAC: <span class="val">${direct_cac:,}</span></p>
 <svg width="260" height="40"><rect width="{bar}" height="30" y="5" fill="#38bdf8" rx="3"/>
-<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{map_grasp} mAP</text></svg>
-<p style="color:#64748b;font-size:12px">POST /training/affordance/detect | GET /training/affordance/vocabulary</p>
+<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{channel_pct*100:.0f}% channel</text></svg>
+<p style="color:#64748b;font-size:12px">GET /gtm/channel/mix/optimization | POST /gtm/channel/partner/roi | Port: {PORT}</p>
 </body></html>"""
 
     if __name__ == "__main__":
