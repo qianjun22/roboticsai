@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 14199
-SERVICE = "robotics_customer_success_v3"
-DESCRIPTION = "Robotics customer success platform v3 for QBR automation and health scoring"
+PORT = 14198
+SERVICE = "robot_automated_tire_mounter"
+DESCRIPTION = "Automated tire mounting robot with bead seating and inflation calibration"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
