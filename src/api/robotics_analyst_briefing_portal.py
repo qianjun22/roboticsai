@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23010
-SERVICE = "robot_space_station_maintenance_bot"
-DESCRIPTION = "Simulates ISS exterior surface crawling for maintenance inspection"
+PORT = 23011
+SERVICE = "robotics_analyst_briefing_portal"
+DESCRIPTION = "Analyst briefing portal for robotics AI market research"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
