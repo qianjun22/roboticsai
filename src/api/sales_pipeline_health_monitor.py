@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 11785
-SERVICE = "sales-pipeline-health-monitor"
-DESCRIPTION = "Sales pipeline health monitor for coverage ratio, stage aging, and at-risk deal early warning systems"
+PORT = 11883
+SERVICE = "sales_pipeline_health_monitor"
+DESCRIPTION = "Sales pipeline health monitor for stage conversion tracking, deal velocity analysis, and pipeline coverage ratio optimization"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
