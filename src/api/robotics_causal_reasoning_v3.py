@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15350
-SERVICE = "robot-nuclear-decommission-bot"
-DESCRIPTION = "Teleoperated robot for nuclear facility decommissioning, waste handling, and radiation mapping"
+PORT = 15351
+SERVICE = "robotics-causal-reasoning-v3"
+DESCRIPTION = "Causal reasoning v3 for robot action planning with counterfactual understanding"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
