@@ -1,4 +1,4 @@
-"""Growth Metrics Dashboard — ARR growth rate, logo growth, NRR, CAC payback; vs top-quartile SaaS.
+"""DAgger Run262 Planner — multi-modal reward DAgger; visual + force + task success rewards fused.
 OCI Robot Cloud — roboticsai
 """
 from __future__ import annotations
@@ -11,9 +11,9 @@ try:
 except ImportError:
     _has_fastapi = False
 
-PORT = 10587
-SERVICE = "growth_metrics_dashboard"
-DESCRIPTION = "Growth KPIs: ARR MoM 18%, NRR 118%, CAC payback 8mo; benchmarked vs top-quartile SaaS."
+PORT = 10586
+SERVICE = "dagger_run262_planner"
+DESCRIPTION = "Multi-modal reward DAgger: visual(40%)+force(30%)+task(30%); 91% SR vs 87% single-reward."
 
 if _has_fastapi:
     app = FastAPI(title=SERVICE, description=DESCRIPTION)
@@ -24,18 +24,17 @@ if _has_fastapi:
 
     @app.get("/", response_class=HTMLResponse)
     def dashboard():
-        arr_growth = round(random.uniform(0.14, 0.22), 2)
-        nrr = round(random.uniform(1.12, 1.25), 2)
-        cac_payback = random.randint(7, 10)
-        bar = int(arr_growth * 1000)
+        sr = round(random.uniform(0.88, 0.93), 3)
+        visual_w = round(random.uniform(0.35, 0.45), 2)
+        bar = int(sr * 220)
         return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
 <style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
 h1{{color:#C74634}}span.val{{color:#38bdf8}}</style></head><body>
 <h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>ARR MoM: <span class="val">{arr_growth*100:.0f}%</span> | NRR: <span class="val">{nrr:.0%}</span> | CAC Payback: <span class="val">{cac_payback}mo</span></p>
+<p>SR: <span class="val">{sr}</span> | Visual Weight: <span class="val">{visual_w}</span> | Port: <span class="val">{PORT}</span></p>
 <svg width="260" height="40"><rect width="{bar}" height="30" y="5" fill="#38bdf8" rx="3"/>
-<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{arr_growth*100:.0f}% MoM</text></svg>
-<p style="color:#64748b;font-size:12px">GET /gtm/growth/summary | GET /gtm/growth/cohort_analysis</p>
+<text x="{bar+6}" y="24" fill="#e2e8f0" font-size="13">{sr}</text></svg>
+<p style="color:#64748b;font-size:12px">Multi-modal reward DAgger run262 — richest reward signal</p>
 </body></html>"""
 
     if __name__ == "__main__":
