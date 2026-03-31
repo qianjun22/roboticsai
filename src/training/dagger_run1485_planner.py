@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15501
-SERVICE = "robotics_nist_framework_v4"
-DESCRIPTION = "NIST cybersecurity framework implementation for robotics systems"
+PORT = 15500
+SERVICE = "dagger_run1485_planner"
+DESCRIPTION = "DAgger run 1485 training planner for imitation learning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
