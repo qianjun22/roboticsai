@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12319
+PORT = 12447
 SERVICE = "partner_go_to_market_accelerator"
-DESCRIPTION = "Partner go-to-market accelerator for robotics platform joint selling and demand generation"
+DESCRIPTION = "Partner go-to-market accelerator with co-sell playbooks, demand generation templates, and joint pipeline tracking"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
