@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 23345
-SERVICE = "robotics_platform_kubernetes_native"
-DESCRIPTION = "Subsidy tracking and reporting tool for agricultural robot programs"
+PORT = 23344
+SERVICE = "dagger_run3446_planner"
+DESCRIPTION = "DAgger run 3446 planning and trajectory optimization service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
