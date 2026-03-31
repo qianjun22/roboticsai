@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12644
-SERVICE = "sim-autonomous-dam-inspection-env"
-DESCRIPTION = "Simulation environment for autonomous inspection of dams and hydroelectric infrastructure with underwater drones"
+PORT = 12645
+SERVICE = "customer-onboarding-time-to-value"
+DESCRIPTION = "Tracks time-to-value for enterprise robotics customers from contract signature through first production deployment"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
