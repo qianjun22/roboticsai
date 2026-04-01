@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41117
-SERVICE = "robotics_implementation_risk_analyzer"
-DESCRIPTION = "GTM analytics: implementation risk analyzer"
+PORT = 53279
+SERVICE = "robotics-implementation-risk-analyzer"
+DESCRIPTION = "Robotics GTM implementation risk analyzer service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,7 +16,22 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title><style>body{{margin:0;font-family:sans-serif;background:#0f172a;color:#e2e8f0}}header{{background:#C74634;padding:16px 24px}}h1{{margin:0;font-size:1.4rem}}.cards{{display:flex;gap:16px;padding:24px;flex-wrap:wrap}}.card{{background:#1e293b;border-radius:8px;padding:20px;min-width:200px}}.chart{{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:12px}}.bar{{width:20px;border-radius:3px 3px 0 0}}</style></head><body><header><h1>OCI Robot Cloud — {SERVICE}</h1></header><div class="cards"><div class="card"><div>Port</div><div style="font-size:2rem;color:#38bdf8">{PORT}</div></div><div class="card"><div>Status</div><div style="color:#4ade80">Running</div><div class="chart">{bars}</div></div><div class="card"><div>Description</div><div style="color:#94a3b8">{DESCRIPTION}</div></div></div></body></html>"""
+    return f"""<!DOCTYPE html><html><head><title>robotics-implementation-risk-analyzer</title><style>
+body{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;}
+.header{background:#C74634;padding:20px 32px;}
+h1{margin:0;font-size:24px;color:#fff;}
+.subtitle{color:#fecaca;font-size:14px;margin-top:4px;}
+.content{padding:32px;}
+.metric{background:#1e293b;border-radius:8px;padding:20px;margin:12px 0;}
+.bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
+.bar{width:20px;border-radius:3px 3px 0 0;}
+</style></head><body>
+<div class="header"><h1>robotics-implementation-risk-analyzer</h1><div class="subtitle">Robotics GTM implementation risk analyzer service · port 53279</div></div>
+<div class="content">
+<div class="metric"><strong>Status:</strong> operational</div>
+<div class="metric"><strong>Port:</strong> 53279</div>
+<div class="bars">{bars}</div>
+</div></body></html>"""
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)
