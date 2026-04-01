@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=52442
+PORT=52602
 SERVICE="robot_greenhouse_monitor_v37"
 DESCRIPTION="Sim: greenhouse_monitor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
