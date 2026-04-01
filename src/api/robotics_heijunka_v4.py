@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28579
+PORT = 29197
 SERVICE = "robotics_heijunka_v4"
 DESCRIPTION = "heijunka v4 go-to-market platform"
 

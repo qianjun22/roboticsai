@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28583
+PORT = 29201
 SERVICE = "robotics_takt_v4"
 DESCRIPTION = "takt v4 go-to-market platform"
 
