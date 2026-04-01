@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=50945
+PORT=50947
 SERVICE="robotics_webinar_host_v35"
 DESCRIPTION="GTM: webinar_host"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
