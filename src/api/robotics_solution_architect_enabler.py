@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 51687
+PORT = 52383
 SERVICE = "robotics-solution-architect-enabler"
 DESCRIPTION = "Robotics GTM solution architect enabler service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-solution-architect-enabler</h1><div class="subtitle">Robotics GTM solution architect enabler service · port 51687</div></div>
+<div class="header"><h1>robotics-solution-architect-enabler</h1><div class="subtitle">Robotics GTM solution architect enabler service · port 52383</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 51687</div>
+<div class="metric"><strong>Port:</strong> 52383</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
