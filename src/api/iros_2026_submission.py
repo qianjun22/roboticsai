@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8180
-SERVICE="revenue_dashboard"
-DESCRIPTION="Revenue dashboard: MRR, ARR, CAC, LTV, churn"
+PORT=8176
+SERVICE="iros_2026_submission"
+DESCRIPTION="IROS 2026 workshop: Foundation Models for Robot Learning"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}

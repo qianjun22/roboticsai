@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8180
-SERVICE="revenue_dashboard"
-DESCRIPTION="Revenue dashboard: MRR, ARR, CAC, LTV, churn"
+PORT=8183
+SERVICE="multi_cloud_support"
+DESCRIPTION="Multi-cloud: OCI primary, GCP/Azure fallback"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}
