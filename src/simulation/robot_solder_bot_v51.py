@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=70054
+PORT=70154
 SERVICE="robot_solder_bot_v51"
 DESCRIPTION="Sim: solder_bot"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
