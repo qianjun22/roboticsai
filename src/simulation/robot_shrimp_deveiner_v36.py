@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=51662
+PORT=51822
 SERVICE="robot_shrimp_deveiner_v36"
 DESCRIPTION="Sim: shrimp_deveiner"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
