@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 51535
-SERVICE = "robotics-roi-calculator-service"
-DESCRIPTION = "Robotics GTM roi calculator service service"
+PORT = 51534
+SERVICE = "robot-parallel-kinematic-machine"
+DESCRIPTION = "Robotics simulation for parallel kinematic machine"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,7 +16,7 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>robotics-roi-calculator-service</title><style>
+    return f"""<!DOCTYPE html><html><head><title>robot-parallel-kinematic-machine</title><style>
 body{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;}
 .header{background:#C74634;padding:20px 32px;}
 h1{margin:0;font-size:24px;color:#fff;}
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-roi-calculator-service</h1><div class="subtitle">Robotics GTM roi calculator service service · port 51535</div></div>
+<div class="header"><h1>robot-parallel-kinematic-machine</h1><div class="subtitle">Robotics simulation for parallel kinematic machine · port 51534</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 51535</div>
+<div class="metric"><strong>Port:</strong> 51534</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
