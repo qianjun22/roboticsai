@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29933
+PORT = 29315
 SERVICE = "robotics_ide_plugin_v4"
 DESCRIPTION = "ide plugin v4 go-to-market platform"
 

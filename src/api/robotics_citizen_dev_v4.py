@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29949
+PORT = 29331
 SERVICE = "robotics_citizen_dev_v4"
 DESCRIPTION = "citizen dev v4 go-to-market platform"
 

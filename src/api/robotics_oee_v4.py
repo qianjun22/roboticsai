@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28715
+PORT = 29333
 SERVICE = "robotics_oee_v4"
 DESCRIPTION = "oee v4 go-to-market platform"
 

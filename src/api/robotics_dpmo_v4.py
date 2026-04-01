@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28699
+PORT = 29317
 SERVICE = "robotics_dpmo_v4"
 DESCRIPTION = "dpmo v4 go-to-market platform"
 

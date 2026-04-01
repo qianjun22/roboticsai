@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28707
+PORT = 29325
 SERVICE = "robotics_rolled_yield_v4"
 DESCRIPTION = "rolled yield v4 go-to-market platform"
 
