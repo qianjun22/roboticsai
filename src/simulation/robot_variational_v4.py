@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28554
+PORT = 29922
 SERVICE = "robot_variational_v4"
 DESCRIPTION = "variational v4 simulation module"
 

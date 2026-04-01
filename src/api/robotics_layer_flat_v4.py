@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29129
+PORT = 29927
 SERVICE = "robotics_layer_flat_v4"
 DESCRIPTION = "layer flat v4 go-to-market platform"
 

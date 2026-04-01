@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28558
+PORT = 29926
 SERVICE = "robot_qaoa_v4"
 DESCRIPTION = "qaoa v4 simulation module"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29125
+PORT = 29923
 SERVICE = "robotics_span_control_v4"
 DESCRIPTION = "span control v4 go-to-market platform"
 

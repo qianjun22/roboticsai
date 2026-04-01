@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28550
+PORT = 29918
 SERVICE = "robot_quantum_adiabatic"
 DESCRIPTION = "quantum adiabatic simulation module"
 
