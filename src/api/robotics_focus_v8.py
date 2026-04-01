@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 36072
-SERVICE = "dagger-run6628-planner"
-DESCRIPTION = "DAgger run 6628 interactive imitation learning planner for geomagnetic navigation without GPS"
+PORT = 36073
+SERVICE = "robotics-focus-v8"
+DESCRIPTION = "Focus prioritization engine for robotics GTM with bet sizing, opportunity cost analysis, and elimination framework"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
