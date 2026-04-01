@@ -1,7 +1,7 @@
 import datetime, fastapi, fastapi.responses, uvicorn
-PORT = 30472
-SERVICE = "dagger_run5228_planner"
-DESCRIPTION = "DAgger run 5228 training planner microservice for iterative imitation learning"
+PORT = 30473
+SERVICE = "robotics_pmo_ops_v5"
+DESCRIPTION = "PMO operations GTM API microservice for robotics portfolio governance and delivery standardization"
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 @app.get("/health")
 def health():
