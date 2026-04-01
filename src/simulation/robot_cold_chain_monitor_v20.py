@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=32614
+PORT=32714
 SERVICE="robot_cold_chain_monitor_v20"
 DESCRIPTION="Sim: cold_chain_monitor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
