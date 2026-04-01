@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52070
+PORT = 53030
 SERVICE = "robot-slip-detection-handler"
 DESCRIPTION = "Robotics simulation for slip detection handler"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-slip-detection-handler</h1><div class="subtitle">Robotics simulation for slip detection handler · port 52070</div></div>
+<div class="header"><h1>robot-slip-detection-handler</h1><div class="subtitle">Robotics simulation for slip detection handler · port 53030</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52070</div>
+<div class="metric"><strong>Port:</strong> 53030</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
