@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=70665
+PORT=70667
 SERVICE="robotics_platform_flywheel_v52"
 DESCRIPTION="GTM: platform_flywheel"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
