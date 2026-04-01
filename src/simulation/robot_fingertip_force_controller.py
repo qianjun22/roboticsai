@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52062
+PORT = 53982
 SERVICE = "robot-fingertip-force-controller"
 DESCRIPTION = "Robotics simulation for fingertip force controller"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-fingertip-force-controller</h1><div class="subtitle">Robotics simulation for fingertip force controller · port 52062</div></div>
+<div class="header"><h1>robot-fingertip-force-controller</h1><div class="subtitle">Robotics simulation for fingertip force controller · port 53982</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52062</div>
+<div class="metric"><strong>Port:</strong> 53982</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
