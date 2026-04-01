@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28803
+PORT = 29421
 SERVICE = "robotics_preventive_v4"
 DESCRIPTION = "preventive v4 go-to-market platform"
 

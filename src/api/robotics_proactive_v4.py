@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28807
+PORT = 29425
 SERVICE = "robotics_proactive_v4"
 DESCRIPTION = "proactive v4 go-to-market platform"
 

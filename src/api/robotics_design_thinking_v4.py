@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28811
+PORT = 29429
 SERVICE = "robotics_design_thinking_v4"
 DESCRIPTION = "design thinking v4 go-to-market platform"
 

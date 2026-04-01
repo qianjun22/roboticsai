@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28633
+PORT = 29431
 SERVICE = "robotics_strangler_fig_v4"
 DESCRIPTION = "strangler fig v4 go-to-market platform"
 
