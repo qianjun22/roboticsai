@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22478
+PORT = 22786
 SERVICE = "robot_tunnel_boring"
-DESCRIPTION = "Tunnel boring robot simulation — TBM guidance and ground condition monitoring"
+DESCRIPTION = "Robotic tunnel boring simulation — cutter head torque control and segment placement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
