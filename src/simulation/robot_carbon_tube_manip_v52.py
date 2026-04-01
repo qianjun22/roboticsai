@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=70574
+PORT=70674
 SERVICE="robot_carbon_tube_manip_v52"
 DESCRIPTION="Sim: carbon_tube_manip"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
