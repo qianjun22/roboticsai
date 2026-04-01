@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=53005
+PORT=53007
 SERVICE="robotics_content_strategy_v37"
 DESCRIPTION="GTM: content_strategy"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
