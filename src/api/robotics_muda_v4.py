@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29221
+PORT = 28603
 SERVICE = "robotics_muda_v4"
 DESCRIPTION = "muda v4 go-to-market platform"
 

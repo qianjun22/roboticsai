@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 50036
 SERVICE = "dagger-run10119-planner"
-DESCRIPTION = "DAgger run 10119 policy planning and online correction service"
+DESCRIPTION = "DAgger run 10119 policy planning and online correction"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -26,7 +26,7 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>dagger-run10119-planner</h1><div class="subtitle">DAgger run 10119 policy planning and online correction service · port 50036</div></div>
+<div class="header"><h1>dagger-run10119-planner</h1><div class="subtitle">DAgger run 10119 policy planning and online correction · port 50036</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
 <div class="metric"><strong>Port:</strong> 50036</div>

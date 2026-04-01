@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28913
+PORT = 29711
 SERVICE = "robotics_ddos_protect_v4"
 DESCRIPTION = "ddos protect v4 go-to-market platform"
 

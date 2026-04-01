@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28877
+PORT = 29675
 SERVICE = "robotics_mssp_v4"
 DESCRIPTION = "mssp v4 go-to-market platform"
 

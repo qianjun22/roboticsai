@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28909
+PORT = 29707
 SERVICE = "robotics_waf_v4"
 DESCRIPTION = "waf v4 go-to-market platform"
 

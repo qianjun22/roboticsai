@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29227
+PORT = 29845
 SERVICE = "robotics_hyper_care_v4"
 DESCRIPTION = "hyper care v4 go-to-market platform"
 

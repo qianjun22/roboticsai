@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28911
+PORT = 29529
 SERVICE = "robotics_consistency_v4"
 DESCRIPTION = "consistency v4 go-to-market platform"
 

@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 12987
+PORT = 18115
 SERVICE = "robotics_account_based_marketing"
-DESCRIPTION = "Account-based marketing platform for robotics — orchestrates targeted campaigns for top enterprise prospects with intent signal tracking"
+DESCRIPTION = "Account-based marketing campaign orchestration for enterprise robotics sales"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,12 +16,21 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
-<style>body{{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;padding:2rem}}
-h1{{color:#C74634;font-size:1.5rem}}p{{color:#94a3b8}}.chart{{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:1rem}}.bar{{width:24px;border-radius:3px 3px 0 0}}</style></head>
-<body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p><p>Port: {PORT}</p><div class="chart">{bars}</div>
-<script>setInterval(()=>document.querySelectorAll('.bar').forEach(b=>b.style.height=Math.random()*80+10+'%'),1200)</script>
-</body></html>"""
+    return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title><style>
+body{{margin:0;padding:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;}}
+.header{{background:#C74634;padding:20px 32px;}}
+h1{{margin:0;font-size:24px;color:#fff;}}
+.sub{{color:#fca5a5;font-size:13px;margin-top:4px;}}
+.content{{padding:32px;}}
+.metric{{background:#1e293b;border-radius:12px;padding:20px;margin-bottom:16px;}}
+.bars{{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:12px;}}
+.bar{{width:20px;border-radius:4px 4px 0 0;}}
+</style></head><body>
+<div class="header"><h1>{SERVICE}</h1><div class="sub">{DESCRIPTION}</div></div>
+<div class="content">
+<div class="metric"><b>Port:</b> {PORT} &nbsp;|&nbsp; <b>Status:</b> <span style="color:#4ade80">● Live</span>
+<div class="bars">{bars}</div></div>
+</div></body></html>"""
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)

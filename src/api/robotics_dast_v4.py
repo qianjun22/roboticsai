@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28897
+PORT = 29695
 SERVICE = "robotics_dast_v4"
 DESCRIPTION = "dast v4 go-to-market platform"
 

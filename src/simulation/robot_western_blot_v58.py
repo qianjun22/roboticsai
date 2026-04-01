@@ -1,0 +1,11 @@
+import datetime,fastapi,fastapi.responses,uvicorn
+PORT=78810
+SERVICE="robot_western_blot_v58"
+DESCRIPTION="Sim: western_blot"
+app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
+@app.get("/health")
+def health():
+    return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
+@app.get("/")
+def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
+if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
