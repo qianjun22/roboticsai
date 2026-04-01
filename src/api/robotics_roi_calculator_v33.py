@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=48741
+PORT=48743
 SERVICE="robotics_roi_calculator_v33"
 DESCRIPTION="GTM: roi_calculator"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
