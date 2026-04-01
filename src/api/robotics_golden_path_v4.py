@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28977
+PORT = 29775
 SERVICE = "robotics_golden_path_v4"
 DESCRIPTION = "golden path v4 go-to-market platform"
 

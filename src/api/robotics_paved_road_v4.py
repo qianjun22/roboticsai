@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28981
+PORT = 29779
 SERVICE = "robotics_paved_road_v4"
 DESCRIPTION = "paved road v4 go-to-market platform"
 

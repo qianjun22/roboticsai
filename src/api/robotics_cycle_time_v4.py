@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29171
+PORT = 29789
 SERVICE = "robotics_cycle_time_v4"
 DESCRIPTION = "cycle time v4 go-to-market platform"
 

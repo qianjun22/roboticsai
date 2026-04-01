@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29159
+PORT = 29777
 SERVICE = "robotics_pipeline_v4"
 DESCRIPTION = "pipeline v4 go-to-market platform"
 

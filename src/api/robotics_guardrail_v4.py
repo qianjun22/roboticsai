@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28985
+PORT = 29783
 SERVICE = "robotics_guardrail_v4"
 DESCRIPTION = "guardrail v4 go-to-market platform"
 
