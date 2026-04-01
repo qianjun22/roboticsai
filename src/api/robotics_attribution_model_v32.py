@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=46527
+PORT=46685
 SERVICE="robotics_attribution_model_v32"
 DESCRIPTION="GTM: attribution_model"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
