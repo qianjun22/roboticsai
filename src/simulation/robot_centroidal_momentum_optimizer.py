@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52994
+PORT = 53954
 SERVICE = "robot-centroidal-momentum-optimizer"
 DESCRIPTION = "Robotics simulation for centroidal momentum optimizer"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-centroidal-momentum-optimizer</h1><div class="subtitle">Robotics simulation for centroidal momentum optimizer · port 52994</div></div>
+<div class="header"><h1>robot-centroidal-momentum-optimizer</h1><div class="subtitle">Robotics simulation for centroidal momentum optimizer · port 53954</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52994</div>
+<div class="metric"><strong>Port:</strong> 53954</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
