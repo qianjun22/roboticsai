@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=60950
+PORT=61110
 SERVICE="robot_quantum_sensor_v44"
 DESCRIPTION="Sim: quantum_sensor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
