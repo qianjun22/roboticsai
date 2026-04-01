@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=71630
+PORT=71730
 SERVICE="robot_virgo_mirror_v53"
 DESCRIPTION="Sim: virgo_mirror"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
