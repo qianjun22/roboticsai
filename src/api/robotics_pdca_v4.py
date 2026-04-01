@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28631
+PORT = 29249
 SERVICE = "robotics_pdca_v4"
 DESCRIPTION = "pdca v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28623
+PORT = 29241
 SERVICE = "robotics_obeya_v4"
 DESCRIPTION = "obeya v4 go-to-market platform"
 
