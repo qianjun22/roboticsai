@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22362
-SERVICE = "robot_smart_home_installer"
-DESCRIPTION = "Smart home installation robot simulation — autonomous sensor and device setup"
+PORT = 22363
+SERVICE = "robotics_home_automation_v1"
+DESCRIPTION = "Home automation robotics API v1 — domestic service robot task planning"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
