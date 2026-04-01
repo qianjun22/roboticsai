@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=44506
+PORT=44666
 SERVICE="robot_optical_tweezer_v30"
 DESCRIPTION="Sim: optical_tweezer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
