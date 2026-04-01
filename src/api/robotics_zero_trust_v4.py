@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28833
+PORT = 29631
 SERVICE = "robotics_zero_trust_v4"
 DESCRIPTION = "zero trust v4 go-to-market platform"
 

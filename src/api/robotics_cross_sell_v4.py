@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28999
+PORT = 29617
 SERVICE = "robotics_cross_sell_v4"
 DESCRIPTION = "cross sell v4 go-to-market platform"
 

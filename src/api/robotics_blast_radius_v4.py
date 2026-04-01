@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28821
+PORT = 29619
 SERVICE = "robotics_blast_radius_v4"
 DESCRIPTION = "blast radius v4 go-to-market platform"
 

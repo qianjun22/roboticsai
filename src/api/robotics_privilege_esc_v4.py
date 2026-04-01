@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28829
+PORT = 29627
 SERVICE = "robotics_privilege_esc_v4"
 DESCRIPTION = "privilege esc v4 go-to-market platform"
 

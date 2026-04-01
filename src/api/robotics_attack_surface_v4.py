@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28817
+PORT = 29615
 SERVICE = "robotics_attack_surface_v4"
 DESCRIPTION = "attack surface v4 go-to-market platform"
 

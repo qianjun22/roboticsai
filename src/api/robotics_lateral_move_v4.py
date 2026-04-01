@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28825
+PORT = 29623
 SERVICE = "robotics_lateral_move_v4"
 DESCRIPTION = "lateral move v4 go-to-market platform"
 
