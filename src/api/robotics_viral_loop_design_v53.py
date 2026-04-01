@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=72653
+PORT=72655
 SERVICE="robotics_viral_loop_design_v53"
 DESCRIPTION="GTM: viral_loop_design"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
