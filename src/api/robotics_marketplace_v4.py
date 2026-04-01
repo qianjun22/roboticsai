@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28477
+PORT = 29893
 SERVICE = "robotics_marketplace_v4"
 DESCRIPTION = "marketplace v4 go-to-market platform"
 

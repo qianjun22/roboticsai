@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28522
+PORT = 29890
 SERVICE = "robot_quantum_hopfield"
 DESCRIPTION = "quantum hopfield simulation module"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28506
+PORT = 29874
 SERVICE = "robot_quantum_clustering"
 DESCRIPTION = "quantum clustering simulation module"
 

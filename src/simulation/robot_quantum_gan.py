@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28510
+PORT = 29878
 SERVICE = "robot_quantum_gan"
 DESCRIPTION = "quantum gan simulation module"
 

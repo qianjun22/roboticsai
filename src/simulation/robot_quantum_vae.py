@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28514
+PORT = 29882
 SERVICE = "robot_quantum_vae"
 DESCRIPTION = "quantum vae simulation module"
 

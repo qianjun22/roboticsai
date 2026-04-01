@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29081
+PORT = 29879
 SERVICE = "robotics_identity_v4"
 DESCRIPTION = "identity v4 go-to-market platform"
 

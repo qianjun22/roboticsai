@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29085
+PORT = 29883
 SERVICE = "robotics_visual_v4"
 DESCRIPTION = "visual v4 go-to-market platform"
 
