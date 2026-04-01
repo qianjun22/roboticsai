@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=65065
+PORT=65067
 SERVICE="robotics_competitive_intel_v47"
 DESCRIPTION="GTM: competitive_intel"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
