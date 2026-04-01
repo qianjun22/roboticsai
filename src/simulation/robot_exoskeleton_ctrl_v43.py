@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=60354
+PORT=60514
 SERVICE="robot_exoskeleton_ctrl_v43"
 DESCRIPTION="Sim: exoskeleton_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
