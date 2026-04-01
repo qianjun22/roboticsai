@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28797
+PORT = 29595
 SERVICE = "robotics_cis_v4"
 DESCRIPTION = "cis v4 go-to-market platform"
 

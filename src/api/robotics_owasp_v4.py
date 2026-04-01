@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28801
+PORT = 29599
 SERVICE = "robotics_owasp_v4"
 DESCRIPTION = "owasp v4 go-to-market platform"
 

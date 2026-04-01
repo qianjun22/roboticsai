@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28983
+PORT = 29601
 SERVICE = "robotics_freemium_v4"
 DESCRIPTION = "freemium v4 go-to-market platform"
 

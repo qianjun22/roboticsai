@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28805
+PORT = 29603
 SERVICE = "robotics_cvss_v4"
 DESCRIPTION = "cvss v4 go-to-market platform"
 

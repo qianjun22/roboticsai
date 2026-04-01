@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28979
+PORT = 29597
 SERVICE = "robotics_unbundle_v4"
 DESCRIPTION = "unbundle v4 go-to-market platform"
 
