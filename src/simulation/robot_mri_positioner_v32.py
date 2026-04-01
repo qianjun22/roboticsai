@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=47414
+PORT=47574
 SERVICE="robot_mri_positioner_v32"
 DESCRIPTION="Sim: mri_positioner"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
