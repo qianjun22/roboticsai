@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52699
+PORT = 53395
 SERVICE = "robotics-pricing-strategy-optimizer"
 DESCRIPTION = "Robotics GTM pricing strategy optimizer service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-pricing-strategy-optimizer</h1><div class="subtitle">Robotics GTM pricing strategy optimizer service · port 52699</div></div>
+<div class="header"><h1>robotics-pricing-strategy-optimizer</h1><div class="subtitle">Robotics GTM pricing strategy optimizer service · port 53395</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52699</div>
+<div class="metric"><strong>Port:</strong> 53395</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
