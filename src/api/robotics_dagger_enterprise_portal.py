@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 50761
+PORT = 51001
 SERVICE = "robotics-dagger-enterprise-portal"
 DESCRIPTION = "Robotics GTM dagger enterprise portal service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-dagger-enterprise-portal</h1><div class="subtitle">Robotics GTM dagger enterprise portal service · port 50761</div></div>
+<div class="header"><h1>robotics-dagger-enterprise-portal</h1><div class="subtitle">Robotics GTM dagger enterprise portal service · port 51001</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 50761</div>
+<div class="metric"><strong>Port:</strong> 51001</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
