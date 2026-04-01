@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=46151
+PORT=46309
 SERVICE="robotics_podcast_tracker_v31"
 DESCRIPTION="GTM: podcast_tracker"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
