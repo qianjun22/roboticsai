@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 48141
 SERVICE = "robotics_prevent_v9_10027b"
-DESCRIPTION = "Robotics prevent v9 cycle 10027B"
+DESCRIPTION = "Robotics prevent v9 cycle 10027B GTM"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
