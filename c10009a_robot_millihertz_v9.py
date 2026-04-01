@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 48066
 SERVICE = "robot_millihertz_v9_10009a"
-DESCRIPTION = "Robot millihertz v9 cycle 10009A sim service"
+DESCRIPTION = "Robot millihertz v9 cycle 10009A"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
