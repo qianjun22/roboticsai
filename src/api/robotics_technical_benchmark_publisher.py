@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 51539
+PORT = 52931
 SERVICE = "robotics-technical-benchmark-publisher"
 DESCRIPTION = "Robotics GTM technical benchmark publisher service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-technical-benchmark-publisher</h1><div class="subtitle">Robotics GTM technical benchmark publisher service · port 51539</div></div>
+<div class="header"><h1>robotics-technical-benchmark-publisher</h1><div class="subtitle">Robotics GTM technical benchmark publisher service · port 52931</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 51539</div>
+<div class="metric"><strong>Port:</strong> 52931</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
