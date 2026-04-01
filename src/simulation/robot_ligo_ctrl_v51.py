@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=70126
+PORT=70226
 SERVICE="robot_ligo_ctrl_v51"
 DESCRIPTION="Sim: ligo_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
