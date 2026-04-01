@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29225
+PORT = 28607
 SERVICE = "robotics_mura_v4"
 DESCRIPTION = "mura v4 go-to-market platform"
 

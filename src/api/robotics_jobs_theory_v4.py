@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29469
+PORT = 28851
 SERVICE = "robotics_jobs_theory_v4"
 DESCRIPTION = "jobs theory v4 go-to-market platform"
 

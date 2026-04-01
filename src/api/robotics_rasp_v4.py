@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28905
+PORT = 29703
 SERVICE = "robotics_rasp_v4"
 DESCRIPTION = "rasp v4 go-to-market platform"
 

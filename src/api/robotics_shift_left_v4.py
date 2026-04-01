@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28885
+PORT = 29683
 SERVICE = "robotics_shift_left_v4"
 DESCRIPTION = "shift left v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29465
+PORT = 28847
 SERVICE = "robotics_outcome_driven_v4"
 DESCRIPTION = "outcome driven v4 go-to-market platform"
 

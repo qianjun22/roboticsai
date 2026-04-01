@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29457
+PORT = 28839
 SERVICE = "robotics_moment_truth_v4"
 DESCRIPTION = "moment truth v4 go-to-market platform"
 

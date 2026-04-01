@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29473
+PORT = 28855
 SERVICE = "robotics_switch_v4"
 DESCRIPTION = "switch v4 go-to-market platform"
 

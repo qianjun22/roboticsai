@@ -4,8 +4,8 @@ import fastapi.responses
 import uvicorn
 
 PORT = 23687
-SERVICE = "Daggerrun3532"
-DESCRIPTION = "DAgger imitation learning run 3532 for robot policy improvement iteration"
+SERVICE = "DaggerRun3532"
+DESCRIPTION = "DAgger imitation learning run 3532 for robot policy improvement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

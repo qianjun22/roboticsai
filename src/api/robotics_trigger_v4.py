@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28875
+PORT = 29493
 SERVICE = "robotics_trigger_v4"
 DESCRIPTION = "trigger v4 go-to-market platform"
 
