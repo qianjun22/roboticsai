@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29685
+PORT = 29067
 SERVICE = "robotics_ltv_v4"
 DESCRIPTION = "ltv v4 go-to-market platform"
 

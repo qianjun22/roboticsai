@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29673
+PORT = 29055
 SERVICE = "robotics_cohort_v4"
 DESCRIPTION = "cohort v4 go-to-market platform"
 

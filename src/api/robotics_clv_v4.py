@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29681
+PORT = 29063
 SERVICE = "robotics_clv_v4"
 DESCRIPTION = "clv v4 go-to-market platform"
 

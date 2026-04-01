@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29855
+PORT = 29057
 SERVICE = "robotics_competitive_moat_v4"
 DESCRIPTION = "competitive moat v4 go-to-market platform"
 

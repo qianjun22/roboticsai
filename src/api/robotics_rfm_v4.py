@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29677
+PORT = 29059
 SERVICE = "robotics_rfm_v4"
 DESCRIPTION = "rfm v4 go-to-market platform"
 

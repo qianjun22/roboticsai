@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29689
+PORT = 29071
 SERVICE = "robotics_cac_v4"
 DESCRIPTION = "cac v4 go-to-market platform"
 
