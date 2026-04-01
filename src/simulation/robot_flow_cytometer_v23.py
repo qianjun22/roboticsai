@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=35670
+PORT=35770
 SERVICE="robot_flow_cytometer_v23"
 DESCRIPTION="Sim: flow_cytometer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
