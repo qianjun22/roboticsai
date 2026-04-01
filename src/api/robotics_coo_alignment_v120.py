@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=152529
+PORT=152531
 SERVICE="robotics_coo_alignment_v120"
 DESCRIPTION="GTM: coo_alignment"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
