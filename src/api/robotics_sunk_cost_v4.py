@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28951
+PORT = 29569
 SERVICE = "robotics_sunk_cost_v4"
 DESCRIPTION = "sunk cost v4 go-to-market platform"
 

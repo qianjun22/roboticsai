@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28773
+PORT = 29571
 SERVICE = "robotics_sox_v4"
 DESCRIPTION = "sox v4 go-to-market platform"
 

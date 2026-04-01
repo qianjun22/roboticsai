@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28947
+PORT = 29565
 SERVICE = "robotics_loss_aversion_v4"
 DESCRIPTION = "loss aversion v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28765
+PORT = 29563
 SERVICE = "robotics_ccpa_v4"
 DESCRIPTION = "ccpa v4 go-to-market platform"
 

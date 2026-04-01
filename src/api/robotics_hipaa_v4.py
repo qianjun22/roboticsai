@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28769
+PORT = 29567
 SERVICE = "robotics_hipaa_v4"
 DESCRIPTION = "hipaa v4 go-to-market platform"
 

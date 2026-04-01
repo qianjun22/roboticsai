@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28761
+PORT = 29559
 SERVICE = "robotics_gdpr_v4"
 DESCRIPTION = "gdpr v4 go-to-market platform"
 

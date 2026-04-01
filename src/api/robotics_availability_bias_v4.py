@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28939
+PORT = 29557
 SERVICE = "robotics_availability_bias_v4"
 DESCRIPTION = "availability bias v4 go-to-market platform"
 

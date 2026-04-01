@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28943
+PORT = 29561
 SERVICE = "robotics_confirmation_v4"
 DESCRIPTION = "confirmation v4 go-to-market platform"
 
