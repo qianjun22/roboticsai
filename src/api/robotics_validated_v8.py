@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 36040
-SERVICE = "dagger-run6620-planner"
-DESCRIPTION = "DAgger run 6620 interactive imitation learning planner with circadian-aware sampling"
+PORT = 36041
+SERVICE = "robotics-validated-v8"
+DESCRIPTION = "Validated learning framework for robotics with hypothesis testing and evidence-based iteration"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
