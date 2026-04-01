@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=32429
+PORT=32431
 SERVICE="robotics_onboarding_checklist_v20"
 DESCRIPTION="GTM: onboarding_checklist"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
