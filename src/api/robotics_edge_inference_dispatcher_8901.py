@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 43636
-SERVICE = "dagger-run8519-planner"
-DESCRIPTION = "DAgger run 8519 planning service cycle 8901"
+PORT = 43637
+SERVICE = "robotics-edge-inference-dispatcher-8901"
+DESCRIPTION = "GTM edge inference dispatcher service cycle 8901"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
