@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22162
-SERVICE = "robot_airport_baggage_handler"
-DESCRIPTION = "Airport baggage handling robot for autonomous sorting, tagging and carousel loading"
+PORT = 22163
+SERVICE = "robotics_airport_ops_v1"
+DESCRIPTION = "Airport operations robotics API for ground handling automation and ramp safety"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
