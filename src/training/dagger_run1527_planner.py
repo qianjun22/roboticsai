@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15669
-SERVICE = "robotics_disaster_recovery_v5"
-DESCRIPTION = "Disaster recovery v5: multi-region active-passive failover with sub-5-minute RTO for robot platform"
+PORT = 15668
+SERVICE = "dagger_run1527_planner"
+DESCRIPTION = "DAgger run 1527 training planner with interactive policy improvement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
