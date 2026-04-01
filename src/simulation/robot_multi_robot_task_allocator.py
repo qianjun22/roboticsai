@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52342
+PORT = 53302
 SERVICE = "robot-multi-robot-task-allocator"
 DESCRIPTION = "Robotics simulation for multi robot task allocator"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-multi-robot-task-allocator</h1><div class="subtitle">Robotics simulation for multi robot task allocator · port 52342</div></div>
+<div class="header"><h1>robot-multi-robot-task-allocator</h1><div class="subtitle">Robotics simulation for multi robot task allocator · port 53302</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52342</div>
+<div class="metric"><strong>Port:</strong> 53302</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
