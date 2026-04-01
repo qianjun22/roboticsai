@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22170
-SERVICE = "robot_dam_structural_inspector"
-DESCRIPTION = "Dam structural inspection robot for crack detection and seepage monitoring"
+PORT = 22171
+SERVICE = "robotics_civil_infrastructure_v1"
+DESCRIPTION = "Civil infrastructure robotics API for bridge and dam autonomous structural health monitoring"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
