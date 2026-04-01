@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=37206
+PORT=37306
 SERVICE="robot_autoclave_loader_v24"
 DESCRIPTION="Sim: autoclave_loader"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
