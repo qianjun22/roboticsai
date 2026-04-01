@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 48081
 SERVICE = "robotics_pivot_v9_10012b"
-DESCRIPTION = "Robotics pivot v9 cycle 10012B DAgger GTM service"
+DESCRIPTION = "Robotics pivot v9 cycle 10012B GTM"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
