@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=88009
+PORT=88011
 SERVICE="robotics_runway_optimizer_v66"
 DESCRIPTION="GTM: runway_optimizer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
