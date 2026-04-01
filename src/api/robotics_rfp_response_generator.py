@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 51679
+PORT = 53071
 SERVICE = "robotics-rfp-response-generator"
 DESCRIPTION = "Robotics GTM rfp response generator service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-rfp-response-generator</h1><div class="subtitle">Robotics GTM rfp response generator service · port 51679</div></div>
+<div class="header"><h1>robotics-rfp-response-generator</h1><div class="subtitle">Robotics GTM rfp response generator service · port 53071</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 51679</div>
+<div class="metric"><strong>Port:</strong> 53071</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
