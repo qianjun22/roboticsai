@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=64138
+PORT=64298
 SERVICE="robot_fish_sorter_v46"
 DESCRIPTION="Sim: fish_sorter"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
