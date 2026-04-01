@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8231
-SERVICE=inference_cache
-DESCRIPTION=Inference cache: KV-cache for repeated states
+PORT=8229
+SERVICE=multimodal_input
+DESCRIPTION=Multimodal input: camera + lidar + tactile + language
 app=fastapi.FastAPI(title=SERVICE,version=1.0.0,description=DESCRIPTION)
 @app.get(/health)
 def health(): return {status:ok,service:SERVICE,port:PORT}

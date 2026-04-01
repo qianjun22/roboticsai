@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8231
-SERVICE=inference_cache
-DESCRIPTION=Inference cache: KV-cache for repeated states
+PORT=8230
+SERVICE=robot_twin_service
+DESCRIPTION=Digital twin: mirror physical robot in Genesis
 app=fastapi.FastAPI(title=SERVICE,version=1.0.0,description=DESCRIPTION)
 @app.get(/health)
 def health(): return {status:ok,service:SERVICE,port:PORT}

@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8231
-SERVICE=inference_cache
-DESCRIPTION=Inference cache: KV-cache for repeated states
+PORT=8232
+SERVICE=distributed_training_v2
+DESCRIPTION=DDP across A100x8 for faster finetune
 app=fastapi.FastAPI(title=SERVICE,version=1.0.0,description=DESCRIPTION)
 @app.get(/health)
 def health(): return {status:ok,service:SERVICE,port:PORT}
