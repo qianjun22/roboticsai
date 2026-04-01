@@ -1,7 +1,7 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=59097
-SERVICE="robotics_social_amplifier_v42"
-DESCRIPTION="GTM: social_amplifier"
+PORT=59096
+SERVICE="dagger_run12384_planner"
+DESCRIPTION="DAgger run 12384"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health():
