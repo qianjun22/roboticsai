@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=74550
+PORT=74650
 SERVICE="robot_pcb_placer_v55"
 DESCRIPTION="Sim: pcb_placer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
