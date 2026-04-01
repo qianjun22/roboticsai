@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52118
+PORT = 53078
 SERVICE = "robot-retraction-force-estimator"
 DESCRIPTION = "Robotics simulation for retraction force estimator"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-retraction-force-estimator</h1><div class="subtitle">Robotics simulation for retraction force estimator · port 52118</div></div>
+<div class="header"><h1>robot-retraction-force-estimator</h1><div class="subtitle">Robotics simulation for retraction force estimator · port 53078</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52118</div>
+<div class="metric"><strong>Port:</strong> 53078</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
