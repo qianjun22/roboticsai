@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=154094
+PORT=154194
 SERVICE="robot_thought_decoder_v121"
 DESCRIPTION="Sim: thought_decoder"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
