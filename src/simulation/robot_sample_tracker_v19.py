@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=31918
+PORT=32018
 SERVICE="robot_sample_tracker_v19"
 DESCRIPTION="Sim: sample_tracker"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
