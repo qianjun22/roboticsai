@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=68734
+PORT=68834
 SERVICE="robot_nano_gripper_v50"
 DESCRIPTION="Sim: nano_gripper"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
