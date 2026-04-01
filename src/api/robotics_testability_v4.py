@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28767
+PORT = 29385
 SERVICE = "robotics_testability_v4"
 DESCRIPTION = "testability v4 go-to-market platform"
 

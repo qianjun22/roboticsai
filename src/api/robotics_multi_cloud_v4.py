@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28585
+PORT = 29383
 SERVICE = "robotics_multi_cloud_v4"
 DESCRIPTION = "multi cloud v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28593
+PORT = 29391
 SERVICE = "robotics_cloud_bursting_v4"
 DESCRIPTION = "cloud bursting v4 go-to-market platform"
 

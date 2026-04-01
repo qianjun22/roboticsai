@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28759
+PORT = 29377
 SERVICE = "robotics_repairability_v4"
 DESCRIPTION = "repairability v4 go-to-market platform"
 

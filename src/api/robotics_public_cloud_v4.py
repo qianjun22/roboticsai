@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28581
+PORT = 29379
 SERVICE = "robotics_public_cloud_v4"
 DESCRIPTION = "public cloud v4 go-to-market platform"
 
