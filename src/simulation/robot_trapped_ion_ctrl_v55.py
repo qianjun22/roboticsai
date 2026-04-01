@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=74198
+PORT=74298
 SERVICE="robot_trapped_ion_ctrl_v55"
 DESCRIPTION="Sim: trapped_ion_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
