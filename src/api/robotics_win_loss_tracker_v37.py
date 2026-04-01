@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=52749
+PORT=52751
 SERVICE="robotics_win_loss_tracker_v37"
 DESCRIPTION="GTM: win_loss_tracker"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
