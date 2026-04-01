@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29721
+PORT = 29103
 SERVICE = "robotics_arr_v4"
 DESCRIPTION = "arr v4 go-to-market platform"
 

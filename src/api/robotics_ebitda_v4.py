@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29713
+PORT = 29095
 SERVICE = "robotics_ebitda_v4"
 DESCRIPTION = "ebitda v4 go-to-market platform"
 

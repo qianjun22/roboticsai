@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29717
+PORT = 29099
 SERVICE = "robotics_fcf_v4"
 DESCRIPTION = "fcf v4 go-to-market platform"
 
