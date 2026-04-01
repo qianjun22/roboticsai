@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 48155
 SERVICE = "robotics_plan_v9_10031a"
-DESCRIPTION = "Robotics plan v9 cycle 10031A"
+DESCRIPTION = "Robotics plan v9 cycle 10031A GTM"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

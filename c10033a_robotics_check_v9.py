@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 48157
-SERVICE = "robotics_plan_v9_10031b"
-DESCRIPTION = "Robotics plan v9 cycle 10031B GTM"
+PORT = 48163
+SERVICE = "robotics_check_v9_10033a"
+DESCRIPTION = "Robotics check v9 cycle 10033A GTM"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
