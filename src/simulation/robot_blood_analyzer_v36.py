@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=51250
+PORT=51410
 SERVICE="robot_blood_analyzer_v36"
 DESCRIPTION="Sim: blood_analyzer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
