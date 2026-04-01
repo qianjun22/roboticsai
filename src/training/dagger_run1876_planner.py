@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17065
-SERVICE = "robotics_continual_learning_v5"
-DESCRIPTION = "Continual learning system for robot skill acquisition without catastrophic forgetting"
+PORT = 17064
+SERVICE = "dagger_run1876_planner"
+DESCRIPTION = "DAgger run 1876 trajectory planner and data aggregation service"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
