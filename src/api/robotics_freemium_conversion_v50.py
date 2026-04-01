@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=68717
+PORT=68719
 SERVICE="robotics_freemium_conversion_v50"
 DESCRIPTION="GTM: freemium_conversion"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
