@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28737
+PORT = 29535
 SERVICE = "robotics_risk_tolerance_v4"
 DESCRIPTION = "risk tolerance v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28931
+PORT = 29549
 SERVICE = "robotics_anchoring_v4"
 DESCRIPTION = "anchoring v4 go-to-market platform"
 

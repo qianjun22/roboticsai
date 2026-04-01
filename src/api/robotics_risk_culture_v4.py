@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28745
+PORT = 29543
 SERVICE = "robotics_risk_culture_v4"
 DESCRIPTION = "risk culture v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28919
+PORT = 29537
 SERVICE = "robotics_choice_arch_v4"
 DESCRIPTION = "choice arch v4 go-to-market platform"
 

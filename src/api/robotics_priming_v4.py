@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28935
+PORT = 29553
 SERVICE = "robotics_priming_v4"
 DESCRIPTION = "priming v4 go-to-market platform"
 
