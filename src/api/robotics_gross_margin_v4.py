@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29087
+PORT = 29705
 SERVICE = "robotics_gross_margin_v4"
 DESCRIPTION = "gross margin v4 go-to-market platform"
 

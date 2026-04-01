@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29091
+PORT = 29709
 SERVICE = "robotics_net_margin_v4"
 DESCRIPTION = "net margin v4 go-to-market platform"
 
