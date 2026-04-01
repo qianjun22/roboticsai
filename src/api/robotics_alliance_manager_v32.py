@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=46751
+PORT=46909
 SERVICE="robotics_alliance_manager_v32"
 DESCRIPTION="GTM: alliance_manager"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
