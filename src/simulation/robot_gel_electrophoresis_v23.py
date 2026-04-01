@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=36274
+PORT=36374
 SERVICE="robot_gel_electrophoresis_v23"
 DESCRIPTION="Sim: gel_electrophoresis"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
