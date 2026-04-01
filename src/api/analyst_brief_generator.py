@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=8522
-SERVICE="contact_rich_manipulation"
-DESCRIPTION="Contact-rich manipulation research: peg-in-hole, assembly, connector insertion tasks"
+PORT=8533
+SERVICE="analyst_brief_generator"
+DESCRIPTION="Analyst brief generator: Gartner/Forrester robotics cloud brief for OCI Robot Cloud"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/tasks")
-def tasks(): return {"tasks":[{"name":"peg_in_hole","sr":0.09},{"name":"usb_insertion","sr":0.04},{"name":"connector_plug","sr":0.06}],"avg_sr":0.063,"requires":"force_feedback+tactile"}
+@app.get("/brief")
+def brief(): return {"target_analysts":["Gartner","Forrester","IDC"],"brief_type":"product_launch","differentiators":["NVIDIA_full_stack","DAgger_online_learning","9.6x_cheaper"],"scheduled":"2026-09-10"}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
