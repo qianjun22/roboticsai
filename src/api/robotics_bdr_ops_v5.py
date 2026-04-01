@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 30088
-SERVICE = "dagger_run5132_planner"
-DESCRIPTION = "DAgger run 5132 planner for iterative policy refinement with aggregated expert trajectories"
+PORT = 30089
+SERVICE = "robotics_bdr_ops_v5"
+DESCRIPTION = "BDR Ops v5 — intelligent workflow orchestration and continuous improvement for robot fleets"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
