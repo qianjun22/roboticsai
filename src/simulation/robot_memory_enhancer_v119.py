@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=150910
+PORT=151010
 SERVICE="robot_memory_enhancer_v119"
 DESCRIPTION="Sim: memory_enhancer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
