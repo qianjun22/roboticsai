@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22314
-SERVICE = "robot_lunar_regolith_collector"
-DESCRIPTION = "Lunar regolith collector robot simulation — in-situ resource utilization on Moon"
+PORT = 22315
+SERVICE = "robotics_space_resource_v1"
+DESCRIPTION = "Space resource robotics API v1 — ISRU mining and propellant production"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
