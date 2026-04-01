@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40939
-SERVICE = "robotics_deal_risk_assessor_v4"
-DESCRIPTION = "Deal risk assessor v4 for robotics GTM analytics"
+PORT = 40938
+SERVICE = "robot_gamma_ray_spectrometer"
+DESCRIPTION = "Gamma ray spectrometer simulation for robotics radiation sensing"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
