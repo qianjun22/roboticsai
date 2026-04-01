@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15554
-SERVICE = "robot_lunar_water_ice_excavator"
-DESCRIPTION = "Autonomous robot for extracting and processing water ice deposits on the lunar surface"
+PORT = 15555
+SERVICE = "robotics_feature_store_v5"
+DESCRIPTION = "Feature store v5: centralized repository for robot perception and state features"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
