@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8158
-SERVICE="customer_roi_calculator"
-DESCRIPTION="Customer ROI: automation savings vs robot cloud cost"
+PORT=8160
+SERVICE="compliance_tracker"
+DESCRIPTION="Compliance tracker: SOC2, ISO27001, GDPR for robot data"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}
