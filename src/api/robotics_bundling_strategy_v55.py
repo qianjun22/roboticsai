@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=74481
+PORT=74483
 SERVICE="robotics_bundling_strategy_v55"
 DESCRIPTION="GTM: bundling_strategy"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
