@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52134
+PORT = 53094
 SERVICE = "robot-micro-manipulation-ctrl"
 DESCRIPTION = "Robotics simulation for micro manipulation ctrl"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-micro-manipulation-ctrl</h1><div class="subtitle">Robotics simulation for micro manipulation ctrl · port 52134</div></div>
+<div class="header"><h1>robot-micro-manipulation-ctrl</h1><div class="subtitle">Robotics simulation for micro manipulation ctrl · port 53094</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52134</div>
+<div class="metric"><strong>Port:</strong> 53094</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
