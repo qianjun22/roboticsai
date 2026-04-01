@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=62566
+PORT=62726
 SERVICE="robot_protein_folder_v45"
 DESCRIPTION="Sim: protein_folder"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
