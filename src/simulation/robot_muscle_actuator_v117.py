@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=148646
+PORT=148746
 SERVICE="robot_muscle_actuator_v117"
 DESCRIPTION="Sim: muscle_actuator"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
