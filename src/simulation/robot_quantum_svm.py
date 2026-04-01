@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28498
+PORT = 29866
 SERVICE = "robot_quantum_svm"
 DESCRIPTION = "quantum svm simulation module"
 

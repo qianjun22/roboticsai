@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28494
+PORT = 29862
 SERVICE = "robot_quantum_kernel"
 DESCRIPTION = "quantum kernel simulation module"
 

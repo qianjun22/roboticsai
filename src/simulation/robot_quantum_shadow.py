@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28490
+PORT = 29858
 SERVICE = "robot_quantum_shadow"
 DESCRIPTION = "quantum shadow simulation module"
 

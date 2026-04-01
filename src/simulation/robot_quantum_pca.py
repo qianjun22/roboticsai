@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28502
+PORT = 29870
 SERVICE = "robot_quantum_pca"
 DESCRIPTION = "quantum pca simulation module"
 

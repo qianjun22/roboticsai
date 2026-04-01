@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28486
+PORT = 29854
 SERVICE = "robot_quantum_finger"
 DESCRIPTION = "quantum finger simulation module"
 
