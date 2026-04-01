@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 36064
-SERVICE = "dagger-run6626-planner"
-DESCRIPTION = "DAgger run 6626 interactive imitation learning planner with lunar cycle-aware robot navigation training"
+PORT = 36065
+SERVICE = "robotics-magic-num-v8"
+DESCRIPTION = "Magic number calculator for robotics SaaS GTM measuring net new ARR efficiency vs S&M spend"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
