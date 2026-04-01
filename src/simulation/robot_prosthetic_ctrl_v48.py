@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=65662
+PORT=65822
 SERVICE="robot_prosthetic_ctrl_v48"
 DESCRIPTION="Sim: prosthetic_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
