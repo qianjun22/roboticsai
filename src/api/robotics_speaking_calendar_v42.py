@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=59605
+PORT=59607
 SERVICE="robotics_speaking_calendar_v42"
 DESCRIPTION="GTM: speaking_calendar"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
