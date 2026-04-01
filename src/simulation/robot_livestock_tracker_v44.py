@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=60926
+PORT=61086
 SERVICE="robot_livestock_tracker_v44"
 DESCRIPTION="Sim: livestock_tracker"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
