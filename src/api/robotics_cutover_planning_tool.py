@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 50487
+PORT = 52575
 SERVICE = "robotics-cutover-planning-tool"
 DESCRIPTION = "Robotics GTM cutover planning tool service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-cutover-planning-tool</h1><div class="subtitle">Robotics GTM cutover planning tool service · port 50487</div></div>
+<div class="header"><h1>robotics-cutover-planning-tool</h1><div class="subtitle">Robotics GTM cutover planning tool service · port 52575</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 50487</div>
+<div class="metric"><strong>Port:</strong> 52575</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
