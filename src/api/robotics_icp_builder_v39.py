@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=55315
+PORT=55473
 SERVICE="robotics_icp_builder_v39"
 DESCRIPTION="GTM: icp_builder"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
