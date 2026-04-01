@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29217
+PORT = 28599
 SERVICE = "robotics_waste_v4"
 DESCRIPTION = "waste v4 go-to-market platform"
 
