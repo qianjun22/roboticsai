@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 53050
+PORT = 54010
 SERVICE = "robot-power-grasp-optimizer"
 DESCRIPTION = "Robotics simulation for power grasp optimizer"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-power-grasp-optimizer</h1><div class="subtitle">Robotics simulation for power grasp optimizer · port 53050</div></div>
+<div class="header"><h1>robot-power-grasp-optimizer</h1><div class="subtitle">Robotics simulation for power grasp optimizer · port 54010</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 53050</div>
+<div class="metric"><strong>Port:</strong> 54010</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
