@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28891
+PORT = 29509
 SERVICE = "robotics_social_proof_v4"
 DESCRIPTION = "social proof v4 go-to-market platform"
 

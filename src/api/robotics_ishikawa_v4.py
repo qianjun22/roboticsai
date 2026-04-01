@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28709
+PORT = 29507
 SERVICE = "robotics_ishikawa_v4"
 DESCRIPTION = "ishikawa v4 go-to-market platform"
 

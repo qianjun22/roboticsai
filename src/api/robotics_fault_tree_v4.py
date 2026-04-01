@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28713
+PORT = 29511
 SERVICE = "robotics_fault_tree_v4"
 DESCRIPTION = "fault tree v4 go-to-market platform"
 

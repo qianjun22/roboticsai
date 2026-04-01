@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28705
+PORT = 29503
 SERVICE = "robotics_fishbone_v4"
 DESCRIPTION = "fishbone v4 go-to-market platform"
 

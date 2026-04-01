@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28879
+PORT = 29497
 SERVICE = "robotics_variable_reward_v4"
 DESCRIPTION = "variable reward v4 go-to-market platform"
 

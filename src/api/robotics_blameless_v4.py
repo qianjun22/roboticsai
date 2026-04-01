@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28697
+PORT = 29495
 SERVICE = "robotics_blameless_v4"
 DESCRIPTION = "blameless v4 go-to-market platform"
 
