@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=75469
+PORT=75471
 SERVICE="robotics_data_moat_v56"
 DESCRIPTION="GTM: data_moat"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
