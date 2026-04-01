@@ -1,7 +1,7 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=67367
-SERVICE="robotics_platform_flywheel_v49"
-DESCRIPTION="GTM: platform_flywheel"
+PORT=67366
+SERVICE="robot_fiber_coupler_v49"
+DESCRIPTION="Sim: fiber_coupler"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health():
