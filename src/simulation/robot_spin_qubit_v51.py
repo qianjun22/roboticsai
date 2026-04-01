@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=69894
+PORT=69994
 SERVICE="robot_spin_qubit_v51"
 DESCRIPTION="Sim: spin_qubit"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
