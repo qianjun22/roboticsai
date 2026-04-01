@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 48040
 SERVICE = "robot_ligo_v9_10002b"
-DESCRIPTION = "Robot ligo v9 cycle 10002B DAgger service"
+DESCRIPTION = "Robot ligo v9 cycle 10002B"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
