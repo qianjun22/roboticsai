@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52114
+PORT = 53074
 SERVICE = "robot-suture-pattern-executor"
 DESCRIPTION = "Robotics simulation for suture pattern executor"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-suture-pattern-executor</h1><div class="subtitle">Robotics simulation for suture pattern executor · port 52114</div></div>
+<div class="header"><h1>robot-suture-pattern-executor</h1><div class="subtitle">Robotics simulation for suture pattern executor · port 53074</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52114</div>
+<div class="metric"><strong>Port:</strong> 53074</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
