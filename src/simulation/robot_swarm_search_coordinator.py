@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 51399
-SERVICE = "robotics-regulatory-compliance-tracker"
-DESCRIPTION = "Robotics GTM regulatory compliance tracker service"
+PORT = 51398
+SERVICE = "robot-swarm-search-coordinator"
+DESCRIPTION = "Robotics simulation for swarm search coordinator"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
@@ -16,7 +16,7 @@ def health():
 @app.get("/", response_class=fastapi.responses.HTMLResponse)
 def dashboard():
     bars = "".join(f'<div class="bar" style="height:{10+i*7}%;background:#38bdf8;opacity:{0.5+i*0.07:.2f}"></div>' for i in range(8))
-    return f"""<!DOCTYPE html><html><head><title>robotics-regulatory-compliance-tracker</title><style>
+    return f"""<!DOCTYPE html><html><head><title>robot-swarm-search-coordinator</title><style>
 body{margin:0;background:#0f172a;color:#e2e8f0;font-family:system-ui;}
 .header{background:#C74634;padding:20px 32px;}
 h1{margin:0;font-size:24px;color:#fff;}
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-regulatory-compliance-tracker</h1><div class="subtitle">Robotics GTM regulatory compliance tracker service · port 51399</div></div>
+<div class="header"><h1>robot-swarm-search-coordinator</h1><div class="subtitle">Robotics simulation for swarm search coordinator · port 51398</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 51399</div>
+<div class="metric"><strong>Port:</strong> 51398</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
