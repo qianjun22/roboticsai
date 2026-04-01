@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29463
+PORT = 28665
 SERVICE = "robotics_ring_deploy_v4"
 DESCRIPTION = "ring deploy v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29471
+PORT = 28673
 SERVICE = "robotics_chaos_eng_v4"
 DESCRIPTION = "chaos eng v4 go-to-market platform"
 
