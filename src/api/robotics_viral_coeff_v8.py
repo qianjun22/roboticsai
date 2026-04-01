@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 36056
-SERVICE = "dagger-run6624-planner"
-DESCRIPTION = "DAgger run 6624 interactive imitation learning planner for annual cycle robot task optimization"
+PORT = 36057
+SERVICE = "robotics-viral-coeff-v8"
+DESCRIPTION = "Viral coefficient calculator for robotics GTM with referral loop modeling and k-factor optimization"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
