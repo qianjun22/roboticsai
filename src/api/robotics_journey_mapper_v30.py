@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=44283
+PORT=44441
 SERVICE="robotics_journey_mapper_v30"
 DESCRIPTION="GTM: journey_mapper"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
