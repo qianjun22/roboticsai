@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28777
+PORT = 29575
 SERVICE = "robotics_pci_v4"
 DESCRIPTION = "pci v4 go-to-market platform"
 

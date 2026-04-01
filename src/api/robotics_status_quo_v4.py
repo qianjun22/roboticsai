@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28959
+PORT = 29577
 SERVICE = "robotics_status_quo_v4"
 DESCRIPTION = "status quo v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28781
+PORT = 29579
 SERVICE = "robotics_iso27001_v4"
 DESCRIPTION = "iso27001 v4 go-to-market platform"
 

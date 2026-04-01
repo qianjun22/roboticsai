@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28971
+PORT = 29589
 SERVICE = "robotics_price_anchor_v4"
 DESCRIPTION = "price anchor v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28963
+PORT = 29581
 SERVICE = "robotics_decoy_v4"
 DESCRIPTION = "decoy v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28793
+PORT = 29591
 SERVICE = "robotics_nist_v4"
 DESCRIPTION = "nist v4 go-to-market platform"
 
