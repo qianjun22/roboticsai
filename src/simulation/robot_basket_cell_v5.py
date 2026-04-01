@@ -1,7 +1,7 @@
 import datetime, fastapi, fastapi.responses, uvicorn
-PORT = 30947
-SERVICE = "robotics_change_mgmt"
-DESCRIPTION = "Robotics change management service"
+PORT = 30946
+SERVICE = "robot_basket_cell"
+DESCRIPTION = "Robot basket cell simulation service"
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 @app.get("/health")
 def health():
