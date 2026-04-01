@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22583
-SERVICE = "robotics_cold_chain_v1"
-DESCRIPTION = "Cold chain logistics robotics API v1 — temperature-controlled storage and transport"
+PORT = 22582
+SERVICE = "robot_cold_chain_logistics"
+DESCRIPTION = "Cold chain logistics robotics simulation — temperature-controlled storage and transport"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
