@@ -7,8 +7,8 @@ SR_HISTORY=[
     {"run":"BC_baseline","sr":0.05,"episodes":1000,"date":"2026-02-01"},
     {"run":"dagger_run5","sr":0.05,"episodes":150,"date":"2026-02-15"},
     {"run":"dagger_run6","sr":0.05,"episodes":120,"date":"2026-03-01"},
-    {"run":"dagger_run7","sr":None,"episodes":120,"date":"2026-03-31","status":"eval_pending"},
-    {"run":"dagger_run8","sr":None,"episodes":0,"date":None,"status":"launching"},
+    {"run":"dagger_run7","sr":0.05,"episodes":120,"date":"2026-03-31","note":"server_restart_failed_iters2-4"},
+    {"run":"dagger_run8","sr":None,"episodes":0,"date":"2026-04-01","status":"running_iter1_beta0.30","fix":"server_restart_cwd_port_fixed"},
 ]
 TARGET_SR=0.65
 @app.get("/history")
