@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28739
+PORT = 29357
 SERVICE = "robotics_mttf_v4"
 DESCRIPTION = "mttf v4 go-to-market platform"
 

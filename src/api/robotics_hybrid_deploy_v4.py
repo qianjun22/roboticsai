@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28569
+PORT = 29367
 SERVICE = "robotics_hybrid_deploy_v4"
 DESCRIPTION = "hybrid deploy v4 go-to-market platform"
 
