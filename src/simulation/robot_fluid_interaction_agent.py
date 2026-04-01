@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 51638
+PORT = 52598
 SERVICE = "robot-fluid-interaction-agent"
 DESCRIPTION = "Robotics simulation for fluid interaction agent"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-fluid-interaction-agent</h1><div class="subtitle">Robotics simulation for fluid interaction agent · port 51638</div></div>
+<div class="header"><h1>robot-fluid-interaction-agent</h1><div class="subtitle">Robotics simulation for fluid interaction agent · port 52598</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 51638</div>
+<div class="metric"><strong>Port:</strong> 52598</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
