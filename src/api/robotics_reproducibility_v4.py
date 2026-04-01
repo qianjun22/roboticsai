@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29045
+PORT = 29843
 SERVICE = "robotics_reproducibility_v4"
 DESCRIPTION = "reproducibility v4 go-to-market platform"
 

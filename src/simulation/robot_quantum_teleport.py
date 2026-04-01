@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28474
+PORT = 29842
 SERVICE = "robot_quantum_teleport"
 DESCRIPTION = "quantum teleport simulation module"
 

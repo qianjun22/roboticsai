@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29223
+PORT = 29841
 SERVICE = "robotics_go_live_v4"
 DESCRIPTION = "go live v4 go-to-market platform"
 

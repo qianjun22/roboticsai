@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28466
+PORT = 29834
 SERVICE = "robot_quantum_bernstein"
 DESCRIPTION = "quantum bernstein simulation module"
 

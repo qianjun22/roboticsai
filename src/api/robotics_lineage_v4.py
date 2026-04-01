@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29037
+PORT = 29835
 SERVICE = "robotics_lineage_v4"
 DESCRIPTION = "lineage v4 go-to-market platform"
 

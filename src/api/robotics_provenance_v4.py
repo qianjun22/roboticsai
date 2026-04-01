@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29041
+PORT = 29839
 SERVICE = "robotics_provenance_v4"
 DESCRIPTION = "provenance v4 go-to-market platform"
 

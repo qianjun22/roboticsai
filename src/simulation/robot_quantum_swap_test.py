@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28482
+PORT = 29850
 SERVICE = "robot_quantum_swap_test"
 DESCRIPTION = "quantum swap test simulation module"
 

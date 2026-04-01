@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29049
+PORT = 29847
 SERVICE = "robotics_experiment_track_v4"
 DESCRIPTION = "experiment track v4 go-to-market platform"
 
