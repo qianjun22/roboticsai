@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=69846
+PORT=69946
 SERVICE="robot_wafer_handler_v51"
 DESCRIPTION="Sim: wafer_handler"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
