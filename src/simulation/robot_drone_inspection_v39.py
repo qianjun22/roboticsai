@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=54946
+PORT=55106
 SERVICE="robot_drone_inspection_v39"
 DESCRIPTION="Sim: drone_inspection"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
