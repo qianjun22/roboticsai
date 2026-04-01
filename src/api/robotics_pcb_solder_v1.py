@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22662
-SERVICE = "robot_pcb_soldering"
-DESCRIPTION = "PCB soldering robotics simulation — selective solder joint placement and inspection"
+PORT = 22663
+SERVICE = "robotics_pcb_solder_v1"
+DESCRIPTION = "PCB soldering robotics API v1 — selective solder joint placement and inspection"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
