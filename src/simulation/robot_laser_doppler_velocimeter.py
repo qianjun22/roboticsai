@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40927
-SERVICE = "robotics_holdout_group_manager"
-DESCRIPTION = "Holdout group manager for robotics GTM analytics"
+PORT = 40926
+SERVICE = "robot_laser_doppler_velocimeter"
+DESCRIPTION = "Laser Doppler velocimeter simulation for robotics flow measurement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
