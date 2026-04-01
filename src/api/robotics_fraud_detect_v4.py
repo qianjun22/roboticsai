@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28929
+PORT = 29727
 SERVICE = "robotics_fraud_detect_v4"
 DESCRIPTION = "fraud detect v4 go-to-market platform"
 

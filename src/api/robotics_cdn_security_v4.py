@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28917
+PORT = 29715
 SERVICE = "robotics_cdn_security_v4"
 DESCRIPTION = "cdn security v4 go-to-market platform"
 

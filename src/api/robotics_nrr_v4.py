@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29115
+PORT = 29733
 SERVICE = "robotics_nrr_v4"
 DESCRIPTION = "nrr v4 go-to-market platform"
 
