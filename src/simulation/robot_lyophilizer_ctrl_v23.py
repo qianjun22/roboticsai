@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=36010
+PORT=36110
 SERVICE="robot_lyophilizer_ctrl_v23"
 DESCRIPTION="Sim: lyophilizer_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
