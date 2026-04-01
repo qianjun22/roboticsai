@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29637
+PORT = 29019
 SERVICE = "robotics_nps_v4"
 DESCRIPTION = "nps v4 go-to-market platform"
 
