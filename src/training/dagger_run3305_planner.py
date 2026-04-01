@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22781
-SERVICE = "robotics_carbon_capture_v2"
-DESCRIPTION = "Carbon capture robotics API v2 — DAC efficiency optimization and storage injection control"
+PORT = 22780
+SERVICE = "dagger_run3305_planner"
+DESCRIPTION = "DAgger run 3305 training planner — dataset aggregation and policy update scheduler"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
