@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=60206
+PORT=60366
 SERVICE="robot_pharma_dispenser_v43"
 DESCRIPTION="Sim: pharma_dispenser"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
