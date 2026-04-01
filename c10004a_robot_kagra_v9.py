@@ -5,7 +5,7 @@ import uvicorn
 
 PORT = 48046
 SERVICE = "robot_kagra_v9_10004a"
-DESCRIPTION = "Robot kagra v9 cycle 10004A sim service"
+DESCRIPTION = "Robot kagra v9 cycle 10004A"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
