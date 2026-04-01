@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 53047
+PORT = 53743
 SERVICE = "robotics-usage-based-billing-svc"
 DESCRIPTION = "Robotics GTM usage based billing svc service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-usage-based-billing-svc</h1><div class="subtitle">Robotics GTM usage based billing svc service · port 53047</div></div>
+<div class="header"><h1>robotics-usage-based-billing-svc</h1><div class="subtitle">Robotics GTM usage based billing svc service · port 53743</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 53047</div>
+<div class="metric"><strong>Port:</strong> 53743</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
