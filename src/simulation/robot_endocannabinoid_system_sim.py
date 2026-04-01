@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17011
-SERVICE = "robotics-cloud-native-v4"
-DESCRIPTION = "GTM cloud-native v4 for robotics Kubernetes and serverless deployment market strategy"
+PORT = 17010
+SERVICE = "robot-endocannabinoid-system-sim"
+DESCRIPTION = "Simulates endocannabinoid retrograde signaling for pain modulation and appetite research"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
