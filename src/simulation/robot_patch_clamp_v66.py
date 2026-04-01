@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=87822
+PORT=87922
 SERVICE="robot_patch_clamp_v66"
 DESCRIPTION="Sim: patch_clamp"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
