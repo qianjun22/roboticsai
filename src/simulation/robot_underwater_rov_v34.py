@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=49190
+PORT=49350
 SERVICE="robot_underwater_rov_v34"
 DESCRIPTION="Sim: underwater_rov"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
