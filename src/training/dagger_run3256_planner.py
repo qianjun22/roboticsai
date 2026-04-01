@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22585
-SERVICE = "robotics_cold_chain_v2"
-DESCRIPTION = "Cold chain logistics robotics API v2 — freezer zone routing and expiry tracking"
+PORT = 22584
+SERVICE = "dagger_run3256_planner"
+DESCRIPTION = "DAgger run 3256 training planner — cold chain logistics policy iteration"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
