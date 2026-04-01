@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=54646
+PORT=54806
 SERVICE="robot_bomb_disposal_v38"
 DESCRIPTION="Sim: bomb_disposal"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
