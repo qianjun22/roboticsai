@@ -1,46 +1,14 @@
-"""OCI Robot Cloud SDK v2
-OCI Robot Cloud — roboticsai
-"""
-from __future__ import annotations
-import json, time, random, math
-try:
-    from fastapi import FastAPI
-    from fastapi.responses import HTMLResponse, JSONResponse
-    import uvicorn
-except ImportError:
-    FastAPI = None
-
-PORT = 10525
-SERVICE = "oci_robot_cloud_sdk_v2"
-DESCRIPTION = "SDK v2: async/await + TypeScript client + streaming eval + DAgger session manager"
-
-if FastAPI:
-    app = FastAPI(title=SERVICE, description=DESCRIPTION)
-
-    @app.get("/health")
-    def health():
-        return {"status": "ok", "service": SERVICE, "port": PORT, "ts": time.time()}
-
-    @app.get("/", response_class=HTMLResponse)
-    def dashboard():
-        installs = random.randint(1800, 2200); bar = int((installs/2500) * 220)
-        return f"""<!DOCTYPE html><html><head><title>{SERVICE}</title>
-<style>body{{background:#0f172a;color:#e2e8f0;font-family:monospace;padding:2rem}}
-h1{{color:#C74634}}svg text{{fill:#e2e8f0}}</style></head>
-<body><h1>{SERVICE}</h1><p>{DESCRIPTION}</p>
-<p>Port: {PORT} | SDK v2 Installs: {installs:,}</p>
-<svg width='260' height='40'><rect width='220' height='30' fill='#1e293b' rx='4'/>
-<rect width='{bar}' height='30' fill='#38bdf8' rx='4'/>
-<text x='10' y='20' font-size='12'>SDK v2 Installs: {installs:,}</text></svg>
-</body></html>"""
-
-    if __name__ == "__main__":
-        uvicorn.run(app, host="0.0.0.0", port=PORT)
-else:
-    import http.server, socketserver
-    class H(http.server.BaseHTTPRequestHandler):
-        def do_GET(self):
-            body = json.dumps({"status": "ok", "service": SERVICE, "port": PORT}).encode()
-            self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(body)
-        def log_message(self, *a): pass
-    with socketserver.TCPServer(("", PORT), H) as s: s.serve_forever()
+import datetime,fastapi,uvicorn
+PORT=8621
+SERVICE="oci_robot_cloud_sdk_v2"
+app=fastapi.FastAPI(title=SERVICE,version="1.0.0")
+@app.get("/health")
+def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
+@app.get("/")
+def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
+@app.get("/sdk_info")
+def sdk_info(): return {"package":"oci-robot-cloud","version":"2.0.0",
+  "install":"pip install oci-robot-cloud",
+  "features":["fine_tune","eval","deploy","dagger","data_upload","monitor"],
+  "github":"qianjun22/roboticsai","docs":"docs/sdk.md"}
+if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
