@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52903
+PORT = 53599
 SERVICE = "robotics-joint-gtm-planner"
 DESCRIPTION = "Robotics GTM joint gtm planner service"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robotics-joint-gtm-planner</h1><div class="subtitle">Robotics GTM joint gtm planner service · port 52903</div></div>
+<div class="header"><h1>robotics-joint-gtm-planner</h1><div class="subtitle">Robotics GTM joint gtm planner service · port 53599</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52903</div>
+<div class="metric"><strong>Port:</strong> 53599</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
