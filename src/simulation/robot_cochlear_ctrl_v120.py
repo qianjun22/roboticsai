@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=152666
+PORT=152766
 SERVICE="robot_cochlear_ctrl_v120"
 DESCRIPTION="Sim: cochlear_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
