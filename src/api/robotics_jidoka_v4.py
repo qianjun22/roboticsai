@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28575
+PORT = 29193
 SERVICE = "robotics_jidoka_v4"
 DESCRIPTION = "jidoka v4 go-to-market platform"
 

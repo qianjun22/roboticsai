@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28559
+PORT = 29177
 SERVICE = "robotics_kaizen_v4"
 DESCRIPTION = "kaizen v4 go-to-market platform"
 

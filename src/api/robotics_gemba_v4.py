@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28563
+PORT = 29181
 SERVICE = "robotics_gemba_v4"
 DESCRIPTION = "gemba v4 go-to-market platform"
 

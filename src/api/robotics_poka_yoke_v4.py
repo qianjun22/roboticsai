@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28571
+PORT = 29189
 SERVICE = "robotics_poka_yoke_v4"
 DESCRIPTION = "poka yoke v4 go-to-market platform"
 

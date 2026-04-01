@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28567
+PORT = 29185
 SERVICE = "robotics_andon_v4"
 DESCRIPTION = "andon v4 go-to-market platform"
 

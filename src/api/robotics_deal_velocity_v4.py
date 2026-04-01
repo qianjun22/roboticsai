@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29793
+PORT = 29175
 SERVICE = "robotics_deal_velocity_v4"
 DESCRIPTION = "deal velocity v4 go-to-market platform"
 
