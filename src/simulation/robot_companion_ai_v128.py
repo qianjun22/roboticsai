@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=162630
+PORT=162730
 SERVICE="robot_companion_ai_v128"
 DESCRIPTION="Sim: companion_ai"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
