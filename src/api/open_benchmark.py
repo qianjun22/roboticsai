@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8207
-SERVICE="cloud_migration_advisor"
-DESCRIPTION="Cloud migration: AWS/Azure robot workloads → OCI"
+PORT=8211
+SERVICE="open_benchmark"
+DESCRIPTION="Open benchmark: LIBERO + RoboSuite + custom Franka tasks"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}
