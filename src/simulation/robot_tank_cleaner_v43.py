@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=60558
+PORT=60718
 SERVICE="robot_tank_cleaner_v43"
 DESCRIPTION="Sim: tank_cleaner"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
