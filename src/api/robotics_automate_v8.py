@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 36080
-SERVICE = "dagger-run6630-planner"
-DESCRIPTION = "DAgger run 6630 interactive imitation learning planner with galactic radiation shielding for space robots"
+PORT = 36081
+SERVICE = "robotics-automate-v8"
+DESCRIPTION = "GTM automation platform for robotics replacing manual workflows with AI-driven pipeline orchestration"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
