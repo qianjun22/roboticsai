@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=154598
+PORT=154698
 SERVICE="robot_emotion_sensor_v122"
 DESCRIPTION="Sim: emotion_sensor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
