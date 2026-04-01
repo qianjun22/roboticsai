@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40935
-SERVICE = "robotics_geo_lift_test_analyzer"
-DESCRIPTION = "Geo lift test analyzer for robotics GTM analytics"
+PORT = 40934
+SERVICE = "robot_neutron_scattering_modeler"
+DESCRIPTION = "Neutron scattering model for robotics material analysis"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
