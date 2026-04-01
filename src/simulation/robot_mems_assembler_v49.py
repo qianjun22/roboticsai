@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=67370
+PORT=67470
 SERVICE="robot_mems_assembler_v49"
 DESCRIPTION="Sim: mems_assembler"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
