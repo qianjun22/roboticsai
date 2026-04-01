@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 17047
-SERVICE = "robotics-sim-to-real-v5"
-DESCRIPTION = "GTM sim-to-real transfer v5 for robotics zero-shot deployment and domain adaptation"
+PORT = 17046
+SERVICE = "robot-mhc-antigen-presenter"
+DESCRIPTION = "Simulates MHC class I/II antigen presentation for adaptive immune response research"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
