@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41266
-SERVICE = "robot_photonic_lattice_builder"
-DESCRIPTION = "Photonic lattice builder for optical communication in robotic swarms"
+PORT = 41267
+SERVICE = "robotics_health_score_deterioration_v3"
+DESCRIPTION = "Health score deterioration tracker for at-risk account intervention"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
