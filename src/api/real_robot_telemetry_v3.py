@@ -1,12 +1,12 @@
 import datetime,fastapi,uvicorn
-PORT=8580
-SERVICE="enterprise_contract_manager"
-DESCRIPTION="Enterprise contract manager: MSA, DPA, SLA, order forms, renewal tracking"
+PORT=8588
+SERVICE="real_robot_telemetry_v3"
+DESCRIPTION="Real robot telemetry v3: stream joint states 1kHz to cloud for online DAgger correction"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT,"ts":datetime.datetime.utcnow().isoformat()}
 @app.get("/")
 def root(): return {"service":SERVICE,"port":PORT,"status":"operational"}
-@app.get("/contracts")
-def contracts(): return {"active":1,"in_review":2,"avg_deal_size_usd":96000,"avg_close_days":45,"renewal_rate_pct":100}
+@app.get("/telemetry/live")
+def live(): return {"freq_hz":1000,"latency_ms":8,"joints":7,"ee_pose":True,"ft_sensor":True,"cloud_buffer_sec":60}
 if __name__=="__main__": uvicorn.run(app,host="0.0.0.0",port=PORT)
