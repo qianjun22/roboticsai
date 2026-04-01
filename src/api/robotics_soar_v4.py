@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28861
+PORT = 29659
 SERVICE = "robotics_soar_v4"
 DESCRIPTION = "soar v4 go-to-market platform"
 

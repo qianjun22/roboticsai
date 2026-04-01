@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28857
+PORT = 29655
 SERVICE = "robotics_siem_v4"
 DESCRIPTION = "siem v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29039
+PORT = 29657
 SERVICE = "robotics_omni_channel_v4"
 DESCRIPTION = "omni channel v4 go-to-market platform"
 
