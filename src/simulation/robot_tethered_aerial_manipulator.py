@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52222
+PORT = 53182
 SERVICE = "robot-tethered-aerial-manipulator"
 DESCRIPTION = "Robotics simulation for tethered aerial manipulator"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-tethered-aerial-manipulator</h1><div class="subtitle">Robotics simulation for tethered aerial manipulator · port 52222</div></div>
+<div class="header"><h1>robot-tethered-aerial-manipulator</h1><div class="subtitle">Robotics simulation for tethered aerial manipulator · port 53182</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52222</div>
+<div class="metric"><strong>Port:</strong> 53182</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
