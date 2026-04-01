@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=33725
+PORT=33727
 SERVICE="robotics_compliance_check_v21"
 DESCRIPTION="GTM: compliance_check"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
