@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=62674
+PORT=62834
 SERVICE="robot_soil_sampler_v45"
 DESCRIPTION="Sim: soil_sampler"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
