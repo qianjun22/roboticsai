@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=67762
+PORT=67862
 SERVICE="robot_lens_grinder_v49"
 DESCRIPTION="Sim: lens_grinder"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
