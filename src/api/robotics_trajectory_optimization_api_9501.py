@@ -1,9 +1,9 @@
 import datetime
 import fastapi
 import uvicorn
-PORT = 46004
-SERVICE = "dagger-run9111-planner"
-DESCRIPTION = "DAgger run 9111 planning service cycle 9493"
+PORT = 46037
+SERVICE = "robotics-trajectory_optimization_api-9501"
+DESCRIPTION = "GTM trajectory optimization api service cycle 9501"
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 @app.get("/health")
 def health():
