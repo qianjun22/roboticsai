@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29143
+PORT = 29761
 SERVICE = "robotics_rule_40_v4"
 DESCRIPTION = "rule 40 v4 go-to-market platform"
 

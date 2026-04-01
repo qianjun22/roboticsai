@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28957
+PORT = 29755
 SERVICE = "robotics_finops_v4"
 DESCRIPTION = "finops v4 go-to-market platform"
 

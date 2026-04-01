@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29139
+PORT = 29757
 SERVICE = "robotics_quick_ratio_v4"
 DESCRIPTION = "quick ratio v4 go-to-market platform"
 

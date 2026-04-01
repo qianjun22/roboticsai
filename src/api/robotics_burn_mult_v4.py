@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29147
+PORT = 29765
 SERVICE = "robotics_burn_mult_v4"
 DESCRIPTION = "burn mult v4 go-to-market platform"
 

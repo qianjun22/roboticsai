@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29155
+PORT = 29773
 SERVICE = "robotics_sales_eff_v4"
 DESCRIPTION = "sales eff v4 go-to-market platform"
 

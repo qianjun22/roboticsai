@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29151
+PORT = 29769
 SERVICE = "robotics_magic_number_v4"
 DESCRIPTION = "magic number v4 go-to-market platform"
 
