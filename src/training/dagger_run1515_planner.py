@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15621
-SERVICE = "robotics_knowledge_base_v5"
-DESCRIPTION = "Knowledge base v5: searchable operational wiki and troubleshooting guides for robot platform"
+PORT = 15620
+SERVICE = "dagger_run1515_planner"
+DESCRIPTION = "DAgger run 1515 training planner with interactive policy improvement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
