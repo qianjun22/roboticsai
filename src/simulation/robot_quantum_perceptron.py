@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28526
+PORT = 29894
 SERVICE = "robot_quantum_perceptron"
 DESCRIPTION = "quantum perceptron simulation module"
 

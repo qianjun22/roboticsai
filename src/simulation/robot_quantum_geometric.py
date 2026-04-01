@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28542
+PORT = 29910
 SERVICE = "robot_quantum_geometric"
 DESCRIPTION = "quantum geometric simulation module"
 

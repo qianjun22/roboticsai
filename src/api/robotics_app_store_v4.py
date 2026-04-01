@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28481
+PORT = 29897
 SERVICE = "robotics_app_store_v4"
 DESCRIPTION = "app store v4 go-to-market platform"
 

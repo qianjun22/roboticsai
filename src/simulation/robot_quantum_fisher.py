@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28538
+PORT = 29906
 SERVICE = "robot_quantum_fisher"
 DESCRIPTION = "quantum fisher simulation module"
 

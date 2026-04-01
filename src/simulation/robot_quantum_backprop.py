@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28530
+PORT = 29898
 SERVICE = "robot_quantum_backprop"
 DESCRIPTION = "quantum backprop simulation module"
 

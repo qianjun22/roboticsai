@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29295
+PORT = 29913
 SERVICE = "robotics_devrel_v4"
 DESCRIPTION = "devrel v4 go-to-market platform"
 
