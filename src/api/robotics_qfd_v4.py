@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28655
+PORT = 29273
 SERVICE = "robotics_qfd_v4"
 DESCRIPTION = "qfd v4 go-to-market platform"
 

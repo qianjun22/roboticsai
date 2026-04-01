@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28647
+PORT = 29265
 SERVICE = "robotics_ctq_v4"
 DESCRIPTION = "ctq v4 go-to-market platform"
 

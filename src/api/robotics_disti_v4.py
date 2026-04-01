@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29881
+PORT = 29263
 SERVICE = "robotics_disti_v4"
 DESCRIPTION = "disti v4 go-to-market platform"
 

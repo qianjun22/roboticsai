@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28639
+PORT = 29257
 SERVICE = "robotics_dmadv_v4"
 DESCRIPTION = "dmadv v4 go-to-market platform"
 

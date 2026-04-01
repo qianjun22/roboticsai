@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29873
+PORT = 29255
 SERVICE = "robotics_isi_v4"
 DESCRIPTION = "isi v4 go-to-market platform"
 
