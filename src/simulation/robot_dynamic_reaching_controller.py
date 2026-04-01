@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52026
+PORT = 52986
 SERVICE = "robot-dynamic-reaching-controller"
 DESCRIPTION = "Robotics simulation for dynamic reaching controller"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-dynamic-reaching-controller</h1><div class="subtitle">Robotics simulation for dynamic reaching controller · port 52026</div></div>
+<div class="header"><h1>robot-dynamic-reaching-controller</h1><div class="subtitle">Robotics simulation for dynamic reaching controller · port 52986</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52026</div>
+<div class="metric"><strong>Port:</strong> 52986</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
