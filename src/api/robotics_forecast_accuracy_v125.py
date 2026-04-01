@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=158965
+PORT=158967
 SERVICE="robotics_forecast_accuracy_v125"
 DESCRIPTION="GTM: forecast_accuracy"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
