@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=38046
+PORT=38146
 SERVICE="robot_cell_culture_bot_v25"
 DESCRIPTION="Sim: cell_culture_bot"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
