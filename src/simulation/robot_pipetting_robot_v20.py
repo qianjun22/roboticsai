@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=32530
+PORT=32630
 SERVICE="robot_pipetting_robot_v20"
 DESCRIPTION="Sim: pipetting_robot"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
