@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=57870
+PORT=58030
 SERVICE="robot_harvest_classifier_v41"
 DESCRIPTION="Sim: harvest_classifier"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
