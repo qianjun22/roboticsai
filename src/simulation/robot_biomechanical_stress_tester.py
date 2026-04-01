@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40863
-SERVICE = "robotics_pricing_elasticity_model"
-DESCRIPTION = "GTM analytics: pricing elasticity model for robotics sales optimization"
+PORT = 40862
+SERVICE = "robot_biomechanical_stress_tester"
+DESCRIPTION = "Tests biomechanical stress patterns in prosthetic robotic limbs"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
