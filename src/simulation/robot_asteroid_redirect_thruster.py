@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15571
-SERVICE = "robotics_service_mesh_v5"
-DESCRIPTION = "Service mesh v5: Istio-based mTLS communication and traffic management for robot microservices"
+PORT = 15570
+SERVICE = "robot_asteroid_redirect_thruster"
+DESCRIPTION = "Robotic thruster system for redirecting near-Earth asteroids for planetary defense"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
