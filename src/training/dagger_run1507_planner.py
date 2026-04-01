@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 15589
-SERVICE = "robotics_circuit_breaker_v5"
-DESCRIPTION = "Circuit breaker v5: fault tolerance and cascade failure prevention for robot microservices"
+PORT = 15588
+SERVICE = "dagger_run1507_planner"
+DESCRIPTION = "DAgger run 1507 training planner with interactive policy improvement"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
