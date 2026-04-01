@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8130
-SERVICE="cost_per_inference"
-DESCRIPTION="Cost per inference: OCI vs AWS p4d comparison"
+PORT=8131
+SERVICE="dagger_run8_status"
+DESCRIPTION="Live DAgger run8 status (beta=0.30, 6 iters, 50 eps)"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}

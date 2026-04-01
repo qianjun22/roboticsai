@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8130
-SERVICE="cost_per_inference"
-DESCRIPTION="Cost per inference: OCI vs AWS p4d comparison"
+PORT=8126
+SERVICE="sim_to_real_transfer_v2"
+DESCRIPTION="Sim-to-real transfer validator with domain randomization"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}

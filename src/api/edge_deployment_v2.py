@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8130
-SERVICE="cost_per_inference"
-DESCRIPTION="Cost per inference: OCI vs AWS p4d comparison"
+PORT=8129
+SERVICE="edge_deployment_v2"
+DESCRIPTION="Edge deployment: Jetson AGX Orin 64GB packaging"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}

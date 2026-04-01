@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8130
-SERVICE="cost_per_inference"
-DESCRIPTION="Cost per inference: OCI vs AWS p4d comparison"
+PORT=8132
+SERVICE="embodiment_adapter_v2"
+DESCRIPTION="Embodiment adapter v2: cross-robot policy transfer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}

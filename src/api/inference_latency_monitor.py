@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8130
-SERVICE="cost_per_inference"
-DESCRIPTION="Cost per inference: OCI vs AWS p4d comparison"
+PORT=8127
+SERVICE="inference_latency_monitor"
+DESCRIPTION="Real-time GR00T inference latency tracker (target: <250ms)"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}
