@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52306
+PORT = 53266
 SERVICE = "robot-space-debris-capturer"
 DESCRIPTION = "Robotics simulation for space debris capturer"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-space-debris-capturer</h1><div class="subtitle">Robotics simulation for space debris capturer · port 52306</div></div>
+<div class="header"><h1>robot-space-debris-capturer</h1><div class="subtitle">Robotics simulation for space debris capturer · port 53266</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52306</div>
+<div class="metric"><strong>Port:</strong> 53266</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
