@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=50291
+PORT=50449
 SERVICE="robotics_seo_optimizer_v35"
 DESCRIPTION="GTM: seo_optimizer"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
