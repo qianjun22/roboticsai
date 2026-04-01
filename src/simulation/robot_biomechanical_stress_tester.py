@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41271
-SERVICE = "robotics_escalation_risk_analyzer_v4"
-DESCRIPTION = "Escalation risk analyzer for enterprise account issue prevention"
+PORT = 41270
+SERVICE = "robot_biomechanical_stress_tester"
+DESCRIPTION = "Biomechanical stress tester for humanoid robot joint durability analysis"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
