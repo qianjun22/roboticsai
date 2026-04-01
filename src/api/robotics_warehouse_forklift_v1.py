@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22286
-SERVICE = "robot_autonomous_forklift"
-DESCRIPTION = "Autonomous forklift robot simulation — pallet handling in dynamic warehouse"
+PORT = 22287
+SERVICE = "robotics_warehouse_forklift_v1"
+DESCRIPTION = "Warehouse forklift robotics API v1 — autonomous AMR and forklift fleet management"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
