@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29145
+PORT = 29943
 SERVICE = "robotics_teal_org_v4"
 DESCRIPTION = "teal org v4 go-to-market platform"
 

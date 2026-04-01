@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28570
+PORT = 29938
 SERVICE = "robot_vqls_v4"
 DESCRIPTION = "vqls v4 simulation module"
 

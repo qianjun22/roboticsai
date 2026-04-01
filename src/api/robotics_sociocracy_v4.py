@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29141
+PORT = 29939
 SERVICE = "robotics_sociocracy_v4"
 DESCRIPTION = "sociocracy v4 go-to-market platform"
 

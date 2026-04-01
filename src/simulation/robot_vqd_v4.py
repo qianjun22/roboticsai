@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28566
+PORT = 29934
 SERVICE = "robot_vqd_v4"
 DESCRIPTION = "vqd v4 simulation module"
 
