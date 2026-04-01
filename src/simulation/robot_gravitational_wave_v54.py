@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=73922
+PORT=74022
 SERVICE="robot_gravitational_wave_v54"
 DESCRIPTION="Sim: gravitational_wave"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
