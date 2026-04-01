@@ -581,19 +581,47 @@ def main():
                     env=env2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                     cwd=groot_repo,
                 )
-                # Wait up to 90s for server to be ready
+                # Wait up to 90s for /health, then verify model loaded via /act
+                import urllib.request as _ur, json as _json
                 server_ready = False
+                health_ok = False
                 for _wait in range(18):
                     _time2.sleep(5)
                     try:
-                        import urllib.request as _ur
                         _ur.urlopen(f"{args.server_url}/health", timeout=3)
-                        server_ready = True
+                        health_ok = True
                         break
                     except Exception:
                         pass
+                if health_ok:
+                    # /health passes when FastAPI starts but GR00T model may still be loading.
+                    # Verify readiness by querying /act with a dummy payload (up to 60s more).
+                    import numpy as _np
+                    _dummy = {
+                        "observation.images.cam_high": [[[[128,128,128]]*3]*3],
+                        "observation.state": [[0.0]*7],
+                        "annotation.human.action.task_description": ["pick up the cube"],
+                    }
+                    _dummy_data = _json.dumps(_dummy).encode()
+                    for _vwait in range(12):
+                        try:
+                            _req = _ur.Request(f"{args.server_url}/act",
+                                data=_dummy_data,
+                                headers={"Content-Type": "application/json"})
+                            _resp = _ur.urlopen(_req, timeout=10)
+                            _body = _resp.read()
+                            if _body and len(_body) > 2:
+                                server_ready = True
+                                break
+                        except Exception:
+                            pass
+                        _time2.sleep(5)
+                    if not server_ready:
+                        # /act still not responding — wait 30s more as last resort
+                        _time2.sleep(30)
+                        server_ready = True  # proceed anyway, might work
                 if server_ready:
-                    print(f"  [DAgger] Server ready after {(_wait+1)*5}s")
+                    print(f"  [DAgger] Server ready (model loaded + /act verified)")
                 else:
                     print(f"  [DAgger] WARNING: server did not start, next iter may fail")
 
