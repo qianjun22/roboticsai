@@ -573,10 +573,13 @@ def main():
                 print(f"  [DAgger] Restarting GR00T server with checkpoint: {active_checkpoint}")
                 env2 = os.environ.copy()
                 env2["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+                groot_repo = os.environ.get("GROOT_REPO", "/home/ubuntu/Isaac-GR00T")
+                server_port = args.server_url.split(":")[-1].rstrip("/")
                 subprocess.Popen(
                     [str(groot_venv), str(server_script),
-                     "--checkpoint", active_checkpoint, "--port", "8002"],
+                     "--checkpoint", active_checkpoint, "--port", server_port, "--device", "0"],
                     env=env2, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    cwd=groot_repo,
                 )
                 # Wait up to 90s for server to be ready
                 server_ready = False
