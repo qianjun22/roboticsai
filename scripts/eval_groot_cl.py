@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-eval_groot_cl.py — Pure closed-loop eval of GR00T fine-tuned model
-Correct setup: table at z=0.7, Q_HOME init, multipart form-data API
-Result (2026-03-31): SR=95% (19/20), avg_latency=229ms, policy_failure_rate=0.0
-"""
 import time, io, statistics, argparse
 import numpy as np
 import requests
