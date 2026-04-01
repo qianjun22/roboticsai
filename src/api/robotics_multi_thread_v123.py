@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=155997
+PORT=155999
 SERVICE="robotics_multi_thread_v123"
 DESCRIPTION="GTM: multi_thread"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
