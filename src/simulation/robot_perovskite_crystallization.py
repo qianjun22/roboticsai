@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41219
-SERVICE = "robotics_customer_acquisition_cost_v5"
-DESCRIPTION = "Customer acquisition cost analyzer for growth efficiency benchmarking"
+PORT = 41218
+SERVICE = "robot_perovskite_crystallization"
+DESCRIPTION = "Perovskite crystallization simulation for energy harvesting robotics"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
