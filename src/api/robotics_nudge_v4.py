@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28915
+PORT = 29533
 SERVICE = "robotics_nudge_v4"
 DESCRIPTION = "nudge v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28907
+PORT = 29525
 SERVICE = "robotics_reciprocity_v4"
 DESCRIPTION = "reciprocity v4 go-to-market platform"
 

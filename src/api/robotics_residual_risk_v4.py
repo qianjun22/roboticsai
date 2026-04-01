@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28729
+PORT = 29527
 SERVICE = "robotics_residual_risk_v4"
 DESCRIPTION = "residual risk v4 go-to-market platform"
 

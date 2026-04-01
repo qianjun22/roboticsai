@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28725
+PORT = 29523
 SERVICE = "robotics_heat_map_v4"
 DESCRIPTION = "heat map v4 go-to-market platform"
 

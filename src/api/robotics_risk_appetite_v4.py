@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28733
+PORT = 29531
 SERVICE = "robotics_risk_appetite_v4"
 DESCRIPTION = "risk appetite v4 go-to-market platform"
 

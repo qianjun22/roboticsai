@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28717
+PORT = 29515
 SERVICE = "robotics_bowtie_v4"
 DESCRIPTION = "bowtie v4 go-to-market platform"
 

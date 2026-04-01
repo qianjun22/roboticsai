@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28903
+PORT = 29521
 SERVICE = "robotics_scarcity_v4"
 DESCRIPTION = "scarcity v4 go-to-market platform"
 
