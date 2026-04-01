@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28849
+PORT = 29647
 SERVICE = "robotics_just_in_time_v4"
 DESCRIPTION = "just in time v4 go-to-market platform"
 

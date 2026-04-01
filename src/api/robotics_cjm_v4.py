@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29035
+PORT = 29653
 SERVICE = "robotics_cjm_v4"
 DESCRIPTION = "cjm v4 go-to-market platform"
 

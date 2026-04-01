@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28837
+PORT = 29635
 SERVICE = "robotics_microseg_v4"
 DESCRIPTION = "microseg v4 go-to-market platform"
 

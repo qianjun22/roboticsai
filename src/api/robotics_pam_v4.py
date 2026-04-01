@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28853
+PORT = 29651
 SERVICE = "robotics_pam_v4"
 DESCRIPTION = "pam v4 go-to-market platform"
 

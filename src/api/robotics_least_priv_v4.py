@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28845
+PORT = 29643
 SERVICE = "robotics_least_priv_v4"
 DESCRIPTION = "least priv v4 go-to-market platform"
 
