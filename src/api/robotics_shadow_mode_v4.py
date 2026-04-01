@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28645
+PORT = 29443
 SERVICE = "robotics_shadow_mode_v4"
 DESCRIPTION = "shadow mode v4 go-to-market platform"
 

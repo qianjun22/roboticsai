@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28653
+PORT = 29451
 SERVICE = "robotics_canary_v4"
 DESCRIPTION = "canary v4 go-to-market platform"
 

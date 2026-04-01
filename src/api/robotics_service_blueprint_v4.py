@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28831
+PORT = 29449
 SERVICE = "robotics_service_blueprint_v4"
 DESCRIPTION = "service blueprint v4 go-to-market platform"
 

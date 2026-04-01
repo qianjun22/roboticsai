@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28819
+PORT = 29437
 SERVICE = "robotics_persona_v4"
 DESCRIPTION = "persona v4 go-to-market platform"
 

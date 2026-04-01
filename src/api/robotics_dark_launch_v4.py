@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28649
+PORT = 29447
 SERVICE = "robotics_dark_launch_v4"
 DESCRIPTION = "dark launch v4 go-to-market platform"
 

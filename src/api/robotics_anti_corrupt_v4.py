@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28637
+PORT = 29435
 SERVICE = "robotics_anti_corrupt_v4"
 DESCRIPTION = "anti corrupt v4 go-to-market platform"
 

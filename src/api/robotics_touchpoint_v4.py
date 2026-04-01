@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28835
+PORT = 29453
 SERVICE = "robotics_touchpoint_v4"
 DESCRIPTION = "touchpoint v4 go-to-market platform"
 

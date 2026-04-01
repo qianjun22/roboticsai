@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28827
+PORT = 29445
 SERVICE = "robotics_journey_map_v4"
 DESCRIPTION = "journey map v4 go-to-market platform"
 

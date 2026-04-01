@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28823
+PORT = 29441
 SERVICE = "robotics_empathy_map_v4"
 DESCRIPTION = "empathy map v4 go-to-market platform"
 

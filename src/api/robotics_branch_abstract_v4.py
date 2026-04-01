@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28641
+PORT = 29439
 SERVICE = "robotics_branch_abstract_v4"
 DESCRIPTION = "branch abstract v4 go-to-market platform"
 
