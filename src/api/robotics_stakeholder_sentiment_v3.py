@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 41084
-SERVICE = "dagger_run7881_planner"
-DESCRIPTION = "DAgger run 7881 training planner"
+PORT = 41085
+SERVICE = "robotics_stakeholder_sentiment_v3"
+DESCRIPTION = "GTM analytics: stakeholder sentiment v3"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
