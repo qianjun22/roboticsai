@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=159990
+PORT=160090
 SERVICE="robot_mind_ctrl_arm_v126"
 DESCRIPTION="Sim: mind_ctrl_arm"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
