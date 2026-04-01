@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=58621
+PORT=58623
 SERVICE="robotics_event_manager_v42"
 DESCRIPTION="GTM: event_manager"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
