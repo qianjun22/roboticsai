@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29461
+PORT = 28843
 SERVICE = "robotics_jtbd_v4"
 DESCRIPTION = "jtbd v4 go-to-market platform"
 
