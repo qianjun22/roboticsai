@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=156122
+PORT=156222
 SERVICE="robot_empathy_bot_v123"
 DESCRIPTION="Sim: empathy_bot"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
