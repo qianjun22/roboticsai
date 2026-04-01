@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52182
+PORT = 53142
 SERVICE = "robot-nuclear-decommission-bot"
 DESCRIPTION = "Robotics simulation for nuclear decommission bot"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-nuclear-decommission-bot</h1><div class="subtitle">Robotics simulation for nuclear decommission bot · port 52182</div></div>
+<div class="header"><h1>robot-nuclear-decommission-bot</h1><div class="subtitle">Robotics simulation for nuclear decommission bot · port 53142</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52182</div>
+<div class="metric"><strong>Port:</strong> 53142</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
