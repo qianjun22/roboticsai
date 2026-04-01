@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=32134
+PORT=32234
 SERVICE="robot_bioreactor_ctrl_v20"
 DESCRIPTION="Sim: bioreactor_ctrl"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
