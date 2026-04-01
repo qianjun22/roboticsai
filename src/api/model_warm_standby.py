@@ -1,7 +1,7 @@
 import datetime,fastapi,uvicorn
-PORT=8189
-SERVICE="regression_test_suite"
-DESCRIPTION="Regression test suite: prevent SR drops on new checkpoints"
+PORT=8194
+SERVICE="model_warm_standby"
+DESCRIPTION="Model warm standby: hot-swap GR00T checkpoint with 0-downtime"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
 @app.get("/health")
 def health(): return {"status":"ok","service":SERVICE,"port":PORT}
