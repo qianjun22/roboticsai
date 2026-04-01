@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28609
+PORT = 29407
 SERVICE = "robotics_cloud_smart_v4"
 DESCRIPTION = "cloud smart v4 go-to-market platform"
 

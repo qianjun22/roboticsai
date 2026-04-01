@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28787
+PORT = 29405
 SERVICE = "robotics_predictive_maint_v4"
 DESCRIPTION = "predictive maint v4 go-to-market platform"
 

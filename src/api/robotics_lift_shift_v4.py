@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28613
+PORT = 29411
 SERVICE = "robotics_lift_shift_v4"
 DESCRIPTION = "lift shift v4 go-to-market platform"
 

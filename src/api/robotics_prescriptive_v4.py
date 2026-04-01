@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28791
+PORT = 29409
 SERVICE = "robotics_prescriptive_v4"
 DESCRIPTION = "prescriptive v4 go-to-market platform"
 

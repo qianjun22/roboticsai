@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28605
+PORT = 29403
 SERVICE = "robotics_cloud_agnostic_v4"
 DESCRIPTION = "cloud agnostic v4 go-to-market platform"
 
