@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28683
+PORT = 29301
 SERVICE = "robotics_gage_rnr_v4"
 DESCRIPTION = "gage rnr v4 go-to-market platform"
 

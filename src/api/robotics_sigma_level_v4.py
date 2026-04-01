@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28695
+PORT = 29313
 SERVICE = "robotics_sigma_level_v4"
 DESCRIPTION = "sigma level v4 go-to-market platform"
 

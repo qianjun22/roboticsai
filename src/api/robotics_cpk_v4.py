@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28687
+PORT = 29305
 SERVICE = "robotics_cpk_v4"
 DESCRIPTION = "cpk v4 go-to-market platform"
 
