@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 36048
-SERVICE = "dagger-run6622-planner"
-DESCRIPTION = "DAgger run 6622 interactive imitation learning planner with infradian rhythm data augmentation"
+PORT = 36049
+SERVICE = "robotics-channel-fit-v8"
+DESCRIPTION = "Channel-fit optimization for robotics GTM with multi-channel attribution and conversion analysis"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
