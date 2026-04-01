@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29135
+PORT = 29753
 SERVICE = "robotics_rev_churn_v4"
 DESCRIPTION = "rev churn v4 go-to-market platform"
 

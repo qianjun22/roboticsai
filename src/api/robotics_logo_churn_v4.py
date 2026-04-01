@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29131
+PORT = 29749
 SERVICE = "robotics_logo_churn_v4"
 DESCRIPTION = "logo churn v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28941
+PORT = 29739
 SERVICE = "robotics_mlops_v4"
 DESCRIPTION = "mlops v4 go-to-market platform"
 
