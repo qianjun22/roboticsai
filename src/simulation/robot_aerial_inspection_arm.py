@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 52230
+PORT = 53190
 SERVICE = "robot-aerial-inspection-arm"
 DESCRIPTION = "Robotics simulation for aerial inspection arm"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-aerial-inspection-arm</h1><div class="subtitle">Robotics simulation for aerial inspection arm · port 52230</div></div>
+<div class="header"><h1>robot-aerial-inspection-arm</h1><div class="subtitle">Robotics simulation for aerial inspection arm · port 53190</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 52230</div>
+<div class="metric"><strong>Port:</strong> 53190</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
