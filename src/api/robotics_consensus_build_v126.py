@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=159601
+PORT=159603
 SERVICE="robotics_consensus_build_v126"
 DESCRIPTION="GTM: consensus_build"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
