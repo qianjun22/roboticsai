@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=151806
+PORT=151906
 SERVICE="robot_cognitive_augment_v119"
 DESCRIPTION="Sim: cognitive_augment"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
