@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22514
+PORT = 22778
 SERVICE = "robot_carbon_capture"
-DESCRIPTION = "Carbon capture robot simulation — DAC sorbent handling and CO2 compression sequencing"
+DESCRIPTION = "Robotic carbon capture simulation — sorbent cycling and CO2 compression staging"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 

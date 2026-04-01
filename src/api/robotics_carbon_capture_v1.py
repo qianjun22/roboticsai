@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22515
+PORT = 22779
 SERVICE = "robotics_carbon_capture_v1"
-DESCRIPTION = "Carbon capture robotics API v1 — amine scrubber maintenance and regeneration cycle automation"
+DESCRIPTION = "Carbon capture robotics API v1 — sorbent cycling and CO2 compression staging"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
