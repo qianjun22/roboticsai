@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28681
+PORT = 29479
 SERVICE = "robotics_game_day_v4"
 DESCRIPTION = "game day v4 go-to-market platform"
 

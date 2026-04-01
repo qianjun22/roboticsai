@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28867
+PORT = 29485
 SERVICE = "robotics_habit_v4"
 DESCRIPTION = "habit v4 go-to-market platform"
 

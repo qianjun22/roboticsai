@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28685
+PORT = 29483
 SERVICE = "robotics_fire_drill_v4"
 DESCRIPTION = "fire drill v4 go-to-market platform"
 

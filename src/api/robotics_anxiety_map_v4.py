@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28859
+PORT = 29477
 SERVICE = "robotics_anxiety_map_v4"
 DESCRIPTION = "anxiety map v4 go-to-market platform"
 

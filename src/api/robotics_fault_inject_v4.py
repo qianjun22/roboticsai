@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28677
+PORT = 29475
 SERVICE = "robotics_fault_inject_v4"
 DESCRIPTION = "fault inject v4 go-to-market platform"
 

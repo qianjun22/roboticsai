@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28863
+PORT = 29481
 SERVICE = "robotics_progress_force_v4"
 DESCRIPTION = "progress force v4 go-to-market platform"
 

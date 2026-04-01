@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28689
+PORT = 29487
 SERVICE = "robotics_incident_resp_v4"
 DESCRIPTION = "incident resp v4 go-to-market platform"
 
