@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28889
+PORT = 29687
 SERVICE = "robotics_secure_sdlc_v4"
 DESCRIPTION = "secure sdlc v4 go-to-market platform"
 

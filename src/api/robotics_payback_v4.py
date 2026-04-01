@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29075
+PORT = 29693
 SERVICE = "robotics_payback_v4"
 DESCRIPTION = "payback v4 go-to-market platform"
 
