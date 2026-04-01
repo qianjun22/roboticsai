@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 22114
-SERVICE = "robot_nuclear_inspection_drone"
-DESCRIPTION = "Nuclear facility inspection drone robot for radiation mapping and containment checks"
+PORT = 22115
+SERVICE = "robotics_nuclear_safety_v1"
+DESCRIPTION = "Nuclear safety robotics API for remote handling in high-radiation environments"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
