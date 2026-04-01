@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=75906
+PORT=76006
 SERVICE="robot_bec_controller_v56"
 DESCRIPTION="Sim: bec_controller"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
