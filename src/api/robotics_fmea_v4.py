@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28659
+PORT = 29277
 SERVICE = "robotics_fmea_v4"
 DESCRIPTION = "fmea v4 go-to-market platform"
 
