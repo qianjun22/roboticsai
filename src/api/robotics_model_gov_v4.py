@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29001
+PORT = 29799
 SERVICE = "robotics_model_gov_v4"
 DESCRIPTION = "model gov v4 go-to-market platform"
 

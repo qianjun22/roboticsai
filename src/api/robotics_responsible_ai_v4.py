@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29013
+PORT = 29811
 SERVICE = "robotics_responsible_ai_v4"
 DESCRIPTION = "responsible ai v4 go-to-market platform"
 

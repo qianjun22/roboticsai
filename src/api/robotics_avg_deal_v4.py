@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29179
+PORT = 29797
 SERVICE = "robotics_avg_deal_v4"
 DESCRIPTION = "avg deal v4 go-to-market platform"
 

@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 29009
+PORT = 29807
 SERVICE = "robotics_ethics_v4"
 DESCRIPTION = "ethics v4 go-to-market platform"
 
