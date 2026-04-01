@@ -3,9 +3,9 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 40855
-SERVICE = "robotics_competitive_intelligence_v3"
-DESCRIPTION = "GTM analytics: competitive intelligence v3 for robotics sales"
+PORT = 40854
+SERVICE = "robot_neural_mesh_fabricator"
+DESCRIPTION = "Fabricates neural mesh patterns for soft robotic skin sensors"
 
 app = fastapi.FastAPI(title=SERVICE, version="1.0.0", description=DESCRIPTION)
 
