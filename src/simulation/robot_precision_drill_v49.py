@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=67242
+PORT=67342
 SERVICE="robot_precision_drill_v49"
 DESCRIPTION="Sim: precision_drill"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
