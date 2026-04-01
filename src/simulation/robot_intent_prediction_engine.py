@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 50622
+PORT = 51582
 SERVICE = "robot-intent-prediction-engine"
 DESCRIPTION = "Robotics simulation for intent prediction engine"
 
@@ -26,10 +26,10 @@ h1{margin:0;font-size:24px;color:#fff;}
 .bars{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:16px;}
 .bar{width:20px;border-radius:3px 3px 0 0;}
 </style></head><body>
-<div class="header"><h1>robot-intent-prediction-engine</h1><div class="subtitle">Robotics simulation for intent prediction engine · port 50622</div></div>
+<div class="header"><h1>robot-intent-prediction-engine</h1><div class="subtitle">Robotics simulation for intent prediction engine · port 51582</div></div>
 <div class="content">
 <div class="metric"><strong>Status:</strong> operational</div>
-<div class="metric"><strong>Port:</strong> 50622</div>
+<div class="metric"><strong>Port:</strong> 51582</div>
 <div class="bars">{bars}</div>
 </div></body></html>"""
 
