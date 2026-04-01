@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28547
+PORT = 29165
 SERVICE = "robotics_kanban_v4"
 DESCRIPTION = "kanban v4 go-to-market platform"
 

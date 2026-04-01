@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28551
+PORT = 29169
 SERVICE = "robotics_lean_v4"
 DESCRIPTION = "lean v4 go-to-market platform"
 

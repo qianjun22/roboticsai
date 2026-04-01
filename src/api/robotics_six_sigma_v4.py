@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28555
+PORT = 29173
 SERVICE = "robotics_six_sigma_v4"
 DESCRIPTION = "six sigma v4 go-to-market platform"
 
