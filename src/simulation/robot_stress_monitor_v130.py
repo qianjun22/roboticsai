@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=165102
+PORT=165202
 SERVICE="robot_stress_monitor_v130"
 DESCRIPTION="Sim: stress_monitor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
