@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=165114
+PORT=165214
 SERVICE="robot_attention_amplifier_v130"
 DESCRIPTION="Sim: attention_amplifier"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
