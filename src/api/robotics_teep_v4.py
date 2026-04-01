@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28719
+PORT = 29337
 SERVICE = "robotics_teep_v4"
 DESCRIPTION = "teep v4 go-to-market platform"
 

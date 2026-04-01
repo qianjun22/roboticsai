@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28545
+PORT = 29343
 SERVICE = "robotics_bring_own_v4"
 DESCRIPTION = "bring own v4 go-to-market platform"
 

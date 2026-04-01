@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28731
+PORT = 29349
 SERVICE = "robotics_mtta_v4"
 DESCRIPTION = "mtta v4 go-to-market platform"
 

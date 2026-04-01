@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28735
+PORT = 29353
 SERVICE = "robotics_mttd_v4"
 DESCRIPTION = "mttd v4 go-to-market platform"
 

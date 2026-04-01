@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28549
+PORT = 29347
 SERVICE = "robotics_byod_v4"
 DESCRIPTION = "byod v4 go-to-market platform"
 

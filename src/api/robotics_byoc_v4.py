@@ -3,7 +3,7 @@ import fastapi
 import fastapi.responses
 import uvicorn
 
-PORT = 28553
+PORT = 29351
 SERVICE = "robotics_byoc_v4"
 DESCRIPTION = "byoc v4 go-to-market platform"
 
