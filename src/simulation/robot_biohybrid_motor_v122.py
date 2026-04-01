@@ -1,5 +1,5 @@
 import datetime,fastapi,fastapi.responses,uvicorn
-PORT=155242
+PORT=155342
 SERVICE="robot_biohybrid_motor_v122"
 DESCRIPTION="Sim: biohybrid_motor"
 app=fastapi.FastAPI(title=SERVICE,version="1.0.0",description=DESCRIPTION)
